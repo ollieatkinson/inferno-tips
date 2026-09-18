@@ -1,0 +1,101 @@
+<!doctype html>
+<html>
+  <head>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "/node_modules/three/build/three.module.js",
+          "three/addons/": "/node_modules/three/examples/jsm/"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <script type="module">
+      import * as THREE from 'three';
+      import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+      const renderer = new THREE.WebGLRenderer({
+        alpha: true,
+        antialias: true,
+        preserveDrawingBuffer: true,
+      });
+      renderer.setSize(192, 192);
+      renderer.setClearColor(0x000000, 0);
+      document.body.appendChild(renderer.domElement);
+      let scene, model, mixer, clips, camera, action;
+      window.loadModel = async (name, indices = [0, 2]) => {
+        const gltf = await new GLTFLoader().loadAsync(
+          '/models/' + name + '.glb',
+        );
+        scene = new THREE.Scene();
+        model = gltf.scene;
+        scene.add(model);
+        model.traverse((o) => {
+          if (o.isMesh) {
+            const old = Array.isArray(o.material) ? o.material : [o.material];
+            o.material = old.map(
+              (m) =>
+                new THREE.MeshBasicMaterial({
+                  map: m.map,
+                  vertexColors: !!o.geometry.attributes.color,
+                  transparent: m.transparent,
+                  side: THREE.DoubleSide,
+                }),
+            );
+            if (o.material.length === 1) o.material = o.material[0];
+          }
+        });
+        model.rotation.y = (Math.PI * 3) / 4;
+        mixer = new THREE.AnimationMixer(model);
+        clips = gltf.animations;
+        const box = new THREE.Box3();
+        for (const c of indices.map((i) => clips[i])) {
+          const a = mixer.clipAction(c);
+          a.play();
+          for (let t = 0; t < c.duration; t += 0.2) {
+            mixer.setTime(t);
+            model.updateMatrixWorld(true);
+            box.union(new THREE.Box3().setFromObject(model, true));
+          }
+          a.stop();
+        }
+        const center = box.getCenter(new THREE.Vector3());
+        const size = box.getSize(new THREE.Vector3());
+        const radius = Math.max(size.x, size.y, size.z) * 0.6;
+        camera = new THREE.OrthographicCamera(
+          -radius,
+          radius,
+          radius,
+          -radius,
+          0.01,
+          100000,
+        );
+        camera.position.set(
+          center.x,
+          center.y + radius * 0.9,
+          center.z + radius * 2.8,
+        );
+        camera.lookAt(center);
+        return {
+          size: size.toArray(),
+          center: center.toArray(),
+          clips: clips.map((c, i) => ({
+            index: i,
+            duration: c.duration,
+            tracks: c.tracks.length,
+          })),
+        };
+      };
+      window.frame = (index, time) => {
+        mixer.stopAllAction();
+        action = mixer.clipAction(clips[index]);
+        action.setLoop(THREE.LoopOnce);
+        action.clampWhenFinished = true;
+        action.play();
+        mixer.setTime(time);
+        renderer.render(scene, camera);
+        return renderer.domElement.toDataURL('image/png');
+      };
+    </script>
+  </body>
+</html>

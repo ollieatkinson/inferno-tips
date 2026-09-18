@@ -1,0 +1,84 @@
+{
+  "mager": {
+    "idle": {
+      "frames": 1,
+      "durationMs": 580,
+      "src": "/monsters/mager-idle.webp"
+    },
+    "magic": {
+      "frames": 24,
+      "durationMs": 1200,
+      "src": "/monsters/mager-magic.webp"
+    }
+  },
+  "ranger": {
+    "idle": {
+      "frames": 1,
+      "durationMs": 1800,
+      "src": "/monsters/ranger-idle.webp"
+    },
+    "range": {
+      "frames": 36,
+      "durationMs": 1800,
+      "src": "/monsters/ranger-range.webp"
+    }
+  },
+  "blob": {
+    "idle": {
+      "frames": 1,
+      "durationMs": 600,
+      "src": "/monsters/blob-idle.webp"
+    },
+    "magic": {
+      "frames": 12,
+      "durationMs": 600,
+      "src": "/monsters/blob-magic.webp"
+    },
+    "range": {
+      "frames": 12,
+      "durationMs": 600,
+      "src": "/monsters/blob-range.webp"
+    }
+  },
+  "melee": {
+    "idle": {
+      "frames": 1,
+      "durationMs": 1200,
+      "src": "/monsters/melee-idle.webp"
+    },
+    "melee": {
+      "frames": 24,
+      "durationMs": 1200,
+      "src": "/monsters/melee-melee.webp"
+    }
+  },
+  "bat": {
+    "idle": {
+      "frames": 1,
+      "durationMs": 600,
+      "src": "/monsters/bat-idle.webp"
+    },
+    "range": {
+      "frames": 12,
+      "durationMs": 600,
+      "src": "/monsters/bat-range.webp"
+    }
+  },
+  "jad": {
+    "idle": {
+      "frames": 1,
+      "durationMs": 1300,
+      "src": "/monsters/jad-idle.webp"
+    },
+    "magic": {
+      "frames": 64,
+      "durationMs": 3200,
+      "src": "/monsters/jad-magic.webp"
+    },
+    "range": {
+      "frames": 22,
+      "durationMs": 1100,
+      "src": "/monsters/jad-range.webp"
+    }
+  }
+}

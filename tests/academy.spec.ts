@@ -408,7 +408,11 @@ test('mager attack cues follow four real ticks in guided mode', async ({
   await page.clock.runFor(599);
   await expect(page.locator('.run-stats').getByText('0 / 36')).toBeVisible();
   await page.clock.runFor(1);
-  await expect(page.getByText('MAGIC ATTACK', { exact: true })).toBeVisible();
+  await expect(
+    page
+      .locator('[data-enemy="mager"]')
+      .getByText('Magic attack', { exact: true }),
+  ).toBeVisible();
   await expect(
     page.getByText('Magic attack in 4 ticks', { exact: true }),
   ).toBeVisible();
@@ -1008,4 +1012,83 @@ test('guided prayer cells keep their size through the final tick', async ({
         .locator('td[aria-hidden="true"]'),
     ).toHaveCount(5);
   }
+});
+
+test('mixed movement drill shows independent attacks and freezes sprite playback when paused', async ({
+  page,
+}) => {
+  await page.clock.install();
+  await open(page);
+  await lesson(page, 'Blob, mager and movement');
+  const mager = page.locator('[data-enemy="mager"]');
+  const blob = page.locator('[data-enemy="blob"]');
+  await expect(mager).toBeVisible();
+  await expect(blob).toBeVisible();
+  await expect(page.getByLabel('Movement practice grid')).toBeVisible();
+  await start(page, false);
+  await page.getByRole('button', { name: 'Magic', exact: true }).click();
+  await page.clock.runFor(600);
+  await expect(mager).toHaveAttribute('data-event', 'attack');
+  await expect(blob).toHaveAttribute('data-event', 'read');
+  await page.clock.runFor(150);
+  const sprite = mager.locator('.monster-sprite');
+  await expect(sprite).toHaveAttribute('data-animation', 'magic');
+  expect(Number(await sprite.getAttribute('data-frame'))).toBeGreaterThan(0);
+  await page.getByRole('button', { name: 'Pause', exact: true }).click();
+  const frame = await sprite.getAttribute('data-frame');
+  await page.clock.runFor(1000);
+  await expect(sprite).toHaveAttribute('data-frame', frame!);
+  await page.getByRole('button', { name: 'Resume', exact: true }).click();
+  await page.clock.runFor(150);
+  expect(Number(await sprite.getAttribute('data-frame'))).toBeGreaterThan(
+    Number(frame),
+  );
+  await page.clock.runFor(1650);
+  await expect(blob).toHaveAttribute('data-event', 'attack');
+  await expect(blob).toContainText('Ranged attack');
+  await expect(blob.locator('.monster-sprite')).toHaveAttribute(
+    'data-animation',
+    'range',
+  );
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await lesson(page, 'One-tick alternating');
+  await page.getByRole('button', { name: 'Challenge', exact: true }).click();
+  await expect(mager).toBeVisible();
+  await expect(blob).toBeVisible();
+  await expect(page.locator('.enemy-countdown')).toHaveCount(0);
+  await expect(sprite).toHaveAttribute('data-animation', 'idle');
+});
+
+test('triple Jad has three independently cued animated monsters', async ({
+  page,
+}) => {
+  await page.clock.install();
+  await open(page);
+  await lesson(page, 'Triple Jad prayer cues');
+  await expect(page.locator('.enemy-unit')).toHaveCount(3);
+  await start(page, false);
+  await expect(page.locator('[data-enemy="jad-0"]')).toHaveAttribute(
+    'data-event',
+    'cue',
+  );
+  await expect(
+    page.locator('[data-enemy="jad-1"] .monster-sprite'),
+  ).toHaveAttribute('data-animation', 'idle');
+  await page.clock.runFor(1800);
+  await expect(page.locator('[data-enemy="jad-0"]')).toHaveAttribute(
+    'data-event',
+    'attack',
+  );
+  await expect(page.locator('[data-enemy="jad-1"]')).toHaveAttribute(
+    'data-event',
+    'cue',
+  );
+  await expect(
+    page.locator('[data-enemy="jad-2"] .monster-sprite'),
+  ).toHaveAttribute('data-animation', 'idle');
 });

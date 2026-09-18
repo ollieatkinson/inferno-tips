@@ -56,7 +56,7 @@ Set `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` to use an existing Chromium installati
 
 The course draws on the three requested guides by [Hug my cat](https://www.youtube.com/watch?v=zTQdupqm-lM), [Gnomonkey](https://www.youtube.com/watch?v=2xviK0wGI-o) and [dearlola1](https://www.youtube.com/watch?v=r3s4rbTd4QU), with [OSRS Wiki mechanics references](https://oldschool.runescape.wiki/w/Inferno/Strategies). See [research and coverage](docs/research.md) for transcript acquisition, timestamped evidence, creator disagreements and model decisions. Full transcripts and videos are not republished.
 
-This is a focused timing and coordination tool, not a full combat simulator. It does not model damage rolls, prayer drain, latency, gear, stat restoration, pathfinding or full encounters. Jad uses labelled reaction cues; Zuk is taught through decisions and a weapon/movement drill, with full encounter practice linked externally. Mitigation exercises report unprotected attacks separately from correct-priority scores. Supply drills model finite exercise stock and a three-tick eating/drinking cooldown; the fixed dose sequence is not a personalized supply recommendation. Movement targets are an invented practice task, not an Inferno floor hazard. Scores and mastery are learning milestones, not a promise of a cape.
+This is a focused timing and coordination tool, not a full combat simulator. It does not model damage rolls, prayer drain, latency, gear, stat restoration, pathfinding or full encounters. Monsters show game-model attack animations on their own schedules, including beside the movement grid. Blob reads are separate from delayed attacks, and each Jad has its own animation and reaction cue; Zuk is taught through decisions and a weapon/movement drill, with full encounter practice linked externally. Mitigation exercises report unprotected attacks separately from correct-priority scores. Supply drills model finite exercise stock and a three-tick eating/drinking cooldown; the fixed dose sequence is not a personalized supply recommendation. Movement targets are an invented practice task, not an Inferno floor hazard. Scores and mastery are learning milestones, not a promise of a cape.
 
 Game artwork and RuneScape trademarks belong to Jagex Ltd. This is an independent fan project. See [THIRD_PARTY.md](THIRD_PARTY.md) and the site’s `/credits/` page for attribution.
 
@@ -70,3 +70,15 @@ npx prettier --write src/lib/losSetups.json
 ```
 
 The generator uses the companion repository’s public encoder and simulator, validates positions and link round-trips, and checks the demonstrated attack sequences. The normal site build and tests need no companion checkout. Lesson assignments select a setup in `curriculum.ts`; drill links are mapped in `los.ts`.
+
+## Regenerating monster sprites
+
+The runtime uses local WebP sheets (about 460 KB total), with no 3D renderer dependency. To re-render the game models, use the separate optional asset-preparation tools:
+
+```sh
+npm ci --prefix scripts/monster-sprites
+PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/path/to/chromium node scripts/monster-sprites/render.mjs
+npx prettier --write src/lib/monsterSprites.json docs/monster-models.json
+```
+
+The script downloads six public model files to a temporary directory, captures the source attack clips at 20 fps with a fixed camera, and records their URLs and hashes. Normal development, builds and tests do not need these tools or source models.

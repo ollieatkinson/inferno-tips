@@ -1,4 +1,9 @@
 import { TOTAL_TICKS, type LessonId, type Prayer } from './course';
+import {
+  monsterEvents,
+  jadStyleForTick,
+  type MonsterEvent,
+} from './encounters';
 export type Supply = 'shark' | 'brew' | 'restore';
 export interface Check {
   tick: number;
@@ -16,6 +21,7 @@ export interface DrillState {
   exposures: { tick: number; message: string }[];
   seed: number;
   checks: Check[];
+  monsterEvents: MonsterEvent[];
   streak: number;
   bestStreak: number;
   consumed: Record<Supply, number>;
@@ -31,6 +37,7 @@ export const initialState = (seed = 0): DrillState => ({
   exposures: [],
   seed,
   checks: [],
+  monsterEvents: [],
   streak: 0,
   bestStreak: 0,
   consumed: { shark: 0, brew: 0, restore: 0 },
@@ -71,12 +78,7 @@ export const targetAt = (tick: number, id: LessonId = 'movement') =>
   ];
 export const isJad = (id: LessonId) => id === 'jad' || id === 'triples';
 export const jadPeriod = (id: LessonId) => (id === 'triples' ? 3 : 8);
-export function jadStyle(id: LessonId, tick: number, seed = 0): Prayer {
-  const cycle = Math.floor((Math.max(3, tick) - 3) / jadPeriod(id));
-  let value = Math.imul(cycle + seed + 7, 0x45d9f3b);
-  value = Math.imul(value ^ (value >>> 16), 0x45d9f3b);
-  return (value ^ (value >>> 16)) & 1 ? 'magic' : 'range';
-}
+export const jadStyle = jadStyleForTick;
 export const blobScanPhase = (id: LessonId) =>
   id === 'two-tick-repair' ? 2 : 1;
 export const isBlobScan = (id: LessonId, tick: number) =>
@@ -293,6 +295,10 @@ export function advance(
   }
   return {
     tick,
+    monsterEvents: [
+      ...state.monsterEvents,
+      ...monsterEvents(id, tick, pending, pendingB, state.seed),
+    ],
     pending,
     pendingB,
     exposure,

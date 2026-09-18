@@ -5,6 +5,7 @@ import { Overview } from './Overview';
 import { losSetups, drillLosSetups } from '../lib/los';
 import { SettingsPage } from './SettingsPage';
 import { PrayerPreview } from './PrayerPreview';
+import { EnemyScene } from './EnemyScene';
 import {
   readSettings,
   SETTINGS_KEY,
@@ -1167,6 +1168,12 @@ function Trainer({
           <div
             className={`training-arena ${hasMovement(lesson.id) ? 'with-movement' : ''}`}
           >
+            <EnemyScene
+              id={lesson.id}
+              state={state}
+              status={status}
+              guided={mode === 'guided'}
+            />
             {hasMovement(lesson.id) ? (
               <>
                 <div
@@ -1198,55 +1205,6 @@ function Trainer({
             ) : (
               <>
                 <div className="arena-floor" />
-                <div className="enemy-line">
-                  {(isJad(lesson.id)
-                    ? ['jad']
-                    : lesson.id === 'bat'
-                      ? ['bat']
-                      : lesson.id === 'reverse'
-                        ? ['mager', 'bat']
-                        : lesson.id === 'melee-blob'
-                          ? ['melee', 'blob']
-                          : ['stack', 'stack-one'].includes(lesson.id)
-                            ? ['mager', 'ranger']
-                            : lesson.id === 'anchor-range'
-                              ? ['ranger', 'blob']
-                              : lesson.id === 'double-blob'
-                                ? ['mager', 'blob', 'blob']
-                                : ['two-tick', 'two-tick-repair'].includes(
-                                      lesson.id,
-                                    )
-                                  ? ['mager', 'blob']
-                                  : hasBlob(lesson.id)
-                                    ? ['blob']
-                                    : ['mager']
-                  ).map((n, index) => (
-                    <div
-                      className={`enemy ${magerLesson && state.tick > 0 && state.tick % 4 === 1 ? 'attacking' : ''}`}
-                      key={`${n}-${index}-${magerLesson ? state.tick : 0}`}
-                    >
-                      <GameIcon name={n} />
-                      <span>
-                        {n === 'blob'
-                          ? 'JAL-AK'
-                          : n === 'mager'
-                            ? 'JAL-ZEK'
-                            : n === 'ranger'
-                              ? 'JAL-XIL'
-                              : n === 'jad'
-                                ? 'JALTOK-JAD'
-                                : n === 'bat'
-                                  ? 'JAL-MEJRAH'
-                                  : 'JAL-IMKOT'}
-                      </span>
-                      {magerLesson &&
-                        state.tick > 0 &&
-                        state.tick % 4 === 1 && (
-                          <b className="attack-flash">MAGIC ATTACK</b>
-                        )}
-                    </div>
-                  ))}
-                </div>
                 <div className="player-avatar">
                   <div className="overhead">
                     {prayer !== 'off' && (

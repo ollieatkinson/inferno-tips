@@ -1,7 +1,7 @@
 # Verification — 18 September 2026
 
-- `npm test`: 77 passing tests. Includes all 20 intended drill techniques, independent attack schedules, all four blob scan phases, bad two-tick alignment, conservation false positives, mitigation exposure, Jad check delay, finite supplies and saved progress.
-- `npm run test:production`: static Astro build/check passed with no diagnostics; all 41 Playwright tests passed against the built preview. The preview test passed again after the final mobile CSS adjustment. Every drill completed through the visible controls. Coverage includes mistakes, mastery persistence, corrupt/blocked storage, mouse prayer toggles, Esc/F1 defaults, saved tab keys and collision swaps, knowledge checks, bookmarkable lesson links, troubleshooting shortcuts, filters, mobile layout and pause behaviour.
+- `npm test`: 83 passing tests. Includes all 20 intended drill techniques, independent attack schedules, all four blob scan phases, bad two-tick alignment, conservation false positives, mitigation exposure, Jad check delay, finite supplies and saved progress.
+- `npm run test:production`: static Astro build/check passed with no diagnostics; all 44 Playwright tests passed against the built preview. Every drill completed through the visible controls. Coverage includes mistakes, mastery persistence, corrupt/blocked storage, mouse prayer toggles, Esc/F1 defaults, saved tab keys and collision swaps, knowledge checks, bookmarkable lesson links, troubleshooting shortcuts, filters, mobile layout and pause behaviour.
 - Real-clock production run completed 36 ticks plus count-in in approximately 23.9 seconds. Other timing tests use a controlled browser clock to check specific boundaries without flaky mouse scheduling.
 - `npm audit --omit=dev --audit-level=high`: zero vulnerabilities.
 - `git diff --check`: passed.
@@ -20,7 +20,7 @@ Used the official Chrome DevTools MCP in an isolated Chromium session. The preco
 
 A production-only saved-tab-key race was found and fixed: keys are read on trainer creation and the key listener is attached before paint. The final full production suite includes the reload-and-immediate-key test and passes.
 
-Screenshots and raw DevTools output are temporary verification artifacts, not shipped game assets. The app remains a timing/decision trainer: exact game animation recognition, full pathfinding, damage, HP/stat arithmetic and Zuk shield simulation are practised in the linked companion tools.
+Screenshots and raw DevTools output are temporary verification artifacts, not shipped game assets. The app remains a timing/decision trainer. The later monster-animation update below adds rendered game-model attack clips; full pathfinding, damage, HP/stat arithmetic and Zuk shield simulation remain in the linked companion tools.
 
 ## Guide and layout review
 
@@ -58,3 +58,12 @@ Screenshots and raw DevTools output are temporary verification artifacts, not sh
 
 - The preview keeps six column slots as the run ends; unused slots are blank. Prayer icons and action notes reserve row space to keep the controls below steady.
 - Production build/check passed with no diagnostics. Both guided-preview browser tests passed, including measured column width and table height on every tick through tick 35 at desktop and mobile widths (1280 and 390 px).
+
+## Visible monsters and attack animations
+
+- Added locally rendered attack clips for mager, ranger, blob (both ranged styles), bat, melee and Jad. All 19 prayer drills show their full monster roster; movement drills retain their tile grid beside the monsters. The weapon-only drill retains its shoot/step task.
+- Enemy events distinguish physical attacks from pattern checks and blob prayer reads. Unit tests check four-tick anchors, three-tick bats, delayed blob attacks from actual reads, separate second-blob phases and each Jad’s cue/check pair.
+- New browser coverage confirms mager attack and blob read on tick 1, the delayed blob hit, changing animation frames, frozen playback during pause, resumed playback, clean reset, visible enemies without countdown hints in challenge mode, mobile layout, and three independent Jads.
+- Re-ran the standalone sprite generator successfully from the checked-in scripts. The normal build and runtime do not depend on its Three.js/Sharp tools or the source models.
+- Final production checks passed for mobile layout, the mager cue, mixed movement attacks/pause, and triple Jad after the final sprite-render optimization and layout adjustment. Astro check reported no errors, warnings or hints.
+- Chrome DevTools live mobile run: followed the gauntlet through tick 10 at real 600 ms timing with 100% accuracy. Observed mager attacks on 1/5/9, blob reads on 1/7 and blob attacks on 4/10; paused animation frames froze. No horizontal overflow or browser console errors.

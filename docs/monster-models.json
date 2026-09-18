@@ -1,0 +1,52 @@
+{
+  "mager": {
+    "url": "https://oldschool-cdn.com/models/7699_33000.glb",
+    "sha256": "a2a62ac5848212e9de8ef90b2f1ffe3517d62d0712628cc11dc96c241fe0439f",
+    "actions": {
+      "idle": 0,
+      "magic": 2
+    }
+  },
+  "ranger": {
+    "url": "https://oldschool-cdn.com/models/7698_33014.glb",
+    "sha256": "baf05cab2e56db636fa77b5b501aca5f878cb5e3ae9f75023d1ef09cd8590d6b",
+    "actions": {
+      "idle": 0,
+      "range": 2
+    }
+  },
+  "blob": {
+    "url": "https://oldschool-cdn.com/models/7693_33001.glb",
+    "sha256": "298b54e09370202d483617ca69b703030ceeb4b392b8cf3b9e16dec7e7d70d8c",
+    "actions": {
+      "idle": 0,
+      "magic": 2,
+      "range": 4
+    }
+  },
+  "melee": {
+    "url": "https://oldschool-cdn.com/models/7697_33010.glb",
+    "sha256": "a7e59ff39917268f768017d56b2cf882a85381a778e3c320ba7f173256b4af17",
+    "actions": {
+      "idle": 0,
+      "melee": 2
+    }
+  },
+  "bat": {
+    "url": "https://oldschool-cdn.com/models/7692_33018.glb",
+    "sha256": "4a35eafe37d787253a33ea7044f224e2395383c745a1143b6600ae85548b41a8",
+    "actions": {
+      "idle": 0,
+      "range": 1
+    }
+  },
+  "jad": {
+    "url": "https://oldschool-cdn.com/models/7700_33012.glb",
+    "sha256": "500bb1621ade8709c05b946aed08bb4d4832eba6911d47fcfb86fafa0a850a4d",
+    "actions": {
+      "idle": 0,
+      "magic": 2,
+      "range": 3
+    }
+  }
+}

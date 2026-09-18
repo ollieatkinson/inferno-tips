@@ -355,7 +355,7 @@ lessons.push({
     'Keep the correct prayer active through the check. Repeated attacks can use the same style: do not toggle that prayer off.',
   ],
   takeaway:
-    'These labelled cues are a reaction exercise, not a frame-perfect reproduction of Jad’s animations. Practise the real animations in the linked combat simulator.',
+    'Watch the Jad animation and its labelled cue, then protect the check three ticks later. Use the linked combat simulator to add healer management and positioning.',
   source: { creator: 'Gnomonkey', video: '2xviK0wGI-o', seconds: 4904 },
 });
 lessons.push({

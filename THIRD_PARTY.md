@@ -10,6 +10,10 @@ The following files are served locally, copied from the adjacent `inferno-los` p
 - `public/icons/jad.png`: [JalTok-Jad](https://oldschool.runescape.wiki/images/JalTok-Jad.png) via the OSRS Wiki.
 - `public/icons/player.png`: game artwork via [Supalosa/osrs-colosseum](https://github.com/Supalosa/osrs-colosseum/blob/5b1734f06e0580bcc9cb8a0a681c93a13adaf3d3/public/player.png).
 
+Animated monster sprites:
+
+- `public/monsters/*.webp`: Jagex NPC models and attack animations distributed by [OldSchoolSDK](https://github.com/OldSchoolSDK/InfernoTrainer/tree/804c23f4e5cd50c1f13e93b502d6893555196769) via `oldschool-cdn.com`. Rendered locally into transparent sprite sheets at 20 fps, keeping each clip’s native duration. [Source model URLs and SHA-256 hashes](docs/monster-models.json) record provenance. Attack clip indices follow that pinned trainer’s `JalZek`, `JalXil`, `JalAk`, `JalImKot`, `JalMejRah` and `JalTokJad` implementations. Renderer and regeneration instructions: `scripts/monster-sprites/`.
+
 Additional local interface assets:
 
 - `public/icons/inventory.png`: [Inventory tab icon](https://oldschool.runescape.wiki/w/File:Inventory.png), Jagex artwork via the OSRS Wiki.
