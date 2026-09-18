@@ -20,6 +20,7 @@ export function PrayerPreview({
     );
   const beats = prayerPreview(id, state, selected);
   if (!beats.length) return null;
+  const emptySlots = Array.from({ length: 6 - beats.length }, (_, i) => i);
   return (
     <section className="prayer-preview" aria-label="Upcoming prayer pattern">
       <div className="prayer-preview-heading">
@@ -50,6 +51,9 @@ export function PrayerPreview({
                   {i === 0 && <small>Next</small>}
                 </th>
               ))}
+              {emptySlots.map((slot) => (
+                <td key={`empty-${slot}`} aria-hidden="true" />
+              ))}
             </tr>
           </thead>
           <tbody>
@@ -57,14 +61,16 @@ export function PrayerPreview({
               <th scope="row">Prayer</th>
               {beats.map((beat, i) => (
                 <td key={beat.tick} className={i === 0 ? 'next-beat' : ''}>
-                  {beat.prayer !== 'off' && (
-                    <img
-                      src={`/icons/protect-${beat.prayer}.png`}
-                      alt=""
-                      width="24"
-                      height="24"
-                    />
-                  )}
+                  <span className="prayer-preview-icon" aria-hidden="true">
+                    {beat.prayer !== 'off' && (
+                      <img
+                        src={`/icons/protect-${beat.prayer}.png`}
+                        alt=""
+                        width="24"
+                        height="24"
+                      />
+                    )}
+                  </span>
                   <span>
                     {beat.prayer === 'range'
                       ? 'Ranged'
@@ -76,6 +82,9 @@ export function PrayerPreview({
                   </span>
                 </td>
               ))}
+              {emptySlots.map((slot) => (
+                <td key={`empty-${slot}`} aria-hidden="true" />
+              ))}
             </tr>
             <tr>
               <th scope="row">Action</th>
@@ -84,6 +93,9 @@ export function PrayerPreview({
                   {beat.action}
                   {beat.note && <small>{beat.note}</small>}
                 </td>
+              ))}
+              {emptySlots.map((slot) => (
+                <td key={`empty-${slot}`} aria-hidden="true" />
               ))}
             </tr>
           </tbody>

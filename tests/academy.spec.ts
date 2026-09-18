@@ -976,3 +976,36 @@ test('guided prayer preview shows upcoming beats, advances, pauses and hides in 
   await page.keyboard.press('End');
   await expect(scroller).toBeFocused();
 });
+
+test('guided prayer cells keep their size through the final tick', async ({
+  page,
+}) => {
+  await page.clock.install();
+  await open(page);
+  for (const width of [1280, 390]) {
+    await page.setViewportSize({ width, height: 900 });
+    await lesson(page, 'Flick the mager');
+    const dimensions = () =>
+      page.locator('.prayer-preview').evaluate((preview) => ({
+        cell: preview.querySelector('tbody td')!.getBoundingClientRect().width,
+        table: preview.querySelector('table')!.getBoundingClientRect().height,
+      }));
+    const initial = await dimensions();
+    await start(page, false);
+    for (let tick = 1; tick <= 35; tick++) {
+      await page.clock.runFor(600);
+      const current = await dimensions();
+      expect(current.cell).toBeCloseTo(initial.cell, 1);
+      expect(current.table).toBeCloseTo(initial.table, 1);
+    }
+    await expect(
+      page.locator('.prayer-preview [aria-current="step"]'),
+    ).toHaveText('36Next');
+    await expect(
+      page
+        .locator('.prayer-preview tbody tr')
+        .first()
+        .locator('td[aria-hidden="true"]'),
+    ).toHaveCount(5);
+  }
+});

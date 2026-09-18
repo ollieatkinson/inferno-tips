@@ -2928,9 +2928,20 @@ select:focus-visible {
   text-align: left;
   padding-left: 8px;
 }
+.prayer-preview tbody tr:first-child {
+  height: 58px;
+}
+.prayer-preview tbody tr:last-child {
+  height: 80px;
+}
+.prayer-preview-icon {
+  display: block;
+  height: 24px;
+  margin-bottom: 3px;
+}
 .prayer-preview td img {
   display: block;
-  margin: 0 auto 3px;
+  margin: 0 auto;
   object-fit: contain;
   image-rendering: pixelated;
 }
