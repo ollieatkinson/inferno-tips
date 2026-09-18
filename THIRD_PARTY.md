@@ -10,6 +10,11 @@ The following files are served locally, copied from the adjacent `inferno-los` p
 - `public/icons/jad.png`: [JalTok-Jad](https://oldschool.runescape.wiki/images/JalTok-Jad.png) via the OSRS Wiki.
 - `public/icons/player.png`: game artwork via [Supalosa/osrs-colosseum](https://github.com/Supalosa/osrs-colosseum/blob/5b1734f06e0580bcc9cb8a0a681c93a13adaf3d3/public/player.png).
 
+Additional local interface assets:
+
+- `public/icons/inventory.png`: [Inventory tab icon](https://oldschool.runescape.wiki/w/File:Inventory.png), Jagex artwork via the OSRS Wiki.
+- `public/icons/prayer.png`: Prayer skill icon, Jagex artwork via [RuneLite](https://github.com/runelite/runelite/blob/master/runelite-client/src/main/resources/skill_icons/prayer.png).
+
 The application code, course, CSS illustration, and feedback text are original. Mechanics references: [OSRS Wiki Inferno strategies](https://oldschool.runescape.wiki/w/Inferno/Strategies). Video sources: [Hug my cat’s two-tick guide](https://www.youtube.com/watch?v=zTQdupqm-lM), [Gnomonkey’s Golden Trio guide](https://www.youtube.com/watch?v=2xviK0wGI-o) and [dearlola1’s 2026 guide](https://www.youtube.com/watch?v=r3s4rbTd4QU), linked with timestamps without implying endorsement. Caption research and the lesson coverage map are documented in [docs/research.md](docs/research.md); transcripts and video frames are not published here. Companion positioning tool: [Inferno LoS](https://los.inferno.tips/).
 
 DM Sans and Manrope fonts are loaded from Google Fonts under their respective open font licenses. npm packages retain their upstream licenses; exact dependencies are recorded in `package-lock.json`.

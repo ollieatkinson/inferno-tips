@@ -1371,7 +1371,7 @@ function Trainer({
               aria-pressed={panel === 'inventory'}
               onClick={() => setPanel('inventory')}
             >
-              <Icon name="grid" size={17} />
+              <GameIcon name="inventory" />
               Inventory <kbd>{tabKeyLabel(tabKeys.inventory)}</kbd>
             </button>
             <span>
