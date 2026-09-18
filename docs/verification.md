@@ -89,3 +89,11 @@ Screenshots and raw DevTools output are temporary verification artifacts, not sh
 - Reviewed Chrome DevTools screenshots at 1440 × 1000 and 390 × 844. Mobile puts the guided cycle above the encounter and stacks the game panel below, retaining 46 px prayer targets and avoiding horizontal page overflow.
 - Played a real-time eating sequence in Chrome: Magic on for tick 1, off afterwards, Esc to eat the shark in slot 5, then F1 back to prayers. At tick 2 the run had 100% accuracy, slot 5 was empty and eight sharks remained. Captured actual audio buffer starts for distinct activation/deactivation clips; no console warnings or errors.
 - Production build/check passed without diagnostics; 84 unit tests and all 46 browser tests passed. New regressions cover right-side layout, protection positions, individual inventory slots, rejected cooldown actions, potion doses, resets, mobile target size, real audio playback, saved volume and mute.
+
+## Prayer activation circles
+
+- Replaced the translucent overlay with the original 34 px game highlight sprite behind a transparent protection icon. The icon retains its original colours.
+- A prayer switch lights the new circle immediately and keeps the old circle until the shared game tick. Explicit off clicks clear their own circle; scoring still uses only the selected prayer. Count-in ticks reconcile highlights, pause freezes them, and a new run clears them.
+- The browser regression switches 100 ms into a tick, checks both circles at 599 ms, and confirms only the selected circle at 600 ms. It also covers tab switching, off/on clicks, pause/resume and restarting.
+- Production build/check and five relevant browser tests passed, including full alternation and one-tick flick challenges, player controls, prayer audio and the new highlight test.
+- Chrome DevTools: inspected the original sprite on mobile and observed Magic and Ranged lit together after switching, then only Ranged after the next tick. No console warnings or errors.

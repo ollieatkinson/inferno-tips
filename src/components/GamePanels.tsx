@@ -71,6 +71,7 @@ const itemAction = (item: Supply) =>
 export function GamePanels({
   id,
   prayer,
+  litPrayers,
   panel,
   tabKeys,
   running,
@@ -83,6 +84,7 @@ export function GamePanels({
 }: {
   id: LessonId;
   prayer: Prayer;
+  litPrayers: Prayer[];
   panel: 'prayers' | 'inventory';
   tabKeys: Settings['tabKeys'];
   running: boolean;
@@ -161,11 +163,20 @@ export function GamePanels({
                   <button
                     key={name}
                     className={`prayer-button ${prayer === protection ? 'selected' : ''}`}
+                    data-lit={litPrayers.includes(protection)}
+                    style={{
+                      backgroundPosition: `-${12.5 + (index % 5) * 46}px -158.75px`,
+                    }}
                     aria-label={prayerLabel(protection)}
                     title={name}
                     aria-pressed={prayer === protection}
                     onClick={() => onPrayer(protection)}
                   >
+                    <img
+                      className="native-prayer-icon"
+                      src={`/game-ui/protect-${protection}.png`}
+                      alt=""
+                    />
                     <span className="sr-only">{name}</span>
                   </button>
                 ) : (

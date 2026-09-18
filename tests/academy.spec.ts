@@ -1265,3 +1265,58 @@ test('authentic prayer audio follows toggles and respects saved sound preference
   await magic.click();
   expect(await starts()).toHaveLength(0);
 });
+
+test('prayer circles keep the previous highlight until the shared tick boundary', async ({
+  page,
+}) => {
+  await page.clock.install();
+  await page.clock.pauseAt(new Date());
+  await open(page);
+  await lesson(page, 'One-tick alternating');
+  await start(page, false);
+  const magic = page.getByRole('button', { name: 'Magic', exact: true });
+  const ranged = page.getByRole('button', { name: 'Ranged', exact: true });
+  await magic.click();
+  await expect(magic).toHaveAttribute('data-lit', 'true');
+  await page.clock.runFor(600);
+  await page.clock.runFor(100);
+  await ranged.click();
+  await expect(magic).toHaveAttribute('data-lit', 'true');
+  await expect(ranged).toHaveAttribute('data-lit', 'true');
+  await expect(magic).toHaveAttribute('aria-pressed', 'false');
+  await expect(ranged).toHaveAttribute('aria-pressed', 'true');
+  const glow = await ranged.evaluate((el) => ({
+    image: getComputedStyle(el, '::before').backgroundImage,
+    visibility: getComputedStyle(el, '::before').visibility,
+  }));
+  expect(glow.image).toContain('/game-ui/prayer-active.png');
+  expect(glow.visibility).toBe('visible');
+  await page.keyboard.press('Escape');
+  await page.keyboard.press('F1');
+  await expect(magic).toHaveAttribute('data-lit', 'true');
+  await page.clock.runFor(499);
+  await expect(magic).toHaveAttribute('data-lit', 'true');
+  await page.clock.runFor(1);
+  await expect(magic).toHaveAttribute('data-lit', 'false');
+  await expect(ranged).toHaveAttribute('data-lit', 'true');
+  await expect(page.locator('.run-stats')).toContainText('100%');
+  // Explicit off/on clicks still toggle the clicked circle, including flicks.
+  await ranged.click();
+  await expect(ranged).toHaveAttribute('data-lit', 'false');
+  await ranged.click();
+  await expect(ranged).toHaveAttribute('data-lit', 'true');
+  await magic.click();
+  await page.getByRole('button', { name: 'Pause', exact: true }).click();
+  await page.clock.runFor(1800);
+  await expect(ranged).toHaveAttribute('data-lit', 'true');
+  await expect(magic).toHaveAttribute('data-lit', 'true');
+  await page.getByRole('button', { name: 'Resume', exact: true }).click();
+  await page.clock.runFor(600);
+  await expect(ranged).toHaveAttribute('data-lit', 'false');
+  await expect(magic).toHaveAttribute('data-lit', 'true');
+  await page.getByRole('button', { name: 'End run', exact: true }).click();
+  await page
+    .getByRole('button', { name: 'Start guided practice', exact: true })
+    .click();
+  await expect(page.locator('.prayer-button[data-lit="true"]')).toHaveCount(0);
+});

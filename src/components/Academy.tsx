@@ -782,6 +782,7 @@ function Trainer({
   >('ready');
   const [state, setState] = useState<DrillState>(initialState);
   const [prayer, setPrayer] = useState<Prayer>('off');
+  const [litPrayers, setLitPrayers] = useState<Prayer[]>([]);
   const [tile, setTile] = useState(12);
   const [countdown, setCountdown] = useState(3);
   const [interrupted, setInterrupted] = useState(false);
@@ -832,6 +833,18 @@ function Trainer({
     () => setSoundError(true),
   );
   function selectPrayer(p: Prayer, userClick = false) {
+    const previous = prayerRef.current;
+    // Client-side activation lights immediately. Conflicting prayer circles
+    // reconcile on the shared game tick; an explicit off click clears its own.
+    setLitPrayers((lit) =>
+      p === 'off'
+        ? userClick
+          ? lit.filter((active) => active !== previous)
+          : []
+        : busy
+          ? [...new Set([...lit, p])]
+          : [p],
+    );
     if (userClick && p !== prayerRef.current)
       playPrayerSound(prayerRef.current, p);
     if (status === 'running' && p !== prayerRef.current)
@@ -913,6 +926,7 @@ function Trainer({
     if (status !== 'countdown') return;
     const timer = window.setTimeout(() => {
       beep();
+      setLitPrayers(prayerRef.current === 'off' ? [] : [prayerRef.current]);
       if (countdown === 1) {
         transitionsRef.current = [];
         setStatus('running');
@@ -939,6 +953,7 @@ function Trainer({
       attackRef.current = false;
       setAttackQueued(false);
       beep();
+      setLitPrayers(prayerRef.current === 'off' ? [] : [prayerRef.current]);
       setState((prev) =>
         advance(
           prev,
@@ -1384,6 +1399,7 @@ function Trainer({
             <GamePanels
               id={lesson.id}
               prayer={prayer}
+              litPrayers={busy ? litPrayers : prayer === 'off' ? [] : [prayer]}
               panel={panel}
               tabKeys={tabKeys}
               running={status === 'running'}
