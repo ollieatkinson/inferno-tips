@@ -1,6 +1,6 @@
 # inferno-tips
 
-An Astro site for learning Old School RuneScape Inferno mechanics through short, repeatable exercises. Six lessons build from tick rhythm and blob reads to alternating prayers, offset stacks, movement, and a combined challenge.
+An Astro site for learning Old School RuneScape Inferno mechanics through short, repeatable exercises. Eight ordered chapters contain 22 field lessons with knowledge checks and 20 timed drills. Learning path teaches decisions; Practice drills is a searchable, filterable exercise library.
 
 ## Run locally
 
@@ -17,29 +17,28 @@ Open http://localhost:4321. The site is static; drills run in the browser and pr
 
 Connect `ollieatkinson/inferno-tips` with these settings:
 
-| Setting | Value |
-| --- | --- |
-| Production branch | `trunk` |
-| Framework preset | Astro |
-| Build command | `npm run build` |
-| Build output directory | `dist` |
-| Root directory | Leave blank |
-| Environment variable | `NODE_VERSION=22` |
+| Setting                | Value             |
+| ---------------------- | ----------------- |
+| Production branch      | `trunk`           |
+| Framework preset       | Astro             |
+| Build command          | `npm run build`   |
+| Build output directory | `dist`            |
+| Root directory         | Leave blank       |
+| Environment variable   | `NODE_VERSION=22` |
 
 The repository includes `.nvmrc` with Node 22. No Cloudflare adapter is required because the output is static. After deployment, add `inferno.tips` under Custom domains if desired. The companion wave simulator is linked at https://los.inferno.tips/.
 
-## Exercises
+## Course and drills
 
-1. **Find your rhythm:** lazy-flick a four-tick mager, including turning prayer off between attacks.
-2. **Read the blob:** control the prayer scan and protect against the opposite attack three ticks later.
-3. **One tick at a time:** practise alternating Magic and Ranged every tick.
-4. **Handle the stack:** protect against a mager and ranger offset by two ticks.
-5. **Switch & step:** maintain protection while clicking marked movement targets.
-6. **Put it all together:** combine a blob, a mager, and movement targets.
+The path covers attack cues, blobs, one-tick alternating, one- and two-tick stacks, positioning, melee digs, inventory recovery, late-wave priorities, Jad/triples and Zuk decisions. Optional techniques include two-tick alternating and phase repair, one-tick conservation, and melee–blob mitigation.
 
-Guided mode runs at 900 ms per tick with hints. Challenges use 600 ms ticks without prayer hints. Two uninterrupted challenges at 90% or higher earn lesson mastery. All lessons remain open for practice. Completed runs show check-by-check feedback, accuracy, and best streak. Progress survives reloads and can be reset with confirmation.
+Twenty timed drills include the original mager, blob, stack, movement and supply exercises, plus bat timing, a ranger anchor, differently phased double blobs, off–on conservation, two-tick alignment/repair, reverse flicking, melee–blob triage, Jad/triple cue reactions and shoot–step coordination. The interactive phase lab shows why changing the blob’s first scan can make a two-tick pattern fail.
 
-Use the prayer buttons or `1` (Magic), `2` (Ranged), `0` (Off). Click movement tiles or use arrow keys. `Escape` pauses. Keyboard prayer shortcuts are practice aids, not in-game controls. Hidden tabs and long browser stalls pause the exercise; interrupted challenges count as practice.
+Each field lesson has a decision question and timestamped source link. Knowledge checks persist separately from timed-drill mastery. Spatial assignments link prominently to the LoS tool; full Jad and Zuk practice links to the combat simulator.
+
+Both modes use real 600 ms game ticks. Guided mode adds hints; challenges hide them. Two uninterrupted challenges at 90% or higher earn lesson mastery. All lessons remain open for practice. Completed runs show check-by-check feedback, accuracy, and best streak. Progress survives reloads and can be reset with confirmation.
+
+Click a prayer to activate it; click the active prayer again to turn it off. Click tiles to move. Function keys switch tabs only: `F1` opens Inventory and `F2` opens Prayers by default. Configure these to match your OSRS setup; preferences persist locally. They never activate prayers or items. `Escape` pauses. Hidden tabs and long browser stalls pause the exercise; interrupted challenges count as practice.
 
 ## Verification
 
@@ -48,14 +47,15 @@ npm test
 npm run build
 npx playwright install chromium
 npm run test:browser
+npm run test:production
 ```
 
 Set `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` to use an existing Chromium installation. Unit tests cover scan/attack timing, prayer patterns, movement scoring, streaks, storage validation, and mastery. Browser tests exercise full runs, persistence, mobile layout, failure feedback, and navigation.
 
 ## Sources and limits
 
-The original exercises use game facts from the [OSRS Wiki](https://oldschool.runescape.wiki/w/Inferno/Strategies) and link to [Gnomonkey’s Bowfa Inferno guide](https://www.youtube.com/watch?v=6trKOSUr4EM). They do not reproduce video transcripts or Wiki articles.
+The course draws on the three requested guides by [Hug my cat](https://www.youtube.com/watch?v=zTQdupqm-lM), [Gnomonkey](https://www.youtube.com/watch?v=2xviK0wGI-o) and [dearlola1](https://www.youtube.com/watch?v=r3s4rbTd4QU), with [OSRS Wiki mechanics references](https://oldschool.runescape.wiki/w/Inferno/Strategies). See [research and coverage](docs/research.md) for transcript acquisition, timestamped evidence, creator disagreements and model decisions. Full transcripts and videos are not republished.
 
-This is a focused timing and coordination tool, not a full combat simulator. It does not model damage rolls, prayer drain, latency, gear, pathfinding, Jad, or Zuk. Movement targets are an invented practice task, not an Inferno floor hazard. Scores and mastery are learning milestones, not a promise of a cape.
+This is a focused timing and coordination tool, not a full combat simulator. It does not model damage rolls, prayer drain, latency, gear, stat restoration, pathfinding or full encounters. Jad uses labelled reaction cues; Zuk is taught through decisions and a weapon/movement drill, with full encounter practice linked externally. Mitigation exercises report unprotected attacks separately from correct-priority scores. Supply drills model finite exercise stock and a three-tick eating/drinking cooldown; the fixed dose sequence is not a personalized supply recommendation. Movement targets are an invented practice task, not an Inferno floor hazard. Scores and mastery are learning milestones, not a promise of a cape.
 
 Game artwork and RuneScape trademarks belong to Jagex Ltd. This is an independent fan project. See [THIRD_PARTY.md](THIRD_PARTY.md) and the site’s `/credits/` page for attribution.

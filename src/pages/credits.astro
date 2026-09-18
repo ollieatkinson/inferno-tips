@@ -1,4 +1,193 @@
 ---
 import '../styles/global.css';
 ---
-<!doctype html><html lang="en"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><meta name="description" content="Sources, artwork credits, and simulation limits for Inferno Tips." /><title>Credits & sources — Inferno Tips</title><link rel="icon" href="/favicon.svg" /></head><body><main class="credits-page"><a href="/">← Back to the practice grounds</a><h1>Built for the community.<br />With credit to the community.</h1><p>Inferno Tips is an independent fan-made learning tool. It is not affiliated with, endorsed by, or operated by Jagex or the creators linked here.</p><h2>Game artwork</h2><p>RuneScape, Old School RuneScape, and game artwork are © Jagex Ltd. Their inclusion identifies the game’s creatures and protection prayers. No ownership of these assets is claimed.</p><ul><li>Protection prayer icons: <a href="https://oldschool.runescape.wiki/w/File:Protect_from_Magic.png">Protect from Magic</a>, <a href="https://oldschool.runescape.wiki/w/File:Protect_from_Missiles.png">Protect from Missiles</a>, and <a href="https://oldschool.runescape.wiki/w/File:Protect_from_Melee.png">Protect from Melee</a>, via the OSRS Wiki and our companion Inferno LoS project.</li><li>Blob, mager, and ranger images: Jagex game artwork distributed in <a href="https://github.com/OldSchoolSDK/InfernoTrainer/tree/06fc103f70f1fa228678ca79910a8d3bb0798a7d/src/content/inferno/assets/images">OldSchoolSDK’s Inferno Trainer</a>. See its <a href="https://github.com/OldSchoolSDK/InfernoTrainer/blob/06fc103f70f1fa228678ca79910a8d3bb0798a7d/assets.md">asset attribution</a>.</li><li>Player image: game artwork via <a href="https://github.com/Supalosa/osrs-colosseum/blob/5b1734f06e0580bcc9cb8a0a681c93a13adaf3d3/public/player.png">Supalosa’s Colosseum tool</a>.</li></ul><h2>Mechanics and further learning</h2><ul><li><a href="https://oldschool.runescape.wiki/w/Inferno/Strategies">OSRS Wiki: Inferno strategies</a> — reference for game tick duration, blob scanning, and enemy attack intervals. The exercises, teaching sequence, and feedback here are original.</li><li><a href="https://www.youtube.com/watch?v=6trKOSUr4EM">Gnomonkey: INFERNO IS FREE NOW! Bofa Guide (OSRS)</a> — a recommended full-run guide, published 3 October 2024. Linked to its original creator; videos and transcripts are not reproduced here.</li><li><a href="https://los.inferno.tips/">Inferno LoS</a> — our companion tool for wave layouts and positioning.</li></ul><h2>What the drills model</h2><p>A challenge tick lasts 600 ms; guided practice uses 900 ms. Blobs read prayer on tick 1 and every six ticks thereafter, then attack with the opposite style three ticks later. With no protection prayer, the exercise chooses a reproducible style; that is a practice choice, not a prediction of the game. Magers and rangers use four-tick attacks. Stack exercises begin with a fixed two-tick offset.</p><p>Rhythm and alternation lessons score their requested pattern. Blob lessons score both controlled reads and protected attacks. Other lessons score attack checks and, where applicable, movement targets. A score is correct checks divided by total checks; it does not measure damage, prayer drain, or real-world latency.</p><p>The marked tile exercise is an invented coordination drill, not an Inferno floor hazard. Click movement places the player directly on the chosen tile, without pathfinding. These exercises do not model combat damage, gear, supplies, melee range, full wave solving, Jad, or Zuk. Use the linked guides and simulator to continue learning.</p><h2>Your progress</h2><p>Completed runs and scores are saved in this browser’s local storage. Guided or interrupted runs count as practice. Two uninterrupted challenges at 90% or more earn lesson mastery. Mastery is a learning milestone, not a guarantee of an Inferno completion. Hidden tabs and delayed browser timers pause the drill. You can delete local scores on the Your progress page.</p><p>Fonts are loaded from Google Fonts; otherwise the drills and game images run locally after the site has loaded. External resources open only when you follow their links.</p></main></body></html>
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Sources, artwork credits, and simulation limits for Inferno Tips."
+    />
+    <title>Credits & sources — Inferno Tips</title>
+    <link rel="icon" href="/favicon.svg" />
+  </head>
+  <body>
+    <main class="credits-page">
+      <a href="/">← Back to the practice grounds</a>
+      <h1>
+        Built for the community.
+        <br />
+        With credit to the community.
+      </h1>
+      <p>
+        Inferno Tips is an independent fan-made learning tool. It is not
+        affiliated with, endorsed by, or operated by Jagex or the creators
+        linked here.
+      </p>
+      <h2>Game artwork</h2>
+      <p>
+        RuneScape, Old School RuneScape, and game artwork are © Jagex Ltd. Their
+        inclusion identifies the game’s creatures and protection prayers. No
+        ownership of these assets is claimed.
+      </p>
+      <ul>
+        <li>
+          Protection prayer icons:{' '}
+          <a href="https://oldschool.runescape.wiki/w/File:Protect_from_Magic.png">
+            Protect from Magic
+          </a>
+          ,{' '}
+          <a href="https://oldschool.runescape.wiki/w/File:Protect_from_Missiles.png">
+            Protect from Missiles
+          </a>
+          , and{' '}
+          <a href="https://oldschool.runescape.wiki/w/File:Protect_from_Melee.png">
+            Protect from Melee
+          </a>
+          , via the OSRS Wiki and our companion Inferno LoS project.
+        </li>
+        <li>
+          Blob, mager, ranger, bat, melee, healer and nibbler images: Jagex game
+          artwork distributed in{' '}
+          <a href="https://github.com/OldSchoolSDK/InfernoTrainer/tree/06fc103f70f1fa228678ca79910a8d3bb0798a7d/src/content/inferno/assets/images">
+            OldSchoolSDK’s Inferno Trainer
+          </a>
+          . See its{' '}
+          <a href="https://github.com/OldSchoolSDK/InfernoTrainer/blob/06fc103f70f1fa228678ca79910a8d3bb0798a7d/assets.md">
+            asset attribution
+          </a>
+          .
+        </li>
+        <li>
+          Supply icons:{' '}
+          <a href="https://oldschool.runescape.wiki/w/File:Shark.png">Shark</a>,{' '}
+          <a href="https://oldschool.runescape.wiki/w/File:Saradomin_brew(4).png">
+            Saradomin brew
+          </a>
+          , and{' '}
+          <a href="https://oldschool.runescape.wiki/w/File:Super_restore(4).png">
+            Super restore
+          </a>
+          , via the OSRS Wiki.
+        </li>
+        <li>
+          Player image: game artwork via{' '}
+          <a href="https://github.com/Supalosa/osrs-colosseum/blob/5b1734f06e0580bcc9cb8a0a681c93a13adaf3d3/public/player.png">
+            Supalosa’s Colosseum tool
+          </a>
+          .
+        </li>
+      </ul>
+      <p>
+        Jad image:{' '}
+        <a href="https://oldschool.runescape.wiki/images/JalTok-Jad.png">
+          OSRS Wiki JalTok-Jad artwork
+        </a>
+        .
+      </p>
+      <h2>Mechanics and further learning</h2>
+      <ul>
+        <li>
+          <a href="https://oldschool.runescape.wiki/w/Inferno/Strategies">
+            OSRS Wiki: Inferno strategies
+          </a>{' '}
+          — reference for game tick duration, blob scanning, and enemy attack
+          intervals. The exercises, teaching sequence, and feedback here are
+          original.
+        </li>
+        <li>
+          <a href="https://www.youtube.com/watch?v=zTQdupqm-lM">
+            Hug my cat: 2 Tick flick guide — Step by step
+          </a>{' '}
+          — visually reviewed timing diagrams, setup and phase recovery.
+        </li>
+        <li>
+          <a href="https://www.youtube.com/watch?v=2xviK0wGI-o">
+            Gnomonkey: NEW Golden Trio for First Inferno Cape
+          </a>{' '}
+          — supplies, wave decisions and Zuk damage comparison.
+        </li>
+        <li>
+          <a href="https://www.youtube.com/watch?v=r3s4rbTd4QU">
+            dearlola1: MY NEW OSRS INFERNO GUIDE (ANY GEAR) — 2026
+          </a>{' '}
+          — isolation, corner traps, prayer techniques and encounter examples.
+          Full automatic transcripts of the two narrated guides were reviewed;
+          lessons are original, and videos and transcripts are not reproduced
+          here.
+        </li>
+        <li>
+          <a href="https://inferno.colosim.com/">Inferno combat simulator</a> —
+          full Jad, triple Jad and Zuk encounter practice.
+        </li>
+        <li>
+          <a href="https://los.inferno.tips/">Inferno LoS</a> — our companion
+          tool for wave layouts and positioning.
+        </li>
+      </ul>
+      <h2>What the drills model</h2>
+      <p>
+        Both guided practice and challenges use the real 600 ms game tick.
+        Guided mode adds explanations without changing the rhythm. Prayers,
+        movement, and items use mouse clicks. Configurable function keys switch
+        inventory and prayer tabs only. Blob read phases vary by exercise, with
+        a six-tick cycle and an attack three ticks after the read. Two-tick
+        drills deliberately distinguish aligned and misaligned scan phases. With
+        no protection prayer, the exercise chooses a reproducible style; that is
+        a practice choice, not a prediction of the game. Magers and rangers use
+        four-tick attacks. Stack exercises begin with an explicitly labelled
+        one- or two-tick offset.
+      </p>
+      <p>
+        Rhythm and alternation lessons score their requested pattern.
+        Conservation also checks one off–on pair between ticks; simply holding
+        prayer does not pass. Reverse-flick and melee–blob exercises score the
+        requested mitigation priorities, while separately reporting attacks left
+        unprotected. Blob lessons score both controlled reads and protected
+        attacks. Other lessons score attack checks and, where applicable,
+        movement targets. A score is correct checks divided by total checks; it
+        does not measure damage, prayer drain, or real-world latency.
+      </p>
+      <p>
+        Supply exercises model finite stock and a three-tick cooldown for
+        standard food or potions, based on{' '}
+        <a href="https://oldschool.runescape.wiki/w/Food/Fast_foods">
+          food timing
+        </a>{' '}
+        and{' '}
+        <a href="https://oldschool.runescape.wiki/w/Potions">potion timing</a>.
+        The brew exercise uses a fixed three-brew/one-restore sequence as a
+        dose-tracking task. It does not simulate HP, stat levels, boosts, or the
+        attack delay caused by eating. Supplies do not switch prayers or stop
+        enemy attacks.
+      </p>
+      <p>
+        The marked tile exercise is an invented coordination drill, not an
+        Inferno floor hazard. Click movement places the player directly on the
+        chosen tile, without pathfinding. These exercises do not model combat
+        damage, gear, melee range or full wave solving. Jad exercises use
+        labelled cues and delayed prayer checks, not exact game animations. The
+        shoot–step drill models a two-tick weapon rhythm, not Zuk’s shield. The
+        course covers encounter decisions and links full Jad and Zuk practice
+        externally. Use the linked guides and simulator to continue learning.
+      </p>
+      <h2>Your progress</h2>
+      <p>
+        Knowledge-check answers, completed runs and scores are saved in this
+        browser’s local storage. Guided or interrupted runs count as practice.
+        Two uninterrupted challenges at 90% or more earn lesson mastery. Mastery
+        is a learning milestone, not a guarantee of an Inferno completion.
+        Hidden tabs and delayed browser timers pause the drill. You can delete
+        local scores on the Your progress page.
+      </p>
+      <p>
+        Fonts are loaded from Google Fonts; otherwise the drills and game images
+        run locally after the site has loaded. External resources open only when
+        you follow their links.
+      </p>
+    </main>
+  </body>
+</html>
