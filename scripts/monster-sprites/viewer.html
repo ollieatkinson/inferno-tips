@@ -45,7 +45,9 @@
             if (o.material.length === 1) o.material = o.material[0];
           }
         });
-        model.rotation.y = (Math.PI * 3) / 4;
+        // These models face +Z. Keep the camera on their front, with a slight
+        // turn so casts, arm movements and Jad's stomps remain easy to read.
+        model.rotation.y = Math.PI / 6;
         mixer = new THREE.AnimationMixer(model);
         clips = gltf.animations;
         const box = new THREE.Box3();

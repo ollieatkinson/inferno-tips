@@ -73,3 +73,10 @@ Screenshots and raw DevTools output are temporary verification artifacts, not sh
 - Replaced the small blob illustration and plain heading with official Jagex Zuk artwork, a shorter introduction and responsive desktop/mobile crops. Optimized local WebP sources are approximately 106 KB and 38 KB.
 - Chrome DevTools screenshots reviewed at 1440 × 1000 and 390 × 844: Zuk and the heading remain legible, the next-drill action follows directly below, and the page has no horizontal overflow.
 - Production build/check passed without diagnostics. Existing overview/artwork/credits, troubleshooting navigation and LoS-link browser checks all passed.
+
+## Monster facing correction
+
+- Compared all six models at eight camera-relative angles. The original 135° rotation showed their backs; a 30° rotation shows their faces and keeps attack movements visible.
+- Regenerated all 14 idle/attack sheets and visually reviewed sampled frames from every clip. Frame counts and animation durations are unchanged.
+- Chrome DevTools confirmed the corrected mager/blob sprites in the desktop drill and advancing attack frames on mobile, with no horizontal overflow or console errors.
+- Production build/check and the three existing mager-cue, mixed-movement animation/pause, and triple-Jad browser tests passed.
