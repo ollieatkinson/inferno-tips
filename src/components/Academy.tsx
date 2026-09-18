@@ -1357,7 +1357,7 @@ function Trainer({
               aria-pressed={panel === 'prayers'}
               onClick={() => setPanel('prayers')}
             >
-              <GameIcon name="protect-magic" />
+              <GameIcon name="prayer" />
               Prayers <kbd>{tabKeyLabel(tabKeys.prayers)}</kbd>
             </button>
             <button
