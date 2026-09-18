@@ -133,3 +133,8 @@ Screenshots and raw DevTools output are temporary verification artifacts, not sh
 - Kept the mode description and mobile toolbar layout in place during count-in/running. Disabled scroll anchoring within the trainer so the sticky toolbar does not introduce a one-pixel viewport adjustment.
 - Four regressions assert identical scroll position, encounter position and control position before/after guided and challenge starts at 1440 px and 390 px, through the count-in. The results-to-challenge and manually scrolled mobile-control tests also pass: six production browser tests total. Astro check/build passed without diagnostics.
 - Chrome DevTools real-clock challenge: desktop scroll stayed at 278 px and both encounter/control top positions remained 309.421875 px through count-in; trainer retained focus. Mobile likewise retained its scroll and control positions. No console errors or warnings.
+
+## Guided-only enemy highlights
+
+- Attack and blob-read outlines/backgrounds now appear only in guided practice. Challenge mode retains the monster animations without the coloured container highlight.
+- Production build/check passed. The mixed-enemy browser regression confirms guided highlights, then starts a challenge and checks transparent borders/backgrounds during an actual mager attack and blob read while the attack animation plays.

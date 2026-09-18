@@ -127,7 +127,7 @@ export function EnemyScene({
         return (
           <div
             key={enemy.id}
-            className={`enemy-unit ${attack ? 'enemy-attacking' : ''} ${read ? 'enemy-reading' : ''}`}
+            className={`enemy-unit ${guided && attack ? 'enemy-attacking' : ''} ${guided && read ? 'enemy-reading' : ''}`}
             data-enemy={enemy.id}
             data-event={
               attack ? 'attack' : read ? 'read' : cue ? 'cue' : 'idle'

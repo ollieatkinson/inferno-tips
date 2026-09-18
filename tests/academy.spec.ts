@@ -1060,6 +1060,8 @@ test('mixed movement drill shows independent attacks and freezes sprite playback
   await page.clock.runFor(600);
   await expect(mager).toHaveAttribute('data-event', 'attack');
   await expect(blob).toHaveAttribute('data-event', 'read');
+  await expect(mager).toHaveClass(/enemy-attacking/);
+  await expect(blob).toHaveClass(/enemy-reading/);
   await page.clock.runFor(150);
   const sprite = mager.locator('.monster-sprite');
   await expect(sprite).toHaveAttribute('data-animation', 'magic');
@@ -1092,6 +1094,15 @@ test('mixed movement drill shows independent attacks and freezes sprite playback
   await expect(blob).toBeVisible();
   await expect(page.locator('.enemy-countdown')).toHaveCount(0);
   await expect(sprite).toHaveAttribute('data-animation', 'idle');
+  await start(page);
+  await page.clock.runFor(600);
+  await expect(mager).toHaveAttribute('data-event', 'attack');
+  await expect(blob).toHaveAttribute('data-event', 'read');
+  await expect(sprite).toHaveAttribute('data-animation', 'magic');
+  for (const enemy of [mager, blob]) {
+    await expect(enemy).toHaveCSS('border-top-color', 'rgba(0, 0, 0, 0)');
+    await expect(enemy).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+  }
 });
 
 test('triple Jad has three independently cued animated monsters', async ({
