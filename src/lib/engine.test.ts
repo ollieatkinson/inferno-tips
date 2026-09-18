@@ -1,3 +1,4 @@
+import { nextBlowpipeTile } from './blowpipe';
 import { describe, expect, it } from 'vitest';
 import {
   accuracy,
@@ -44,7 +45,10 @@ describe('drill mechanics', () => {
           tick % 4 === 2 ? supplyGoal(id, tick) : null,
           {
             transitions: tick > 1 ? ['off', 'magic'] : [],
-            attack: tick % 2 === 1,
+            blowpipe:
+              tick % 2 === 1
+                ? { type: 'attack' }
+                : { type: 'move', tile: nextBlowpipeTile(state.blowpipe) },
           },
         );
       expect(state.tick).toBe(36);
@@ -70,7 +74,7 @@ describe('drill mechanics', () => {
           'melee-blob': 36,
           jad: 5,
           triples: 12,
-          blowpipe: 54,
+          blowpipe: 36,
         }[id],
       );
       expect(advance(state, id, 'off', 0)).toBe(state);

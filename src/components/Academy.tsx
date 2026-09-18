@@ -1,3 +1,5 @@
+import { BlowpipeScene } from './BlowpipeScene';
+import { nextBlowpipeTile, type BlowpipeCommand } from '../lib/blowpipe';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { LearningPath, KNOWLEDGE_KEY } from './LearningPath';
 import { chapters, fieldLessons } from '../lib/curriculum';
@@ -549,13 +551,15 @@ function DrillCard({
       <div className="drill-card-bottom">
         <span>
           <Icon name="clock" size={14} />
-          {lesson.id === 'blob'
-            ? 'Read & react'
-            : hasSupplies(lesson.id)
-              ? 'Prayer + supplies'
-              : hasMovement(lesson.id)
-                ? 'Prayer + movement'
-                : 'Prayer timing'}
+          {lesson.id === 'blowpipe'
+            ? 'Attack + movement'
+            : lesson.id === 'blob'
+              ? 'Read & react'
+              : hasSupplies(lesson.id)
+                ? 'Prayer + supplies'
+                : hasMovement(lesson.id)
+                  ? 'Prayer + movement'
+                  : 'Prayer timing'}
         </span>
         <Icon name="arrow" size={18} />
       </div>
@@ -838,8 +842,10 @@ function Trainer({
   const [queuedSupply, setQueuedSupply] = useState<Supply | null>(null);
   const supplyRef = useRef<Supply | null>(null);
   const transitionsRef = useRef<Prayer[]>([]);
-  const attackRef = useRef(false);
-  const [attackQueued, setAttackQueued] = useState(false);
+  const attackRef = useRef<BlowpipeCommand | null>(null);
+  const [attackQueued, setAttackQueued] = useState<BlowpipeCommand | null>(
+    null,
+  );
   const prayerRef = useRef<Prayer>('off');
   const tileRef = useRef(12);
   const audioRef = useRef<AudioContext | null>(null);
@@ -850,13 +856,16 @@ function Trainer({
   const trainingRef = useRef<HTMLElement>(null);
   const startFocus = useRef<'stay' | 'return' | null>(null);
   const ms = 600;
-  const cycleLength = isJad(lesson.id)
-    ? jadPeriod(lesson.id)
-    : lesson.id === 'bat'
-      ? 3
-      : hasBlob(lesson.id)
-        ? 6
-        : 4;
+  const cycleLength =
+    lesson.id === 'blowpipe'
+      ? 2
+      : isJad(lesson.id)
+        ? jadPeriod(lesson.id)
+        : lesson.id === 'bat'
+          ? 3
+          : hasBlob(lesson.id)
+            ? 6
+            : 4;
   const nextTick = Math.min(TOTAL_TICKS, state.tick + 1);
   const expected = expectedPrayer(
     lesson.id,
@@ -875,7 +884,7 @@ function Trainer({
   completeRef.current = onComplete;
   soundRef.current = sound;
   const playPrayerSound = usePrayerSounds(
-    settings.prayerSound,
+    settings.prayerSound && lesson.id !== 'blowpipe',
     settings.prayerVolume,
     () => setSoundError(true),
   );
@@ -925,8 +934,8 @@ function Trainer({
     void prepareAudio();
     setState(initialState(Math.floor(Math.random() * 100000)));
     transitionsRef.current = [];
-    attackRef.current = false;
-    setAttackQueued(false);
+    attackRef.current = null;
+    setAttackQueued(null);
     selectPrayer('off');
     move(12);
     setPanel('prayers');
@@ -1009,11 +1018,11 @@ function Trainer({
       setQueuedSupply(null);
       const input = {
         transitions: transitionsRef.current,
-        attack: attackRef.current,
+        blowpipe: attackRef.current,
       };
       transitionsRef.current = [];
-      attackRef.current = false;
-      setAttackQueued(false);
+      attackRef.current = null;
+      setAttackQueued(null);
       beep();
       setLitPrayers(prayerRef.current === 'off' ? [] : [prayerRef.current]);
       setOverheadPrayer(prayerRef.current);
@@ -1060,6 +1069,7 @@ function Trainer({
     return () => document.removeEventListener('visibilitychange', visibility);
   }, [status]);
   useLayoutEffect(() => {
+    if (lesson.id === 'blowpipe') return;
     const keydown = (e: KeyboardEvent) => {
       if (
         e.altKey ||
@@ -1100,9 +1110,9 @@ function Trainer({
         : 'Click Magic off, then on again before the next beat. One pair per tick.';
   if (lesson.id === 'blowpipe')
     hint =
-      nextTick % 2
-        ? 'Queue Attack before this beat.'
-        : 'Weapon cooldown: click the marked tile before this beat.';
+      state.blowpipe.nextShotTick <= nextTick
+        ? 'Click the target. The blowpipe is ready to fire.'
+        : `Shot fired. Run to tile ${nextBlowpipeTile(state.blowpipe) + 1}, then click the target again.`;
   if (isJad(lesson.id) && !expected)
     hint = 'Read the current Jad cue. Keep protection through its check.';
   const recent = state.checks.at(-1);
@@ -1230,8 +1240,12 @@ function Trainer({
           </div>
           <p className="mode-description">
             {mode === 'guided'
-              ? 'Guided practice shows prayer hints. Try the challenge after a run.'
-              : 'Challenge hides prayer hints. The timing stays at 0.6 seconds per tick.'}
+              ? lesson.id === 'blowpipe'
+                ? 'Guided practice marks the next two-tile step and explains each action.'
+                : 'Guided practice shows prayer hints. Try the challenge after a run.'
+              : lesson.id === 'blowpipe'
+                ? 'Keep firing while running the route. The next-step hints are hidden.'
+                : 'Challenge hides prayer hints. The timing stays at 0.6 seconds per tick.'}
           </p>
           <div className="run-stats">
             <div>
@@ -1318,69 +1332,90 @@ function Trainer({
               </div>
             </div>
           )}
-          <div className="practice-workspace">
+          <div
+            className={`practice-workspace ${lesson.id === 'blowpipe' ? 'blowpipe-workspace' : ''}`}
+          >
             <div className="practice-main">
               <div
-                className={`training-arena ${hasMovement(lesson.id) ? 'with-movement' : ''}`}
+                className={`training-arena ${lesson.id === 'blowpipe' ? 'blowpipe-arena' : hasMovement(lesson.id) ? 'with-movement' : ''}`}
               >
-                <EnemyScene
-                  id={lesson.id}
-                  state={state}
-                  status={status}
-                  guided={mode === 'guided'}
-                />
-                {hasMovement(lesson.id) ? (
-                  <>
-                    <div
-                      className="movement-grid"
-                      role="group"
-                      aria-label="Movement practice grid"
-                    >
-                      {Array.from({ length: 25 }, (_, i) => (
-                        <button
-                          key={i}
-                          aria-label={`Tile ${(i % 5) + 1}, ${Math.floor(i / 5) + 1}${i === target ? ', target' : ''}${i === tile ? ', player' : ''}`}
-                          className={`tile ${i === target ? 'target' : ''} ${i === tile ? 'player' : ''}`}
-                          onClick={() => move(i)}
-                        >
-                          {i === tile ? (
-                            <span className="movement-player" data-player>
-                              <span
-                                className="overhead"
-                                data-prayer={displayedOverhead}
-                              >
-                                {displayedOverhead !== 'off' && (
-                                  <GameIcon
-                                    name={`protect-${displayedOverhead}`}
-                                  />
-                                )}
-                              </span>
-                              <GameIcon name="player" />
-                            </span>
-                          ) : i === target ? (
-                            <span>◇</span>
-                          ) : null}
-                        </button>
-                      ))}
-                    </div>
-                    <p className="arena-caption">
-                      ◇ Reach the marked tile by tick{' '}
-                      {Math.ceil(nextTick / movementPeriod(lesson.id)) *
-                        movementPeriod(lesson.id)}{' '}
-                      · coordination drill
-                    </p>
-                  </>
+                {lesson.id === 'blowpipe' ? (
+                  <BlowpipeScene
+                    state={state.blowpipe}
+                    tick={state.tick}
+                    status={status}
+                    guided={mode === 'guided'}
+                    queued={attackQueued}
+                    onCommand={(command) => {
+                      attackRef.current = command;
+                      setAttackQueued(command);
+                    }}
+                  />
                 ) : (
                   <>
-                    <div className="arena-floor" />
-                    <div className="player-avatar" data-player>
-                      <div className="overhead" data-prayer={displayedOverhead}>
-                        {displayedOverhead !== 'off' && (
-                          <GameIcon name={`protect-${displayedOverhead}`} />
-                        )}
-                      </div>
-                      <GameIcon name="player" />
-                    </div>
+                    <EnemyScene
+                      id={lesson.id}
+                      state={state}
+                      status={status}
+                      guided={mode === 'guided'}
+                    />
+                    {hasMovement(lesson.id) ? (
+                      <>
+                        <div
+                          className="movement-grid"
+                          role="group"
+                          aria-label="Movement practice grid"
+                        >
+                          {Array.from({ length: 25 }, (_, i) => (
+                            <button
+                              key={i}
+                              aria-label={`Tile ${(i % 5) + 1}, ${Math.floor(i / 5) + 1}${i === target ? ', target' : ''}${i === tile ? ', player' : ''}`}
+                              className={`tile ${i === target ? 'target' : ''} ${i === tile ? 'player' : ''}`}
+                              onClick={() => move(i)}
+                            >
+                              {i === tile ? (
+                                <span className="movement-player" data-player>
+                                  <span
+                                    className="overhead"
+                                    data-prayer={displayedOverhead}
+                                  >
+                                    {displayedOverhead !== 'off' && (
+                                      <GameIcon
+                                        name={`protect-${displayedOverhead}`}
+                                      />
+                                    )}
+                                  </span>
+                                  <GameIcon name="player" />
+                                </span>
+                              ) : i === target ? (
+                                <span>◇</span>
+                              ) : null}
+                            </button>
+                          ))}
+                        </div>
+                        <p className="arena-caption">
+                          ◇ Reach the marked tile by tick{' '}
+                          {Math.ceil(nextTick / movementPeriod(lesson.id)) *
+                            movementPeriod(lesson.id)}{' '}
+                          · coordination drill
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <div className="arena-floor" />
+                        <div className="player-avatar" data-player>
+                          <div
+                            className="overhead"
+                            data-prayer={displayedOverhead}
+                          >
+                            {displayedOverhead !== 'off' && (
+                              <GameIcon name={`protect-${displayedOverhead}`} />
+                            )}
+                          </div>
+                          <GameIcon name="player" />
+                        </div>
+                      </>
+                    )}
                   </>
                 )}
                 <CombatEffects
@@ -1397,7 +1432,7 @@ function Trainer({
                       {isJad(lesson.id)
                         ? 'Get ready · watch the attack cue'
                         : lesson.id === 'blowpipe'
-                          ? 'Get ready · shoot, then step'
+                          ? 'Get ready · click the target first'
                           : `Get ready · select ${startPrayer} to start`}
                     </span>
                   </div>
@@ -1446,7 +1481,9 @@ function Trainer({
                           ? 'Count in…'
                           : status === 'paused'
                             ? 'Paused'
-                            : 'Choose your prayer before each beat'}
+                            : lesson.id === 'blowpipe'
+                              ? 'Click the target to fire, then run two tiles'
+                              : 'Choose your prayer before each beat'}
                   </span>
                   <span>GAME SPEED · 0.6s</span>
                 </div>
@@ -1457,39 +1494,54 @@ function Trainer({
                     style={{ animationDuration: `${ms}ms` }}
                   />
                 </div>
-                <div className="beat-dots">
-                  {Array.from({ length: cycleLength }, (_, i) => (
-                    <span
-                      key={i}
-                      className={
-                        state.tick > 0 && (state.tick - 1) % cycleLength === i
-                          ? 'current'
-                          : ''
-                      }
-                    >
-                      {i + 1}
-                    </span>
-                  ))}
-                </div>
+                {lesson.id !== 'blowpipe' && (
+                  <div className="beat-dots">
+                    {Array.from({ length: cycleLength }, (_, i) => (
+                      <span
+                        key={i}
+                        className={
+                          state.tick > 0 && (state.tick - 1) % cycleLength === i
+                            ? 'current'
+                            : ''
+                        }
+                      >
+                        {i + 1}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
               {lesson.id === 'blowpipe' && (
-                <div className="attack-controls">
-                  <button
-                    className="button primary"
-                    disabled={status !== 'running'}
-                    aria-pressed={attackQueued}
-                    onClick={() => {
-                      attackRef.current = true;
-                      setAttackQueued(true);
-                    }}
-                  >
-                    Attack target
-                  </button>
+                <div
+                  className="blowpipe-status"
+                  role="group"
+                  aria-label="Blowpipe results so far"
+                >
                   <span>
-                    {attackQueued
-                      ? 'Shot queued for next beat'
-                      : 'Rapid blowpipe · one shot every two ticks'}
+                    <strong>{state.blowpipe.shots} / 18</strong> shots fired
                   </span>
+                  <span>
+                    <strong>{state.blowpipe.legs} / 6</strong> lengths run
+                  </span>
+                  <span>
+                    <strong>{state.blowpipe.lostTicks}</strong> attack ticks
+                    lost
+                  </span>
+                  <p>
+                    {attackQueued?.type === 'attack'
+                      ? 'Target selected'
+                      : attackQueued?.type === 'move'
+                        ? `Run to tile ${attackQueued.tile + 1} queued`
+                        : state.blowpipe.attacking
+                          ? 'Attacking target'
+                          : state.blowpipe.destination !== null
+                            ? `Running to tile ${state.blowpipe.destination + 1}`
+                            : 'No action queued'}{' '}
+                    ·{' '}
+                    {state.blowpipe.nextShotTick <= nextTick
+                      ? 'Weapon ready'
+                      : 'One tick of cooldown'}
+                  </p>
                 </div>
               )}
               {state.exposure && (
@@ -1501,27 +1553,31 @@ function Trainer({
                 <PrayerPreview id={lesson.id} state={state} selected={prayer} />
               )}
             </div>
-            <GamePanels
-              id={lesson.id}
-              prayer={prayer}
-              activePrayer={displayedOverhead}
-              litPrayers={busy ? litPrayers : prayer === 'off' ? [] : [prayer]}
-              panel={panel}
-              tabKeys={tabKeys}
-              running={status === 'running'}
-              consumed={state.consumed}
-              queuedSupply={queuedSupply}
-              supplyMessage={state.supplyMessage}
-              onPanel={setPanel}
-              onPrayer={(p) =>
-                selectPrayer(prayerRef.current === p ? 'off' : p, true)
-              }
-              onSupply={(item) => {
-                prepareSupplySound();
-                supplyRef.current = item;
-                setQueuedSupply(item);
-              }}
-            />
+            {lesson.id !== 'blowpipe' && (
+              <GamePanels
+                id={lesson.id}
+                prayer={prayer}
+                activePrayer={displayedOverhead}
+                litPrayers={
+                  busy ? litPrayers : prayer === 'off' ? [] : [prayer]
+                }
+                panel={panel}
+                tabKeys={tabKeys}
+                running={status === 'running'}
+                consumed={state.consumed}
+                queuedSupply={queuedSupply}
+                supplyMessage={state.supplyMessage}
+                onPanel={setPanel}
+                onPrayer={(p) =>
+                  selectPrayer(prayerRef.current === p ? 'off' : p, true)
+                }
+                onSupply={(item) => {
+                  prepareSupplySound();
+                  supplyRef.current = item;
+                  setQueuedSupply(item);
+                }}
+              />
+            )}
           </div>
           {hasSupplies(lesson.id) && (
             <div className="supply-objective">
@@ -1557,7 +1613,10 @@ function Trainer({
             <p>
               {mode === 'guided'
                 ? hint
-                : 'Prayer hints are hidden. Trust your rhythm.'}
+                : lesson.id === 'blowpipe'
+                  ? recent?.message ||
+                    'Click the target, then run between shots.'
+                  : 'Prayer hints are hidden. Trust your rhythm.'}
               {mode === 'guided' && recent && <small>{recent.message}</small>}
             </p>
           </div>
@@ -1568,9 +1627,17 @@ function Trainer({
             </p>
           )}
           <p className="control-note">
-            Click a prayer to activate it; click it again to turn it off.{' '}
-            {hasMovement(lesson.id) ? 'Click the marked tile to move. ' : ''}Use
-            the Pause button to take a break.
+            {lesson.id === 'blowpipe' ? (
+              'Click the monster to attack. Ground clicks stop attacking; target clicks stop running. Your last click before the tick is the order that registers.'
+            ) : (
+              <>
+                Click a prayer to activate it; click it again to turn it off.{' '}
+                {hasMovement(lesson.id)
+                  ? 'Click the marked tile to move. '
+                  : ''}
+                Use the Pause button to take a break.
+              </>
+            )}
           </p>
         </section>
         <aside className="lesson-notes">
@@ -1601,7 +1668,9 @@ function Trainer({
             </strong>
             <p>
               {isJad(lesson.id) || lesson.id === 'blowpipe'
-                ? 'Rehearse real attack animations, healer tags and shield movement in the full combat simulator.'
+                ? lesson.id === 'blowpipe'
+                  ? 'Take the shoot–move rhythm to Zuk’s healers in the full combat simulator. This lane has no incoming damage, shield or pathfinding obstacles.'
+                  : 'Rehearse real attack animations, healer tags and shield movement in the full combat simulator.'
                 : 'Use the LoS tool to explore pillar routes, enemy exposure and the positioning that creates your prayer cycle.'}
             </p>
             {losSetup && (
@@ -1678,9 +1747,10 @@ function Trainer({
           </div>
           {mode === 'guided' && (
             <p className="challenge-next-step">
-              Next: try the challenge with prayer hints hidden. Same drill, same
-              timing. Score {PASS_SCORE}% or more without pausing to earn a
-              challenge pass.
+              Next: try the challenge with{' '}
+              {lesson.id === 'blowpipe' ? 'step' : 'prayer'} hints hidden. Same
+              drill, same timing. Score {PASS_SCORE}% or more without pausing to
+              earn a challenge pass.
             </p>
           )}
           <div className="result-actions">

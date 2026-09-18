@@ -138,3 +138,11 @@ Screenshots and raw DevTools output are temporary verification artifacts, not sh
 
 - Attack and blob-read outlines/backgrounds now appear only in guided practice. Challenge mode retains the monster animations without the coloured container highlight.
 - Production build/check passed. The mixed-enemy browser regression confirms guided highlights, then starts a challenge and checks transparent borders/backgrounds during an actual mager attack and blob read while the attack animation plays.
+
+## Blowpipe attack-and-move redesign
+
+- Replaced the abstract attack button and instant movement with a clickable target and seven-tile running lane. Ground orders persist, running covers at most two tiles per tick, and retargeting stops movement and resumes automatic attacks. The two-tick weapon cooldown follows the last shot, including recovery after a missed attack tick.
+- Guided practice marks the next step; challenge mode removes that suggestion. Both show shots, completed lengths and lost attack ticks. Removed unrelated prayer/inventory controls from this drill. The target stays in range; damage, shield movement, obstacles and full game pathfinding are outside this focused exercise.
+- All 94 unit tests passed. Five relevant production browser checks passed, covering complete blowpipe, movement and gauntlet challenges, guided-only enemy highlights, persistent movement, last-click orders, cooldown recovery, pause/reset, projectiles and mobile layout.
+- Chrome DevTools: reviewed desktop and 390 × 844 mobile screenshots. Played 12 ticks using the real browser clock: six shots, two lengths, no lost attack ticks and 100% accuracy. No horizontal overflow or console warnings/errors were observed. Mobile lane targets remained at least 40 px wide.
+- Final Astro check/build passed with no errors, warnings or hints.

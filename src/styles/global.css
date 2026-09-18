@@ -3409,3 +3409,156 @@ select:focus-visible {
   height: 16px;
   image-rendering: pixelated;
 }
+
+/* Blowpipe walking uses the encounter itself for attack and ground clicks. */
+.practice-workspace.blowpipe-workspace {
+  grid-template-columns: minmax(0, 1fr);
+}
+.blowpipe-workspace .practice-main {
+  display: block;
+}
+.training-arena.blowpipe-arena {
+  min-height: 330px;
+}
+.blowpipe-scene {
+  position: relative;
+  width: 100%;
+  padding: 14px 0 0;
+}
+.blowpipe-target {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0 auto;
+  padding: 4px 14px;
+  border: 1px solid #505743;
+  border-radius: 5px;
+  background: #20251b;
+  color: #d9ddcd;
+}
+.blowpipe-target:disabled {
+  opacity: 1;
+  cursor: default;
+}
+.blowpipe-target strong {
+  font-size: 13px;
+}
+.blowpipe-target > span:last-child {
+  font-size: 11px;
+}
+.blowpipe-target .monster-sprite {
+  width: 112px;
+  height: 112px;
+}
+.blowpipe-target:hover:not(:disabled) {
+  border-color: #e6c798;
+}
+.blowpipe-target[aria-pressed='true'] {
+  border-color: #deaa70;
+}
+.blowpipe-route {
+  margin: 14px 8px 8px;
+  text-align: center;
+  font-size: 12px;
+  color: #bdc5ac;
+}
+.blowpipe-route > span {
+  margin-left: 6px;
+}
+.blowpipe-lane {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 2px;
+  width: 100%;
+}
+.blowpipe-tile {
+  position: relative;
+  height: 96px;
+  padding: 0;
+  border: 1px solid #48503a;
+  border-radius: 0;
+  background: #272e20;
+  color: #a4af93;
+}
+.blowpipe-tile:disabled {
+  opacity: 1;
+  cursor: default;
+}
+.blowpipe-tile small {
+  position: absolute;
+  bottom: 3px;
+  left: 5px;
+  font-size: 10px;
+}
+.blowpipe-tile:hover:not(:disabled),
+.blowpipe-tile.queued {
+  border-color: #dca66e;
+  background: #3a3c28;
+}
+.blowpipe-tile.suggested {
+  box-shadow: inset 0 0 0 2px #b5c486;
+}
+.blowpipe-player {
+  position: absolute;
+  width: 32px;
+  height: 62px;
+  object-fit: contain;
+  left: 50%;
+  top: 7px;
+  transform: translateX(-50%);
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+.route-flag {
+  position: absolute;
+  right: 5px;
+  top: 5px;
+  color: #e7b17d;
+  font-size: 20px;
+}
+.blowpipe-projectile {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+}
+.blowpipe-projectile line {
+  stroke: #e3c975;
+  stroke-width: 3;
+  animation: blowpipe-dart 350ms linear forwards;
+}
+@keyframes blowpipe-dart {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: var(--dart-distance);
+    opacity: 0;
+  }
+}
+.blowpipe-status {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 18px;
+  font-size: 12px;
+  color: #acb59e;
+}
+.blowpipe-status strong {
+  display: block;
+  font-size: 20px;
+  color: #e0e4d7;
+}
+.blowpipe-status p {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding-top: 8px;
+  border-top: 1px solid #383f31;
+}
+@media (prefers-reduced-motion: reduce) {
+  .blowpipe-projectile {
+    display: none;
+  }
+}

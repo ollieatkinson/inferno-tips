@@ -603,9 +603,19 @@ for (const [id, name] of [
       if (id === 'blowpipe') {
         if (tick % 2)
           await page
-            .getByRole('button', { name: 'Attack target', exact: true })
+            .getByRole('button', {
+              name: 'Attack practice target',
+              exact: true,
+            })
             .click();
-        else await page.getByRole('button', { name: /^Tile .*target/ }).click();
+        else {
+          const tile = [3, 5, 7, 5, 3, 1][(tick / 2 - 1) % 6];
+          await page
+            .getByRole('button', {
+              name: new RegExp(`^Run to tile ${tile}(,|$)`),
+            })
+            .click();
+        }
       }
       await page.clock.runFor(600);
     }
@@ -1724,3 +1734,64 @@ for (const width of [1440, 390]) {
     });
   }
 }
+
+test('blowpipe orders move on ticks, cancel attacks and recover after a lost shot', async ({
+  page,
+}) => {
+  await page.clock.install();
+  await open(page);
+  await lesson(page, 'Blowpipe attack and movement');
+  await page.clock.pauseAt(new Date());
+  await expect(page.locator('.game-side-panel')).toHaveCount(0);
+  await expect(page.locator('.prayer-button')).toHaveCount(0);
+  await start(page, false);
+  const attack = page.getByRole('button', {
+    name: 'Attack practice target',
+    exact: true,
+  });
+  const tile = (n: number) =>
+    page.getByRole('button', { name: new RegExp(`^Run to tile ${n}(,|$)`) });
+  const stats = page.locator('.blowpipe-status');
+  await attack.click();
+  await tile(7).click();
+  await expect(tile(1)).toHaveAccessibleName('Run to tile 1, player');
+  await page.clock.runFor(600);
+  await expect(tile(3)).toHaveAccessibleName('Run to tile 3, player');
+  await expect(stats).toContainText('0 / 18');
+  await expect(stats).toContainText('1 attack ticks lost');
+  await page.clock.runFor(600);
+  await expect(tile(5)).toHaveAccessibleName('Run to tile 5, player');
+  await expect(stats).toContainText('2 attack ticks lost');
+  await attack.click();
+  await page.clock.runFor(600);
+  await expect(stats).toContainText('1 / 18');
+  await expect(tile(5)).toHaveAccessibleName('Run to tile 5, player');
+  await expect(tile(7)).toHaveClass(/suggested/);
+  await expect(page.locator('.blowpipe-projectile')).toHaveCount(1);
+  await tile(7).click();
+  await page.getByRole('button', { name: 'Pause', exact: true }).click();
+  await page.clock.runFor(1200);
+  await expect(tile(5)).toHaveAccessibleName('Run to tile 5, player');
+  await page.getByRole('button', { name: 'Resume', exact: true }).click();
+  await page.clock.runFor(600);
+  await expect(tile(7)).toHaveAccessibleName('Run to tile 7, player');
+  await expect(stats).toContainText('1 / 6');
+  await attack.click();
+  await page.clock.runFor(600);
+  await expect(stats).toContainText('2 / 18');
+  await page.getByRole('button', { name: 'End run', exact: true }).click();
+  await expect(stats).toContainText('0 / 18');
+  await expect(stats).toContainText('0 / 6');
+  await expect(tile(1)).toHaveAccessibleName('Run to tile 1, player');
+  await page.setViewportSize({ width: 390, height: 844 });
+  await start(page);
+  await attack.click();
+  await page.clock.runFor(600);
+  await expect(page.locator('.blowpipe-tile.suggested')).toHaveCount(0);
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  expect((await tile(3).boundingBox())!.width).toBeGreaterThanOrEqual(40);
+});

@@ -1,3 +1,9 @@
+import {
+  advanceBlowpipe,
+  initialBlowpipe,
+  type BlowpipeState,
+  type BlowpipeCommand,
+} from './blowpipe';
 import { resolveAttacks, type AttackResult } from './combatEffects';
 import { TOTAL_TICKS, type LessonId, type Prayer } from './course';
 import {
@@ -16,6 +22,7 @@ export interface Check {
 }
 export interface DrillState {
   tick: number;
+  blowpipe: BlowpipeState;
   pending: Prayer;
   pendingB: Prayer;
   exposure: string;
@@ -33,6 +40,7 @@ export interface DrillState {
 }
 export const initialState = (seed = 0): DrillState => ({
   tick: 0,
+  blowpipe: initialBlowpipe(),
   pending: 'off',
   pendingB: 'off',
   exposure: '',
@@ -59,7 +67,7 @@ export const supplyGoal = (id: LessonId, tick: number): Supply | null =>
       : null;
 export const stock: Record<Supply, number> = { shark: 9, brew: 6, restore: 2 };
 export const hasMovement = (id: LessonId) =>
-  id === 'movement' || id === 'gauntlet' || id === 'blowpipe';
+  id === 'movement' || id === 'gauntlet';
 export const hasBlob = (id: LessonId) =>
   [
     'blob',
@@ -74,7 +82,7 @@ export const hasBlob = (id: LessonId) =>
 export const opposite = (p: Prayer): Prayer =>
   p === 'magic' ? 'range' : 'magic';
 const targets = [8, 6, 16, 18, 12, 2, 22, 10, 14];
-export const movementPeriod = (id: LessonId) => (id === 'blowpipe' ? 2 : 4);
+export const movementPeriod = (_id: LessonId) => 4;
 export const targetAt = (tick: number, id: LessonId = 'movement') =>
   targets[
     Math.floor((Math.max(1, tick) - 1) / movementPeriod(id)) % targets.length
@@ -92,7 +100,7 @@ export const isBlobAttack = (id: LessonId, tick: number) =>
   (tick - blobScanPhase(id) - 3) % 6 === 0;
 export interface TickInput {
   transitions?: Prayer[];
-  attack?: boolean;
+  blowpipe?: BlowpipeCommand | null;
 }
 export function expectedPrayer(
   id: LessonId,
@@ -243,23 +251,11 @@ export function advance(
         : 'Conservation check missed: make one off–on pair after each beat, finishing on Magic before the next. Holding prayer alone does not pass.',
     });
   }
+  let blowpipe = state.blowpipe;
   if (id === 'blowpipe') {
-    const shouldAttack = tick % 2 === 1;
-    const correct = !!input.attack === shouldAttack;
-    added.push({
-      tick,
-      kind: 'attack',
-      expected: shouldAttack ? 'attack' : 'move during cooldown',
-      actual: input.attack ? 'attack queued' : 'no attack',
-      correct,
-      message: correct
-        ? shouldAttack
-          ? 'Shot on the two-tick rhythm.'
-          : 'Used the weapon cooldown for movement.'
-        : shouldAttack
-          ? 'Missed a shot. Click Attack before an odd beat.'
-          : 'Weapon is on cooldown. Use this beat to move, then attack on the next odd tick.',
-    });
+    const result = advanceBlowpipe(blowpipe, tick, input.blowpipe);
+    blowpipe = result.state;
+    added.push({ tick, ...result.check });
   }
   if (hasMovement(id) && tick % movementPeriod(id) === 0) {
     const target = targetAt(tick, id);
@@ -299,6 +295,7 @@ export function advance(
   const events = monsterEvents(id, tick, pending, pendingB, state.seed);
   return {
     tick,
+    blowpipe,
     monsterEvents: [...state.monsterEvents, ...events],
     attackResults: [
       ...state.attackResults,
@@ -330,7 +327,9 @@ export function coaching(checks: Check[]) {
   if (missed.some((c) => c.kind === 'flick'))
     return 'Your next focus: a single off–on pair between beats. Protection at the boundary and conservation clicks are separate checks.';
   if (missed.some((c) => c.kind === 'attack'))
-    return 'Your next focus: shoot on the attack beat and move during the two-tick weapon cooldown. Avoid leaving the next shot idle.';
+    return 'Your next focus: click the target as soon as the blowpipe is ready. After each shot, run two tiles, then click the target again. Recover from a miss using the weapon cooldown, not odd/even tick numbers.';
+  if (missed.length && checks.some((c) => c.kind === 'attack'))
+    return 'Your shots are landing, but the route needs work. After each shot, run two tiles towards the flag before clicking the target again.';
   if (!missed.length)
     return 'Clean run. Repeat at game speed without hints to make the rhythm stick.';
   if (missed.filter((c) => c.kind === 'supply').length > missed.length / 2)

@@ -51,3 +51,7 @@ Food and potion feedback:
 - `public/sounds/drink.ogg`: unmodified `liquid_2401.ogg` from [OldSchoolSDK](https://github.com/OldSchoolSDK/osrs-sdk/blob/04fdaee3d155238e54cf16c1ac259f6c2b210078/src/assets/sounds/liquid_2401.ogg), identified by its `Potion.ts` implementation.
 - `public/sounds/eat.ogg`: original Jagex eating effect 2393, from the [OSRS sound-effect cache dump](https://github.com/soarespt/OSRS-SoundEffects-Dumps/blob/63ebfb4b9953d408578c53b802fc895ec486fa9d/sounds/2393.wav). Converted from WAV to Vorbis with `ffmpeg -i 2393.wav -c:a libvorbis -q:a 5 eat.ogg`; no retiming or other processing. The [cache sound-name mapping](https://gist.github.com/Jire/d8db4e0964feb92c719b95cf4821ab2c) identifies `eat=2393`.
 - Eating/drinking feedback follows accepted consumption on the drill tick. Cooldown-rejected clicks do not play a sound or reduce inventory. Site-wide supply audio settings are independent of prayer and tick sounds.
+
+Blowpipe walking:
+
+- `public/icons/blowpipe.png`: unmodified Jagex inventory artwork from [OldSchoolSDK](https://github.com/OldSchoolSDK/osrs-sdk/blob/04fdaee3d155238e54cf16c1ac259f6c2b210078/src/assets/images/weapons/blowpipe.png). The lane reuses the credited player image and mager idle sprite for its non-attacking practice target. Its dart streak is a simple SVG timing cue, not an extracted projectile model.

@@ -381,21 +381,21 @@ lessons.push({
 lessons.push({
   id: 'blowpipe',
   title: 'Blowpipe attack and movement',
-  icon: 'player',
+  icon: 'blowpipe',
   level: 'Advanced',
   optional: false,
-  tag: 'TIMING DRILL',
+  tag: 'BLOWPIPE WALKING',
   description:
-    'Click Attack on odd ticks and reach the marked tile on even ticks.',
+    'Run the lane without losing blowpipe shots. Click the target, run two tiles, then attack again.',
   objective:
-    'Click Attack on odd ticks and reach the marked tile on even ticks.',
+    'Run the lane without losing blowpipe shots. Click the target, run two tiles, then attack again.',
   steps: [
-    'A rapid blowpipe attacks every two ticks. Queue a shot, then spend the intervening tick moving.',
-    'The tile changes every two ticks. Click it before the even beat, then return to Attack for the next shot.',
-    'Keep a steady shoot–move rhythm. At Zuk, shield position always takes priority over an extra shot.',
+    'Click the practice target to start attacking. A rapid blowpipe fires every two ticks; watch the dart and shot counter.',
+    'After a shot, click two tiles towards the flag. On the following tick, click the target again. At each end, turn back.',
+    'Ground clicks stop attacking. A distant ground click keeps you running until you click the target again. If you lose a shot, recover when the weapon is ready; there is no fixed odd/even schedule.',
   ],
   takeaway:
-    'This scores attack-and-movement coordination on a small grid. It does not simulate a shield, weapon range, damage or healers. Use the Zuk simulator next.',
+    'Aim for 18 shots and six lengths in 36 ticks. The lane is unobstructed and always in range. This practises blowpipe walking for targets such as Zuk’s healers; it does not simulate the shield, damage, obstacles or attacks on Zuk himself.',
   source: { creator: 'dearlola1', video: 'r3s4rbTd4QU', seconds: 8913 },
 });
 export const TOTAL_TICKS = 36;
