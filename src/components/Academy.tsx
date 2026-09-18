@@ -892,8 +892,14 @@ function Resources() {
   );
 }
 
+const tabKeyOptions = [
+  'Escape',
+  ...Array.from({ length: 12 }, (_, i) => `F${i + 1}`),
+];
+const tabKeyLabel = (key: string) => (key === 'Escape' ? 'Esc' : key);
+
 function readTabKeys() {
-  const defaults = { inventory: 'F1', prayers: 'F2' };
+  const defaults = { inventory: 'Escape', prayers: 'F1' };
   if (typeof window === 'undefined') return defaults;
   try {
     const stored = JSON.parse(
@@ -901,8 +907,8 @@ function readTabKeys() {
     );
     if (
       stored &&
-      /^F([1-9]|1[0-2])$/.test(stored.inventory) &&
-      /^F([1-9]|1[0-2])$/.test(stored.prayers) &&
+      tabKeyOptions.includes(stored.inventory) &&
+      tabKeyOptions.includes(stored.prayers) &&
       stored.inventory !== stored.prayers
     )
       return {
@@ -1132,13 +1138,6 @@ function Trainer({
       if (e.key === tabKeys.prayers) {
         e.preventDefault();
         setPanel('prayers');
-      }
-      if (
-        e.key === 'Escape' &&
-        (status === 'running' || status === 'countdown')
-      ) {
-        e.preventDefault();
-        pause();
       }
     };
     document.addEventListener('keydown', keydown);
@@ -1501,14 +1500,14 @@ function Trainer({
               onClick={() => setPanel('prayers')}
             >
               <GameIcon name="protect-magic" />
-              Prayers <kbd>{tabKeys.prayers}</kbd>
+              Prayers <kbd>{tabKeyLabel(tabKeys.prayers)}</kbd>
             </button>
             <button
               aria-pressed={panel === 'inventory'}
               onClick={() => setPanel('inventory')}
             >
               <Icon name="grid" size={17} />
-              Inventory <kbd>{tabKeys.inventory}</kbd>
+              Inventory <kbd>{tabKeyLabel(tabKeys.inventory)}</kbd>
             </button>
             <span>
               Active:{' '}
@@ -1701,14 +1700,16 @@ function Trainer({
           )}
           <p className="control-note">
             Click a prayer to activate it; click it again to turn it off.{' '}
-            {hasMovement(lesson.id) ? 'Click the marked tile to move. ' : ''}Esc
-            pauses.
+            {hasMovement(lesson.id) ? 'Click the marked tile to move. ' : ''}Use
+            the Pause button to take a break.
           </p>
           <details className="tab-key-settings">
             <summary>Configure tab keys</summary>
             <p>
-              Match these to your OSRS F-key settings. Keys only open a tab;
-              they never activate a prayer or consume an item.
+              Choose Esc or F1–F12 to match your OSRS tab settings. Keys only
+              open a tab; they never activate a prayer or consume an item.
+              Changes save on this browser. Choosing the other tab’s key swaps
+              the two bindings.
             </p>
             <div>
               {(['inventory', 'prayers'] as const).map((tab) => (
@@ -1721,9 +1722,9 @@ function Trainer({
                     value={tabKeys[tab]}
                     onChange={(e) => changeTabKey(tab, e.target.value)}
                   >
-                    {Array.from({ length: 12 }, (_, i) => (
-                      <option key={i} value={`F${i + 1}`}>
-                        F{i + 1}
+                    {tabKeyOptions.map((key) => (
+                      <option key={key} value={key}>
+                        {tabKeyLabel(key)}
                       </option>
                     ))}
                   </select>

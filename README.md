@@ -38,7 +38,7 @@ Each field lesson has a decision question and timestamped source link. Knowledge
 
 Both modes use real 600 ms game ticks. Guided mode adds hints; challenges hide them. Two uninterrupted challenges at 90% or higher earn lesson mastery. All lessons remain open for practice. Completed runs show check-by-check feedback, accuracy, and best streak. Progress survives reloads and can be reset with confirmation.
 
-Click a prayer to activate it; click the active prayer again to turn it off. Click tiles to move. Function keys switch tabs only: `F1` opens Inventory and `F2` opens Prayers by default. Configure these to match your OSRS setup; preferences persist locally. They never activate prayers or items. `Escape` pauses. Hidden tabs and long browser stalls pause the exercise; interrupted challenges count as practice.
+Click a prayer to activate it; click the active prayer again to turn it off. Click tiles to move. Tab keys default to `Esc` for Inventory and `F1` for Prayers. Under **Configure tab keys**, choose Esc or F1–F12 to match your OSRS setup; preferences persist locally. Assigning an already-used key swaps the two bindings. They never activate prayers or items. Use the Pause button to pause. Hidden tabs and long browser stalls pause the exercise; interrupted challenges count as practice.
 
 ## Verification
 

@@ -66,7 +66,7 @@ async function perfectRun(page: Page, id: string, ms = 600) {
         })
         .click();
     if ((id === 'food' || (id === 'potions' && tick <= 32)) && tick % 4 === 2) {
-      await page.keyboard.press('F1');
+      await page.keyboard.press('Escape');
       const label =
         id === 'food'
           ? /^Eat shark/
@@ -74,7 +74,7 @@ async function perfectRun(page: Page, id: string, ms = 600) {
             ? /^Drink super restore/
             : /^Drink Saradomin brew/;
       await page.getByRole('button', { name: label }).click();
-      await page.keyboard.press('F2');
+      await page.keyboard.press('F1');
     }
     await page.clock.runFor(ms);
   }
@@ -193,7 +193,7 @@ test('guided runs and paused challenges never award mastery', async ({
   await expect(page.getByText('Guided run · practice credit')).toBeVisible();
   await page.getByRole('button', { name: 'Challenge', exact: true }).click();
   await start(page);
-  await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: 'Pause', exact: true }).click();
   await expect(
     page.getByRole('heading', { name: 'Take a breath.' }),
   ).toBeVisible();
@@ -297,7 +297,7 @@ test('corrupt or blocked storage cannot prevent practice', async ({ page }) => {
   ).toBeVisible();
 });
 
-test('prayers toggle with clicks and F-keys only change tabs', async ({
+test('prayers toggle with clicks and custom tab keys persist', async ({
   page,
 }) => {
   await open(page);
@@ -310,10 +310,10 @@ test('prayers toggle with clicks and F-keys only change tabs', async ({
   await magic.click();
   await expect(magic).toHaveAttribute('aria-pressed', 'false');
   await page.getByRole('button', { name: 'Ranged', exact: true }).click();
-  await page.keyboard.press('F1');
+  await page.keyboard.press('Escape');
   await expect(page.getByRole('button', { name: /^Eat shark/ })).toBeVisible();
   await expect(page.getByText('Active: Ranged', { exact: true })).toBeVisible();
-  await page.keyboard.press('F2');
+  await page.keyboard.press('F1');
   await expect(
     page.getByRole('button', { name: 'Ranged', exact: true }),
   ).toHaveAttribute('aria-pressed', 'true');
@@ -337,6 +337,52 @@ test('prayers toggle with clicks and F-keys only change tabs', async ({
   await lesson(page, 'Eat between flicks');
   await page.keyboard.press('F3');
   await expect(page.getByRole('button', { name: /^Eat shark/ })).toBeVisible();
+});
+
+test('Esc opens inventory during a run and tab binding collisions swap safely', async ({
+  page,
+}) => {
+  await open(page);
+  await lesson(page, 'Eat between flicks');
+  await page.clock.install();
+  await page.clock.pauseAt(new Date());
+  await start(page, false);
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('button', { name: /^Eat shark/ })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Take a breath.' }),
+  ).toHaveCount(0);
+  await page.clock.runFor(600);
+  await expect(
+    page.getByText('Preparing tick 2', { exact: true }),
+  ).toBeVisible();
+  await page.keyboard.press('F1');
+  await expect(
+    page.getByRole('button', { name: 'Magic', exact: true }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Pause', exact: true }).click();
+  await page.getByText('Configure tab keys', { exact: true }).click();
+  await expect(page.getByLabel('Inventory key', { exact: true })).toHaveValue(
+    'Escape',
+  );
+  await expect(page.getByLabel('Prayer tab key', { exact: true })).toHaveValue(
+    'F1',
+  );
+  await page
+    .getByLabel('Prayer tab key', { exact: true })
+    .selectOption('Escape');
+  await expect(page.getByLabel('Inventory key', { exact: true })).toHaveValue(
+    'F1',
+  );
+  await page.reload();
+  await expect(page.locator('astro-island')).not.toHaveAttribute('ssr');
+  await lesson(page, 'Eat between flicks');
+  await page.keyboard.press('F1');
+  await expect(page.getByRole('button', { name: /^Eat shark/ })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(
+    page.getByRole('button', { name: 'Magic', exact: true }),
+  ).toBeVisible();
 });
 
 test('mager attack cues follow four real ticks in guided mode', async ({
