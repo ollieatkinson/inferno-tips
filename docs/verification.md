@@ -80,3 +80,12 @@ Screenshots and raw DevTools output are temporary verification artifacts, not sh
 - Regenerated all 14 idle/attack sheets and visually reviewed sampled frames from every clip. Frame counts and animation durations are unchanged.
 - Chrome DevTools confirmed the corrected mager/blob sprites in the desktop drill and advancing attack frames on mobile, with no horizontal overflow or console errors.
 - Production build/check and the three existing mager-cue, mixed-movement animation/pause, and triple-Jad browser tests passed.
+
+## Game-style player controls and prayer sounds
+
+- Moved the prayer/inventory panel beside the encounter on desktop, using original Jagex panel artwork and the five-column prayer layout. Protection prayers retain their game positions and toggle highlights; other prayers are dimmed. Instructions and companion links sit below the trainer, and run controls are in its top toolbar.
+- Inventory uses 28 fixed slots. Food disappears from the clicked slot after an accepted action; potions retain per-bottle doses. Rejected cooldown clicks preserve items. Tab switching, pausing and resetting preserve or restore the appropriate state.
+- Added the six original protection-prayer on/off clips, served locally. Prayer audio is enabled by default with separate site-wide mute and volume settings. Tab changes and automatic resets are silent; old preference saves receive the new defaults.
+- Reviewed Chrome DevTools screenshots at 1440 × 1000 and 390 × 844. Mobile puts the guided cycle above the encounter and stacks the game panel below, retaining 46 px prayer targets and avoiding horizontal page overflow.
+- Played a real-time eating sequence in Chrome: Magic on for tick 1, off afterwards, Esc to eat the shark in slot 5, then F1 back to prayers. At tick 2 the run had 100% accuracy, slot 5 was empty and eight sharks remained. Captured actual audio buffer starts for distinct activation/deactivation clips; no console warnings or errors.
+- Production build/check passed without diagnostics; 84 unit tests and all 46 browser tests passed. New regressions cover right-side layout, protection positions, individual inventory slots, rejected cooldown actions, potion doses, resets, mobile target size, real audio playback, saved volume and mute.

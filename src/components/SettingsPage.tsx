@@ -99,6 +99,51 @@ export function SettingsPage({
             </p>
           </div>
         </section>
+        <section aria-labelledby="settings-prayer-sound-title">
+          <div>
+            <h2 id="settings-prayer-sound-title">Prayer sounds</h2>
+            <p>
+              The game's protection-prayer activation and deactivation sounds.
+            </p>
+          </div>
+          <div className="settings-fields">
+            <label className="settings-check">
+              <input
+                type="checkbox"
+                checked={settings.prayerSound}
+                onChange={(e) =>
+                  onChange({ ...settings, prayerSound: e.target.checked })
+                }
+              />
+              Enable prayer sounds
+            </label>
+            <label>
+              Prayer sound volume
+              <div className="settings-volume">
+                <input
+                  type="range"
+                  aria-label="Prayer sound volume"
+                  min="0"
+                  max="100"
+                  step="5"
+                  value={settings.prayerVolume}
+                  onChange={(e) =>
+                    onChange({
+                      ...settings,
+                      prayerVolume: Number(e.target.value),
+                    })
+                  }
+                  aria-valuetext={`${settings.prayerVolume}%`}
+                />
+                <output>{settings.prayerVolume}%</output>
+              </div>
+            </label>
+            <p className="setting-help">
+              Plays when you click a prayer. Switching tabs is silent. Tick
+              sound has its own controls below.
+            </p>
+          </div>
+        </section>
         <section aria-labelledby="settings-sound-title">
           <div>
             <h2 id="settings-sound-title">Tick sound</h2>

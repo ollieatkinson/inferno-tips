@@ -74,7 +74,7 @@ async function perfectRun(page: Page, id: string, ms = 600) {
           : Math.floor((tick - 1) / 4) % 4 === 3
             ? /^Drink super restore/
             : /^Drink Saradomin brew/;
-      await page.getByRole('button', { name: label }).click();
+      await page.getByRole('button', { name: label }).first().click();
       await page.keyboard.press('F1');
     }
     await page.clock.runFor(ms);
@@ -315,7 +315,9 @@ test('prayers toggle with clicks and custom tab keys persist', async ({
   await expect(magic).toHaveAttribute('aria-pressed', 'false');
   await page.getByRole('button', { name: 'Ranged', exact: true }).click();
   await page.keyboard.press('Escape');
-  await expect(page.getByRole('button', { name: /^Eat shark/ })).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: /^Eat shark/ }).first(),
+  ).toBeVisible();
   await expect(page.getByText('Active: Ranged', { exact: true })).toBeVisible();
   await page.keyboard.press('F1');
   await expect(
@@ -336,12 +338,16 @@ test('prayers toggle with clicks and custom tab keys persist', async ({
   await page.getByLabel('Inventory key', { exact: true }).selectOption('F3');
   await lesson(page, 'Eat between flicks');
   await page.keyboard.press('F3');
-  await expect(page.getByRole('button', { name: /^Eat shark/ })).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: /^Eat shark/ }).first(),
+  ).toBeVisible();
   await page.reload();
   await expect(page.locator('astro-island')).not.toHaveAttribute('ssr');
   await lesson(page, 'Eat between flicks');
   await page.keyboard.press('F3');
-  await expect(page.getByRole('button', { name: /^Eat shark/ })).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: /^Eat shark/ }).first(),
+  ).toBeVisible();
 });
 
 test('Esc opens inventory during a run and tab binding collisions swap safely', async ({
@@ -353,7 +359,9 @@ test('Esc opens inventory during a run and tab binding collisions swap safely', 
   await page.clock.pauseAt(new Date());
   await start(page, false);
   await page.keyboard.press('Escape');
-  await expect(page.getByRole('button', { name: /^Eat shark/ })).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: /^Eat shark/ }).first(),
+  ).toBeVisible();
   await expect(
     page.getByRole('heading', { name: 'Practice paused' }),
   ).toHaveCount(0);
@@ -386,7 +394,9 @@ test('Esc opens inventory during a run and tab binding collisions swap safely', 
   await expect(page.locator('astro-island')).not.toHaveAttribute('ssr');
   await lesson(page, 'Eat between flicks');
   await page.keyboard.press('F1');
-  await expect(page.getByRole('button', { name: /^Eat shark/ })).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: /^Eat shark/ }).first(),
+  ).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(
     page.getByRole('button', { name: 'Magic', exact: true }),
@@ -832,7 +842,9 @@ test('site settings migrate tab keys and apply across drills without clearing pr
   ).toHaveCount(0);
   await expect(page.getByLabel('Enable tick sound')).toHaveCount(0);
   await page.keyboard.press('F4');
-  await expect(page.getByRole('button', { name: /^Eat shark/ })).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: /^Eat shark/ }).first(),
+  ).toBeVisible();
   await page.keyboard.press('F5');
   await expect(
     page.getByRole('button', { name: 'Magic', exact: true }),
@@ -883,7 +895,9 @@ test('blocked storage still allows site settings for the current visit', async (
   );
   await lesson(page, 'Eat between flicks');
   await page.keyboard.press('F3');
-  await expect(page.getByRole('button', { name: /^Eat shark/ })).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: /^Eat shark/ }).first(),
+  ).toBeVisible();
 });
 
 test('LoS assignments open their prepared scenes from lessons and troubleshooting', async ({
@@ -1091,4 +1105,163 @@ test('triple Jad has three independently cued animated monsters', async ({
   await expect(
     page.locator('[data-enemy="jad-2"] .monster-sprite'),
   ).toHaveAttribute('data-animation', 'idle');
+});
+
+test('game panels sit beside the encounter and preserve clicked inventory slots', async ({
+  page,
+}) => {
+  await page.clock.install();
+  await open(page);
+  await lesson(page, 'Eat between flicks');
+  const panel = page.getByRole('complementary', { name: 'Player controls' });
+  const arena = page.locator('.training-arena');
+  const a = (await arena.boundingBox())!,
+    b = (await panel.boundingBox())!;
+  expect(b.x).toBeGreaterThanOrEqual(a.x + a.width);
+  const magic = page.getByRole('button', { name: 'Magic', exact: true });
+  const ranged = page.getByRole('button', { name: 'Ranged', exact: true });
+  const melee = page.getByRole('button', { name: 'Melee', exact: true });
+  const positions = await Promise.all(
+    [magic, ranged, melee].map((b) => b.boundingBox()),
+  );
+  expect(positions[0]!.y).toBe(positions[1]!.y);
+  expect(positions[1]!.y).toBe(positions[2]!.y);
+  expect(positions[1]!.x - positions[0]!.x).toBe(46);
+  expect(positions[2]!.x - positions[1]!.x).toBe(46);
+  await start(page, false);
+  await magic.click();
+  await page.clock.runFor(600);
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.inventory-slot')).toHaveCount(28);
+  await expect(page.getByRole('button', { name: /^Eat shark/ })).toHaveCount(9);
+  await page
+    .getByRole('button', { name: 'Eat shark, slot 5', exact: true })
+    .click();
+  await page.clock.runFor(600);
+  await expect(page.locator('.inventory-slot[data-slot="4"]')).toHaveClass(
+    /empty-slot/,
+  );
+  await expect(page.getByRole('button', { name: /^Eat shark/ })).toHaveCount(8);
+  await page
+    .getByRole('button', { name: 'Eat shark, slot 7', exact: true })
+    .click();
+  await page.clock.runFor(600);
+  await expect(
+    page.getByRole('button', { name: 'Eat shark, slot 7', exact: true }),
+  ).toBeVisible();
+  await expect(panel).toContainText('Still on cooldown');
+  await page.keyboard.press('F1');
+  await expect(magic).toHaveAttribute('aria-pressed', 'true');
+  await page.getByRole('button', { name: 'End run', exact: true }).click();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('button', { name: /^Eat shark/ })).toHaveCount(9);
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await page.keyboard.press('F1');
+  expect((await magic.boundingBox())!.width).toBeGreaterThanOrEqual(44);
+  await lesson(page, 'Brew and restore between flicks');
+  await start(page, false);
+  await page.keyboard.press('Escape');
+  await page
+    .getByRole('button', {
+      name: 'Drink Saradomin brew, slot 2, 2 doses remaining',
+      exact: true,
+    })
+    .click();
+  await page.clock.runFor(600);
+  await expect(
+    page.getByRole('button', {
+      name: 'Drink Saradomin brew, slot 2, 1 doses remaining',
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('button', {
+      name: 'Drink Saradomin brew, slot 1, 4 doses remaining',
+      exact: true,
+    }),
+  ).toBeVisible();
+});
+
+test('authentic prayer audio follows toggles and respects saved sound preferences', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    const logs: { duration: number; gain: number }[] = [];
+    Object.assign(window, { prayerAudioStarts: logs });
+    const Native = window.AudioContext;
+    window.AudioContext = class extends Native {
+      lastGain = 0;
+      override createGain() {
+        const gain = super.createGain();
+        const connect = gain.connect.bind(gain);
+        gain.connect = ((...args: Parameters<typeof connect>) => {
+          this.lastGain = gain.gain.value;
+          return connect(...args);
+        }) as typeof gain.connect;
+        return gain;
+      }
+      override createBufferSource() {
+        const source = super.createBufferSource();
+        const start = source.start.bind(source);
+        source.start = (...args) => {
+          logs.push({
+            duration: source.buffer?.duration || 0,
+            gain: this.lastGain,
+          });
+          start(...args);
+        };
+        return source;
+      }
+    };
+  });
+  const starts = () =>
+    page.evaluate(
+      () =>
+        (
+          window as unknown as {
+            prayerAudioStarts: { duration: number; gain: number }[];
+          }
+        ).prayerAudioStarts,
+    );
+  await open(page);
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await expect(page.getByLabel('Enable prayer sounds')).toBeChecked();
+  await page.getByRole('slider', { name: 'Prayer sound volume' }).fill('25');
+  await page.reload();
+  await expect(page.locator('astro-island')).not.toHaveAttribute('ssr');
+  await lesson(page, 'Flick the mager');
+  await page.waitForLoadState('networkidle');
+  expect(await starts()).toHaveLength(0);
+  const magic = page.getByRole('button', { name: 'Magic', exact: true });
+  await magic.click();
+  await expect.poll(async () => (await starts()).length).toBe(1);
+  await magic.click();
+  await expect.poll(async () => (await starts()).length).toBe(2);
+  await page.getByRole('button', { name: 'Ranged', exact: true }).click();
+  await magic.click();
+  await expect.poll(async () => (await starts()).length).toBe(4);
+  const played = await starts();
+  expect(played.every((p) => p.duration > 0 && p.gain === 0.25)).toBe(true);
+  expect(played[0].duration).not.toBe(played[1].duration);
+  await page.keyboard.press('Escape');
+  await page.keyboard.press('F1');
+  expect(await starts()).toHaveLength(4);
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await page.getByLabel('Enable prayer sounds').uncheck();
+  await page.reload();
+  await expect(page.locator('astro-island')).not.toHaveAttribute('ssr');
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await expect(page.getByLabel('Enable prayer sounds')).not.toBeChecked();
+  await expect(
+    page.getByRole('slider', { name: 'Prayer sound volume' }),
+  ).toHaveValue('25');
+  await lesson(page, 'Flick the mager');
+  await magic.click();
+  await magic.click();
+  expect(await starts()).toHaveLength(0);
 });

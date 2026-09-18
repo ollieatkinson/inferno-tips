@@ -28,3 +28,8 @@ The application code, course, CSS illustration, and feedback text are original. 
 DM Sans and Manrope fonts are loaded from Google Fonts under their respective open font licenses. npm packages retain their upstream licenses; exact dependencies are recorded in `package-lock.json`.
 
 Supply timing references: [Food/Fast foods](https://oldschool.runescape.wiki/w/Food/Fast_foods) and [Potions](https://oldschool.runescape.wiki/w/Potions). The three-brew/one-restore practice sequence follows the common example in [Fight Cave strategies](https://oldschool.runescape.wiki/w/TzHaar_Fight_Cave/Strategies); real stat restoration is not simulated.
+
+Game panels and prayer audio:
+
+- `public/game-ui/prayer.png` and `inventory.png`: original Jagex panel artwork distributed by [OldSchoolSDK](https://github.com/OldSchoolSDK/osrs-sdk/tree/04fdaee3d155238e54cf16c1ac259f6c2b210078/src/assets/images/panels). The trainer overlays accessible protection-prayer buttons in the original five-column positions and a four-column, seven-row inventory. Unused prayers are dimmed; the baked-in prayer point counter is covered because drills do not model drain.
+- `public/sounds/{mage,range,melee}-{on,off}.ogg`: the corresponding `mageOn`, `mageOff`, `rangeOn`, `rangeOff`, `meleeOn`, `meleeOff` Jagex sound effects from [OldSchoolSDK at the same revision](https://github.com/OldSchoolSDK/osrs-sdk/tree/04fdaee3d155238e54cf16c1ac259f6c2b210078/src/assets/sounds). Its README records extraction from the game cache. The [protection-prayer implementations](https://github.com/OldSchoolSDK/osrs-sdk/tree/04fdaee3d155238e54cf16c1ac259f6c2b210078/src/content/prayers) identify each activation/deactivation pair. These are served locally without modification.

@@ -866,38 +866,6 @@ footer a {
   background: #c89865;
   color: #231f14;
 }
-.prayer-controls {
-  display: flex;
-  gap: 10px;
-  padding: 18px 22px 0;
-}
-.prayer-button {
-  flex: 1;
-  border: 1px solid #494f3c;
-  background: #292f22;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 9px;
-  padding: 13px 10px;
-  font-size: 11px;
-}
-.prayer-button.selected {
-  border-color: #e2aa72;
-  background: #4a3d28;
-  box-shadow: inset 0 0 0 1px #d39a6640;
-}
-.prayer-button .game-icon {
-  width: 24px;
-  height: 24px;
-  image-rendering: pixelated;
-}
-.off-icon {
-  font-size: 28px;
-  line-height: 24px;
-  color: #afb69b;
-}
 kbd {
   font-family: inherit;
   font-size: 8px;
@@ -1216,14 +1184,6 @@ kbd {
   .trainer-layout {
     gap: 20px;
     grid-template-columns: minmax(0, 1.6fr) minmax(225px, 1fr);
-  }
-  .prayer-controls {
-    gap: 7px;
-    padding-inline: 15px;
-  }
-  .prayer-button {
-    gap: 5px;
-    padding: 11px 6px;
   }
   .progress-table > div {
     gap: 10px;
@@ -1588,22 +1548,6 @@ kbd {
   .run-stats strong {
     font-size: 20px;
   }
-  .prayer-controls {
-    padding: 15px 12px 0;
-    gap: 7px;
-  }
-  .prayer-button {
-    font-size: 10px;
-    gap: 5px;
-    padding: 12px 7px;
-  }
-  .prayer-button .game-icon {
-    width: 22px;
-    height: 22px;
-  }
-  .prayer-button kbd {
-    display: none;
-  }
   .training-actions {
     padding: 16px 14px;
     gap: 12px;
@@ -1712,80 +1656,6 @@ kbd {
     width: 14px;
   }
 }
-.game-panel-tabs {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-  padding: 16px 22px 0;
-}
-.game-panel-tabs button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-  padding: 9px 11px;
-  background: #262c20;
-  border: 1px solid #424b34;
-  border-radius: 5px;
-  font-size: 10px;
-}
-.game-panel-tabs button[aria-pressed='true'] {
-  background: #41402d;
-  border-color: #a58b5b;
-  color: #f2d5a7;
-}
-.game-panel-tabs .game-icon {
-  width: 18px;
-  height: 18px;
-}
-.game-panel-tabs > span {
-  font-size: 9px;
-  color: #b4bda2;
-  margin-left: auto;
-}
-.inventory-panel {
-  padding: 15px 22px 0;
-  min-height: 84px;
-}
-.inventory-items {
-  display: flex;
-  gap: 12px;
-}
-.supply-button {
-  flex: 1;
-  display: grid;
-  grid-template-columns: 35px 1fr;
-  gap: 5px 10px;
-  text-align: left;
-  padding: 12px;
-  background: #343326;
-  border: 1px solid #62583b;
-  border-radius: 5px;
-}
-.supply-button.queued {
-  border-color: var(--orange);
-  background: #4b3d27;
-}
-.supply-button .game-icon {
-  grid-row: 1/3;
-  width: 32px;
-  height: 32px;
-  image-rendering: pixelated;
-}
-.supply-button strong {
-  font-size: 11px;
-  font-weight: 500;
-}
-.supply-button small {
-  font-size: 9px;
-  color: #b9b59a;
-}
-.inventory-status {
-  font-size: 10px;
-  color: #adb898;
-  min-height: 33px;
-  margin-top: 10px;
-}
 .empty-inventory {
   font-size: 11px;
   color: #a3b090;
@@ -1869,39 +1739,6 @@ kbd {
   border-color: #b59758;
 }
 @media (max-width: 650px) {
-  .game-panel-tabs {
-    padding: 14px 12px 0;
-    gap: 5px;
-  }
-  .game-panel-tabs button {
-    font-size: 9px;
-    padding: 9px 7px;
-    gap: 5px;
-  }
-  .game-panel-tabs > span {
-    font-size: 8px;
-  }
-  .game-panel-tabs kbd {
-    font-size: 7px;
-  }
-  .inventory-panel {
-    padding: 15px 12px 0;
-  }
-  .inventory-items {
-    gap: 8px;
-  }
-  .supply-button {
-    padding: 10px;
-    gap: 4px 6px;
-    grid-template-columns: 28px 1fr;
-  }
-  .supply-button .game-icon {
-    width: 27px;
-    height: 27px;
-  }
-  .supply-button strong {
-    font-size: 9px;
-  }
   .supply-objective {
     padding: 12px 14px 0;
     font-size: 9px;
@@ -3148,5 +2985,279 @@ select:focus-visible {
   .with-movement .attack-label {
     gap: 2px;
     flex-wrap: wrap;
+  }
+}
+
+/* Keep the game's click positions together beside the encounter. */
+.trainer-layout {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 32px;
+}
+.training-panel {
+  container-type: inline-size;
+}
+.practice-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 254px;
+  gap: 18px;
+  padding: 18px;
+  align-items: start;
+}
+.practice-main {
+  min-width: 0;
+}
+.practice-main .training-arena {
+  border: 1px solid #343c2c;
+  border-radius: 4px;
+}
+.practice-main .tick-track {
+  padding: 16px 0 0;
+}
+.practice-main .prayer-preview {
+  margin-left: 0;
+  margin-right: 0;
+}
+.game-side-panel {
+  width: 254px;
+}
+.game-side-panel .game-panel-tabs {
+  display: flex;
+  align-items: center;
+  padding: 0;
+  gap: 3px;
+  margin-bottom: 3px;
+}
+.game-side-panel .game-panel-tabs button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-height: 44px;
+  padding: 7px 5px;
+  gap: 5px;
+  border-radius: 4px 4px 0 0;
+  border: 2px ridge #82775e;
+  background: linear-gradient(#615a48, #393426);
+  color: #ded4b6;
+  font-size: 10px;
+  text-shadow: 1px 1px #111;
+}
+.game-side-panel .game-panel-tabs button[aria-pressed='true'] {
+  background: linear-gradient(#864b38, #522b24);
+  border-color: #a58b61;
+  color: #fff0c4;
+}
+.game-panel-tabs img {
+  width: 23px;
+  height: 26px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+.game-side-panel .game-panel-tabs kbd {
+  display: inline;
+  font-size: 8px;
+  padding: 1px 3px;
+}
+.native-panel {
+  position: relative;
+  width: 254px;
+  height: 343px;
+  background: url('/game-ui/inventory.png') center / 100% 100% no-repeat;
+  image-rendering: pixelated;
+}
+.native-panel.prayers {
+  background-image: url('/game-ui/prayer.png');
+}
+.native-prayer-grid {
+  position: absolute;
+  top: 20px;
+  left: 12.5px;
+  display: grid;
+  grid-template-columns: repeat(5, 46px);
+  grid-template-rows: repeat(6, 46.25px);
+}
+.native-prayer-grid .prayer-button {
+  width: 46px;
+  height: 46.25px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: none;
+}
+.native-prayer-grid .prayer-button:hover {
+  background: #e1c98725;
+}
+.native-prayer-grid .prayer-button.selected {
+  background: #d1bb7773;
+  box-shadow: inset 0 0 0 1px #e8d38d66;
+}
+.native-prayer-grid .prayer-button:focus-visible {
+  outline: 2px solid #ffe49c;
+  outline-offset: -2px;
+}
+.unavailable-prayer {
+  background: #423b2cd0;
+  border-radius: 50%;
+  pointer-events: none;
+}
+.native-prayer-footer {
+  position: absolute;
+  bottom: 12px;
+  left: 8px;
+  right: 8px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  background: url('/game-ui/inventory.png') center -285px / 254px 343px
+    no-repeat;
+  color: #e1cf9c;
+  font-size: 11px;
+  text-shadow: 1px 1px #18140f;
+}
+.native-inventory-grid {
+  position: absolute;
+  top: 17px;
+  left: 19px;
+  display: grid;
+  grid-template-columns: repeat(4, 54px);
+  grid-template-rows: repeat(7, 44px);
+}
+.native-inventory-grid .inventory-slot {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.native-inventory-grid .inventory-slot:hover:not(:disabled):not(.empty-slot) {
+  background: #dac48f20;
+}
+.native-inventory-grid .inventory-slot.queued {
+  box-shadow: inset 0 0 0 1px #ecc67a;
+  background: #d1bb7730;
+}
+.native-inventory-grid .inventory-slot:disabled {
+  opacity: 1;
+  cursor: default;
+}
+.inventory-slot img {
+  width: 40px;
+  height: 37px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+.inventory-slot .item-doses {
+  position: absolute;
+  top: 0;
+  left: 6px;
+  font: 12px monospace;
+  color: #ffff00;
+  text-shadow: 1px 1px #000;
+}
+.game-panel-status {
+  padding: 10px 3px 0;
+  font-size: 11px;
+  color: #ded3ae;
+}
+.game-panel-status p {
+  min-height: 34px;
+  margin: 5px 0 0;
+  font-size: 10px;
+  color: #a8af9a;
+}
+.trainer-page .lesson-notes {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: 16px 36px;
+  padding: 0;
+}
+.lesson-notes > .eyebrow,
+.lesson-notes > h2,
+.lesson-notes > ol,
+.lesson-notes > .takeaway,
+.lesson-notes > .source-link {
+  grid-column: 1;
+}
+.lesson-notes > h2 {
+  margin: 0;
+}
+.lesson-notes > .takeaway {
+  margin: 0;
+}
+.lesson-notes > .los-assignment {
+  grid-column: 2;
+  grid-row: 1 / 5;
+  margin: 0;
+  align-self: start;
+}
+.lesson-notes > .mastery-note {
+  grid-column: 2;
+  grid-row: 5 / 8;
+}
+@container (max-width: 660px) {
+  .practice-workspace {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 12px;
+  }
+  .game-side-panel {
+    justify-self: end;
+  }
+}
+@media (max-width: 650px) {
+  .trainer-page .lesson-notes {
+    display: block;
+  }
+  .lesson-notes > h2 {
+    margin: 10px 0 20px;
+  }
+  .lesson-notes > .los-assignment {
+    margin: 24px 0;
+  }
+  .lesson-notes > .source-link {
+    display: inline-block;
+    margin-top: 16px;
+  }
+}
+
+.training-toolbar .training-actions {
+  padding: 0;
+  border: 0;
+  margin-left: auto;
+  gap: 10px;
+}
+.training-toolbar .training-actions .button {
+  padding: 9px 12px;
+  font-size: 11px;
+}
+@container (max-width: 660px) {
+  .training-toolbar {
+    flex-wrap: wrap;
+  }
+  .training-toolbar .training-actions {
+    order: 3;
+    width: 100%;
+    margin-left: 0;
+  }
+}
+
+@container (max-width: 660px) {
+  .practice-main {
+    display: contents;
+  }
+  .practice-main .prayer-preview,
+  .practice-main .prayer-preview-note {
+    order: -1;
+    margin: 0;
+  }
+  .practice-main .training-arena {
+    min-height: 220px;
+  }
+  .practice-main .tick-track {
+    padding-top: 0;
   }
 }

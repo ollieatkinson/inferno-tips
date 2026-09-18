@@ -29,6 +29,7 @@ describe('saved site settings', () => {
         legacy,
       ),
     ).toEqual({
+      ...defaultSettings,
       tabKeys: { inventory: 'F2', prayers: 'F1' },
       defaultMode: 'challenge',
       tickSound: true,
@@ -48,6 +49,22 @@ describe('saved site settings', () => {
       ...defaultSettings,
       tabKeys: { inventory: 'F4', prayers: 'F5' },
     });
+  });
+  it('saves prayer audio independently and migrates existing settings', () => {
+    expect(
+      parseSettings(JSON.stringify({ tickSound: true, volume: 25 })),
+    ).toMatchObject({
+      tickSound: true,
+      volume: 25,
+      prayerSound: true,
+      prayerVolume: 50,
+    });
+    expect(
+      parseSettings(JSON.stringify({ prayerSound: false, prayerVolume: 0 })),
+    ).toMatchObject({ prayerSound: false, prayerVolume: 0 });
+    expect(
+      parseSettings(JSON.stringify({ prayerSound: 'false', prayerVolume: -1 })),
+    ).toMatchObject({ prayerSound: true, prayerVolume: 50 });
   });
   it('swaps colliding bindings without mutating the previous settings', () => {
     const original = { ...defaultSettings, tickSound: true, volume: 25 };

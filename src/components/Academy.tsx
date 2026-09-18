@@ -6,11 +6,12 @@ import { losSetups, drillLosSetups } from '../lib/los';
 import { SettingsPage } from './SettingsPage';
 import { PrayerPreview } from './PrayerPreview';
 import { EnemyScene } from './EnemyScene';
+import { GamePanels } from './GamePanels';
+import { usePrayerSounds } from './usePrayerSounds';
 import {
   readSettings,
   SETTINGS_KEY,
   LEGACY_TAB_KEYS,
-  tabKeyLabel,
   type Settings,
 } from '../lib/settings';
 import {
@@ -38,7 +39,6 @@ import {
   hasMovement,
   hasSupplies,
   initialState,
-  stock,
   supplyGoal,
   targetAt,
   type DrillState,
@@ -826,7 +826,14 @@ function Trainer({
     status === 'running' || status === 'countdown' || status === 'paused';
   completeRef.current = onComplete;
   soundRef.current = sound;
-  function selectPrayer(p: Prayer) {
+  const playPrayerSound = usePrayerSounds(
+    settings.prayerSound,
+    settings.prayerVolume,
+    () => setSoundError(true),
+  );
+  function selectPrayer(p: Prayer, userClick = false) {
+    if (userClick && p !== prayerRef.current)
+      playPrayerSound(prayerRef.current, p);
     if (status === 'running' && p !== prayerRef.current)
       transitionsRef.current.push(p);
     prayerRef.current = p;
@@ -861,6 +868,11 @@ function Trainer({
     setInterrupted(false);
     savedRef.current = false;
     setStatus('countdown');
+    requestAnimationFrame(() => {
+      trainingRef.current
+        ?.querySelector('.training-arena')
+        ?.scrollIntoView({ block: 'start' });
+    });
   }
   function beginChallenge() {
     setMode('challenge');
@@ -1075,6 +1087,59 @@ function Trainer({
                 Challenge
               </button>
             </div>
+            <div className="training-actions">
+              {status === 'ready' || status === 'done' ? (
+                <>
+                  <button
+                    className="button primary"
+                    onClick={
+                      status === 'done' && mode === 'guided'
+                        ? beginChallenge
+                        : begin
+                    }
+                  >
+                    <Icon name="play" size={15} />
+                    {status === 'done'
+                      ? mode === 'guided'
+                        ? 'Start challenge'
+                        : 'Try challenge again'
+                      : mode === 'guided'
+                        ? 'Start guided practice'
+                        : 'Start challenge'}
+                  </button>
+                  {status === 'done' && mode === 'guided' && (
+                    <button className="button secondary" onClick={begin}>
+                      Repeat guided practice
+                    </button>
+                  )}
+                </>
+              ) : (
+                <>
+                  <button
+                    className="button secondary"
+                    onClick={
+                      status === 'paused'
+                        ? () =>
+                            setStatus(
+                              state.tick === 0 ? 'countdown' : 'running',
+                            )
+                        : pause
+                    }
+                  >
+                    {status === 'paused' ? 'Resume' : 'Pause'}
+                  </button>
+                  <button
+                    className="text-button"
+                    onClick={() => {
+                      setState(initialState());
+                      setStatus('ready');
+                    }}
+                  >
+                    End run
+                  </button>
+                </>
+              )}
+            </div>
             <span>{ms / 1000}s / tick</span>
           </div>
           {status === 'ready' && (
@@ -1165,262 +1230,176 @@ function Trainer({
               </div>
             </div>
           )}
-          <div
-            className={`training-arena ${hasMovement(lesson.id) ? 'with-movement' : ''}`}
-          >
-            <EnemyScene
-              id={lesson.id}
-              state={state}
-              status={status}
-              guided={mode === 'guided'}
-            />
-            {hasMovement(lesson.id) ? (
-              <>
-                <div
-                  className="movement-grid"
-                  aria-label="Movement practice grid"
-                >
-                  {Array.from({ length: 25 }, (_, i) => (
-                    <button
-                      key={i}
-                      aria-label={`Tile ${(i % 5) + 1}, ${Math.floor(i / 5) + 1}${i === target ? ', target' : ''}${i === tile ? ', player' : ''}`}
-                      className={`tile ${i === target ? 'target' : ''} ${i === tile ? 'player' : ''}`}
-                      onClick={() => move(i)}
+          <div className="practice-workspace">
+            <div className="practice-main">
+              <div
+                className={`training-arena ${hasMovement(lesson.id) ? 'with-movement' : ''}`}
+              >
+                <EnemyScene
+                  id={lesson.id}
+                  state={state}
+                  status={status}
+                  guided={mode === 'guided'}
+                />
+                {hasMovement(lesson.id) ? (
+                  <>
+                    <div
+                      className="movement-grid"
+                      aria-label="Movement practice grid"
                     >
-                      {i === tile ? (
-                        <GameIcon name="player" />
-                      ) : i === target ? (
-                        <span>◇</span>
-                      ) : null}
+                      {Array.from({ length: 25 }, (_, i) => (
+                        <button
+                          key={i}
+                          aria-label={`Tile ${(i % 5) + 1}, ${Math.floor(i / 5) + 1}${i === target ? ', target' : ''}${i === tile ? ', player' : ''}`}
+                          className={`tile ${i === target ? 'target' : ''} ${i === tile ? 'player' : ''}`}
+                          onClick={() => move(i)}
+                        >
+                          {i === tile ? (
+                            <GameIcon name="player" />
+                          ) : i === target ? (
+                            <span>◇</span>
+                          ) : null}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="arena-caption">
+                      ◇ Reach the marked tile by tick{' '}
+                      {Math.ceil(nextTick / movementPeriod(lesson.id)) *
+                        movementPeriod(lesson.id)}{' '}
+                      · coordination drill
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <div className="arena-floor" />
+                    <div className="player-avatar">
+                      <div className="overhead">
+                        {prayer !== 'off' && (
+                          <GameIcon name={`protect-${prayer}`} />
+                        )}
+                      </div>
+                      <GameIcon name="player" />
+                    </div>
+                  </>
+                )}
+                {status === 'countdown' && (
+                  <div className="arena-overlay">
+                    <strong>{countdown}</strong>
+                    <span>
+                      {isJad(lesson.id)
+                        ? 'Get ready · watch the attack cue'
+                        : lesson.id === 'blowpipe'
+                          ? 'Get ready · shoot, then step'
+                          : `Get ready · select ${startPrayer} to start`}
+                    </span>
+                  </div>
+                )}
+                {status === 'paused' && (
+                  <div className="arena-overlay">
+                    <Icon name="clock" size={35} />
+                    <h3>Practice paused</h3>
+                    <p>
+                      Paused runs count as practice.
+                      <br />
+                      Your progress in this run is safe.
+                    </p>
+                    <button
+                      className="button primary"
+                      onClick={() =>
+                        setStatus(state.tick === 0 ? 'countdown' : 'running')
+                      }
+                    >
+                      Resume practice
+                      <Icon name="play" size={15} />
                     </button>
+                  </div>
+                )}
+              </div>
+              <div className="tick-track">
+                <div className="tick-label">
+                  <span>
+                    {status === 'running'
+                      ? `Preparing tick ${nextTick}`
+                      : status === 'done'
+                        ? 'Run complete'
+                        : status === 'countdown'
+                          ? 'Count in…'
+                          : status === 'paused'
+                            ? 'Paused'
+                            : 'Choose your prayer before each beat'}
+                  </span>
+                  <span>GAME SPEED · 0.6s</span>
+                </div>
+                <div className="tick-meter">
+                  <i
+                    key={`${state.tick}-${status}`}
+                    className={status === 'running' ? 'ticking' : ''}
+                    style={{ animationDuration: `${ms}ms` }}
+                  />
+                </div>
+                <div className="beat-dots">
+                  {Array.from({ length: cycleLength }, (_, i) => (
+                    <span
+                      key={i}
+                      className={
+                        state.tick > 0 && (state.tick - 1) % cycleLength === i
+                          ? 'current'
+                          : ''
+                      }
+                    >
+                      {i + 1}
+                    </span>
                   ))}
                 </div>
-                <p className="arena-caption">
-                  ◇ Reach the marked tile by tick{' '}
-                  {Math.ceil(nextTick / movementPeriod(lesson.id)) *
-                    movementPeriod(lesson.id)}{' '}
-                  · coordination drill
-                </p>
-              </>
-            ) : (
-              <>
-                <div className="arena-floor" />
-                <div className="player-avatar">
-                  <div className="overhead">
-                    {prayer !== 'off' && (
-                      <GameIcon name={`protect-${prayer}`} />
-                    )}
-                  </div>
-                  <GameIcon name="player" />
-                </div>
-              </>
-            )}
-            {status === 'countdown' && (
-              <div className="arena-overlay">
-                <strong>{countdown}</strong>
-                <span>
-                  {isJad(lesson.id)
-                    ? 'Get ready · watch the attack cue'
-                    : lesson.id === 'blowpipe'
-                      ? 'Get ready · shoot, then step'
-                      : `Get ready · select ${startPrayer} to start`}
-                </span>
               </div>
-            )}
-            {status === 'paused' && (
-              <div className="arena-overlay">
-                <Icon name="clock" size={35} />
-                <h3>Practice paused</h3>
-                <p>
-                  Paused runs count as practice.
-                  <br />
-                  Your progress in this run is safe.
-                </p>
-                <button
-                  className="button primary"
-                  onClick={() =>
-                    setStatus(state.tick === 0 ? 'countdown' : 'running')
-                  }
-                >
-                  Resume practice
-                  <Icon name="play" size={15} />
-                </button>
-              </div>
-            )}
-          </div>
-          <div className="tick-track">
-            <div className="tick-label">
-              <span>
-                {status === 'running'
-                  ? `Preparing tick ${nextTick}`
-                  : status === 'done'
-                    ? 'Run complete'
-                    : status === 'countdown'
-                      ? 'Count in…'
-                      : status === 'paused'
-                        ? 'Paused'
-                        : 'Choose your prayer before each beat'}
-              </span>
-              <span>GAME SPEED · 0.6s</span>
-            </div>
-            <div className="tick-meter">
-              <i
-                key={`${state.tick}-${status}`}
-                className={status === 'running' ? 'ticking' : ''}
-                style={{ animationDuration: `${ms}ms` }}
-              />
-            </div>
-            <div className="beat-dots">
-              {Array.from({ length: cycleLength }, (_, i) => (
-                <span
-                  key={i}
-                  className={
-                    state.tick > 0 && (state.tick - 1) % cycleLength === i
-                      ? 'current'
-                      : ''
-                  }
-                >
-                  {i + 1}
-                </span>
-              ))}
-            </div>
-          </div>
-          {lesson.id === 'blowpipe' && (
-            <div className="attack-controls">
-              <button
-                className="button primary"
-                disabled={status !== 'running'}
-                aria-pressed={attackQueued}
-                onClick={() => {
-                  attackRef.current = true;
-                  setAttackQueued(true);
-                }}
-              >
-                Attack target
-              </button>
-              <span>
-                {attackQueued
-                  ? 'Shot queued for next beat'
-                  : 'Rapid blowpipe · one shot every two ticks'}
-              </span>
-            </div>
-          )}
-          {state.exposure && (
-            <p className="exposure-note" role="status">
-              {state.exposure}
-            </p>
-          )}
-          {mode === 'guided' && status !== 'done' && (
-            <PrayerPreview id={lesson.id} state={state} selected={prayer} />
-          )}
-          <div
-            className="game-panel-tabs"
-            role="group"
-            aria-label="Game panels"
-          >
-            <button
-              aria-pressed={panel === 'prayers'}
-              onClick={() => setPanel('prayers')}
-            >
-              <GameIcon name="prayer" />
-              Prayers <kbd>{tabKeyLabel(tabKeys.prayers)}</kbd>
-            </button>
-            <button
-              aria-pressed={panel === 'inventory'}
-              onClick={() => setPanel('inventory')}
-            >
-              <GameIcon name="inventory" />
-              Inventory <kbd>{tabKeyLabel(tabKeys.inventory)}</kbd>
-            </button>
-            <span>
-              Active:{' '}
-              {prayer === 'off'
-                ? 'None'
-                : prayer === 'magic'
-                  ? 'Magic'
-                  : prayer === 'melee'
-                    ? 'Melee'
-                    : 'Ranged'}
-            </span>
-          </div>
-          {panel === 'prayers' ? (
-            <div className="prayer-controls" aria-label="Prayer panel">
-              {(lesson.id === 'melee-blob'
-                ? (['magic', 'range', 'melee'] as const)
-                : (['magic', 'range'] as const)
-              ).map((p) => (
-                <button
-                  key={p}
-                  aria-pressed={prayer === p}
-                  className={`prayer-button ${prayer === p ? 'selected' : ''}`}
-                  onClick={() =>
-                    selectPrayer(prayerRef.current === p ? 'off' : p)
-                  }
-                >
-                  <GameIcon name={`protect-${p}`} />
+              {lesson.id === 'blowpipe' && (
+                <div className="attack-controls">
+                  <button
+                    className="button primary"
+                    disabled={status !== 'running'}
+                    aria-pressed={attackQueued}
+                    onClick={() => {
+                      attackRef.current = true;
+                      setAttackQueued(true);
+                    }}
+                  >
+                    Attack target
+                  </button>
                   <span>
-                    {p === 'range'
-                      ? 'Ranged'
-                      : p === 'melee'
-                        ? 'Melee'
-                        : 'Magic'}
+                    {attackQueued
+                      ? 'Shot queued for next beat'
+                      : 'Rapid blowpipe · one shot every two ticks'}
                   </span>
-                </button>
-              ))}
-            </div>
-          ) : (
-            <div className="inventory-panel" aria-label="Inventory panel">
-              {hasSupplies(lesson.id) ? (
-                <>
-                  <div className="inventory-items">
-                    {(lesson.id === 'food'
-                      ? (['shark'] as Supply[])
-                      : (['brew', 'restore'] as Supply[])
-                    ).map((item) => (
-                      <button
-                        className={`supply-button ${queuedSupply === item ? 'queued' : ''}`}
-                        key={item}
-                        disabled={
-                          status !== 'running' ||
-                          state.consumed[item] >= stock[item]
-                        }
-                        onClick={() => {
-                          supplyRef.current = item;
-                          setQueuedSupply(item);
-                        }}
-                        aria-label={`${item === 'shark' ? 'Eat shark' : item === 'brew' ? 'Drink Saradomin brew' : 'Drink super restore'}, ${stock[item] - state.consumed[item]} ${item === 'shark' ? 'remaining' : 'doses remaining'}`}
-                      >
-                        <GameIcon name={item} />
-                        <strong>
-                          {item === 'shark'
-                            ? 'Shark'
-                            : item === 'brew'
-                              ? 'Saradomin brew'
-                              : 'Super restore'}
-                        </strong>
-                        <small>
-                          {stock[item] - state.consumed[item]}{' '}
-                          {item === 'shark' ? 'remaining' : 'doses'}
-                        </small>
-                      </button>
-                    ))}
-                  </div>
-                  <p className="inventory-status" role="status">
-                    {queuedSupply
-                      ? `${queuedSupply === 'shark' ? 'Eat shark' : `Drink ${queuedSupply}`} queued for the next tick.`
-                      : state.supplyMessage ||
-                        'Click an item during the gap after an attack. It registers on the next tick.'}
-                  </p>
-                </>
-              ) : (
-                <p className="empty-inventory">
-                  No supplies needed for this lesson.
-                  <br />
-                  Try “Eat between flicks” for inventory practice.
+                </div>
+              )}
+              {state.exposure && (
+                <p className="exposure-note" role="status">
+                  {state.exposure}
                 </p>
               )}
+              {mode === 'guided' && status !== 'done' && (
+                <PrayerPreview id={lesson.id} state={state} selected={prayer} />
+              )}
             </div>
-          )}
+            <GamePanels
+              id={lesson.id}
+              prayer={prayer}
+              panel={panel}
+              tabKeys={tabKeys}
+              running={status === 'running'}
+              consumed={state.consumed}
+              queuedSupply={queuedSupply}
+              supplyMessage={state.supplyMessage}
+              onPanel={setPanel}
+              onPrayer={(p) =>
+                selectPrayer(prayerRef.current === p ? 'off' : p, true)
+              }
+              onSupply={(item) => {
+                supplyRef.current = item;
+                setQueuedSupply(item);
+              }}
+            />
+          </div>
           {hasSupplies(lesson.id) && (
             <div className="supply-objective">
               <Icon name="target" size={15} />
@@ -1458,57 +1437,6 @@ function Trainer({
                 : 'Prayer hints are hidden. Trust your rhythm.'}
               {mode === 'guided' && recent && <small>{recent.message}</small>}
             </p>
-          </div>
-          <div className="training-actions">
-            {status === 'ready' || status === 'done' ? (
-              <>
-                <button
-                  className="button primary"
-                  onClick={
-                    status === 'done' && mode === 'guided'
-                      ? beginChallenge
-                      : begin
-                  }
-                >
-                  <Icon name="play" size={15} />
-                  {status === 'done'
-                    ? mode === 'guided'
-                      ? 'Start challenge'
-                      : 'Try challenge again'
-                    : mode === 'guided'
-                      ? 'Start guided practice'
-                      : 'Start challenge'}
-                </button>
-                {status === 'done' && mode === 'guided' && (
-                  <button className="button secondary" onClick={begin}>
-                    Repeat guided practice
-                  </button>
-                )}
-              </>
-            ) : (
-              <>
-                <button
-                  className="button secondary"
-                  onClick={
-                    status === 'paused'
-                      ? () =>
-                          setStatus(state.tick === 0 ? 'countdown' : 'running')
-                      : pause
-                  }
-                >
-                  {status === 'paused' ? 'Resume' : 'Pause'}
-                </button>
-                <button
-                  className="text-button"
-                  onClick={() => {
-                    setState(initialState());
-                    setStatus('ready');
-                  }}
-                >
-                  End run
-                </button>
-              </>
-            )}
           </div>
           {soundError && (
             <p className="fine-print" role="status">

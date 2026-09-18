@@ -11,12 +11,16 @@ export interface Settings {
   tabKeys: { inventory: string; prayers: string };
   defaultMode: Mode;
   tickSound: boolean;
+  prayerSound: boolean;
+  prayerVolume: number;
   volume: number;
 }
 export const defaultSettings: Settings = {
   tabKeys: { inventory: 'Escape', prayers: 'F1' },
   defaultMode: 'guided',
   tickSound: false,
+  prayerSound: true,
+  prayerVolume: 50,
   volume: 50,
 };
 function parse(raw: string | null): unknown {
@@ -49,6 +53,17 @@ export function parseSettings(
         : { ...defaultSettings.tabKeys },
     defaultMode: value?.defaultMode === 'challenge' ? 'challenge' : 'guided',
     tickSound: value?.tickSound === true,
+    prayerSound:
+      typeof value?.prayerSound === 'boolean'
+        ? value.prayerSound
+        : defaultSettings.prayerSound,
+    prayerVolume:
+      typeof value?.prayerVolume === 'number' &&
+      Number.isFinite(value.prayerVolume) &&
+      value.prayerVolume >= 0 &&
+      value.prayerVolume <= 100
+        ? value.prayerVolume
+        : defaultSettings.prayerVolume,
     volume:
       typeof value?.volume === 'number' &&
       Number.isFinite(value.volume) &&
