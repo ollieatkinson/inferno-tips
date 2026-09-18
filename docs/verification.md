@@ -118,3 +118,11 @@ Screenshots and raw DevTools output are temporary verification artifacts, not sh
 - `npm test`: 88 passing tests. Astro check/build: no diagnostics. Nineteen relevant production browser tests passed, including guided-to-challenge, settings, contextual LoS links, navigation, mobile controls and real-clock timing. Seven relevant tests passed again after the main semantic fixes; the real-clock run completed in 24 seconds including count-in.
 - Remaining design priorities and review limits are recorded in `docs/site-review.md`.
 - Final production Lighthouse snapshots for the drill library and paused trainer both reported accessibility 100 with no failed audits. Confirmed the paused heading and inspected the underlying report results, including the previously unscored name mismatch.
+
+## Food and potion feedback
+
+- Added original eating (2393) and drinking (2401) sounds. Audio is prepared on the item click and plays only when the engine accepts consumption on a tick. Rejected cooldown clicks, resets and empty vials are silent.
+- Potion slots use the corresponding one-, two-, three- or four-dose sprite. The last dose leaves an empty vial. Food clears its clicked slot; inventory totals show remaining food/doses. New food/potion audio preferences live in Settings and migrate older saves with defaults.
+- The new browser regression consumes both brew bottles and all restore doses, checks every sprite transition, exhausted vials, rejected cooldown clicks, pause, reset, food removal/counts, distinct decoded eating/drinking clips, volume and mute persistence.
+- Chrome DevTools real-time run: consumed both doses in the second brew bottle. Observed the one-dose sprite, then the empty vial; two native audio buffer starts used the drinking clip. Other bottles were unchanged, the dose total fell from six to four, and no horizontal overflow or console errors/warnings were found. Reviewed the desktop inventory screenshot.
+- `npm test`: 89 tests passed. Astro check/build: no diagnostics. All seven relevant production browser checks passed across the initial batch and focused rerun, including complete food/potion challenges and existing prayer audio. The new test's duration tolerance allows browser Vorbis decoder padding.

@@ -129,7 +129,9 @@ export function GamePanels({
         return used > 0
           ? entry.doses > used
             ? { ...entry, doses: entry.doses - used }
-            : null
+            : entry.item === 'shark'
+              ? null
+              : { ...entry, doses: 0 }
           : entry;
       }),
     );
@@ -196,7 +198,7 @@ export function GamePanels({
         ) : (
           <div className="native-inventory-grid">
             {slots.map((entry, index) =>
-              entry ? (
+              entry && entry.doses > 0 ? (
                 <button
                   key={index}
                   className={`inventory-slot supply-button ${queuedSupply === entry.item && queuedSlot.current === index ? 'queued' : ''}`}
@@ -209,11 +211,29 @@ export function GamePanels({
                     onSupply(entry.item);
                   }}
                 >
-                  <img src={`/icons/${entry.item}.png`} alt="" />
+                  <img
+                    src={
+                      entry.item === 'shark'
+                        ? '/icons/shark.png'
+                        : `/icons/${entry.item}-${entry.doses}.png`
+                    }
+                    alt=""
+                  />
                   {entry.item !== 'shark' && (
                     <span className="item-doses">{entry.doses}</span>
                   )}
                 </button>
+              ) : entry ? (
+                <span
+                  className="inventory-slot"
+                  data-slot={index}
+                  key={index}
+                  role="img"
+                  aria-label={`Empty vial, slot ${index + 1}`}
+                  title="Empty vial"
+                >
+                  <img src="/icons/vial.png" alt="" />
+                </span>
               ) : (
                 <span
                   className="inventory-slot empty-slot"
@@ -228,6 +248,17 @@ export function GamePanels({
       </div>
       <div className="game-panel-status">
         <span>Active: {prayerLabel(activePrayer)}</span>
+        {panel === 'inventory' && id === 'food' && (
+          <span className="supply-count">
+            {stock.shark - consumed.shark} sharks left
+          </span>
+        )}
+        {panel === 'inventory' && id === 'potions' && (
+          <span className="supply-count">
+            Brew: {stock.brew - consumed.brew} doses · Restore:{' '}
+            {stock.restore - consumed.restore} doses
+          </span>
+        )}
         <p>
           {panel === 'prayers'
             ? 'Click a protection prayer to toggle it.'

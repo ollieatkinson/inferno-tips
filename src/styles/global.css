@@ -3198,6 +3198,10 @@ select:focus-visible {
   font-size: 10px;
   color: #a8af9a;
 }
+.supply-count {
+  display: block;
+  margin-top: 5px;
+}
 .trainer-page .lesson-notes {
   display: grid;
   grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);

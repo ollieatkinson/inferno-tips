@@ -144,6 +144,47 @@ export function SettingsPage({
             </p>
           </div>
         </section>
+        <section aria-labelledby="settings-supplies-title">
+          <div>
+            <h2 id="settings-supplies-title">Food & potion sounds</h2>
+            <p>
+              The game's eating and drinking sounds, when an item is consumed.
+            </p>
+          </div>
+          <div className="settings-fields">
+            <label className="settings-check">
+              <input
+                type="checkbox"
+                checked={settings.supplySound}
+                onChange={(e) =>
+                  onChange({ ...settings, supplySound: e.target.checked })
+                }
+              />
+              Enable food and potion sounds
+            </label>
+            <label>
+              Food and potion volume
+              <div className="settings-volume">
+                <input
+                  type="range"
+                  aria-label="Food and potion volume"
+                  min="0"
+                  max="100"
+                  step="5"
+                  value={settings.supplyVolume}
+                  onChange={(e) =>
+                    onChange({
+                      ...settings,
+                      supplyVolume: Number(e.target.value),
+                    })
+                  }
+                  aria-valuetext={`${settings.supplyVolume}%`}
+                />
+                <output>{settings.supplyVolume}%</output>
+              </div>
+            </label>
+          </div>
+        </section>
         <section aria-labelledby="settings-sound-title">
           <div>
             <h2 id="settings-sound-title">Tick sound</h2>

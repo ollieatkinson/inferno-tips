@@ -9,6 +9,7 @@ import { CombatEffects } from './CombatEffects';
 import { EnemyScene } from './EnemyScene';
 import { GamePanels } from './GamePanels';
 import { usePrayerSounds } from './usePrayerSounds';
+import { useSupplySounds } from './useSupplySounds';
 import {
   readSettings,
   SETTINGS_KEY,
@@ -877,6 +878,12 @@ function Trainer({
     settings.prayerVolume,
     () => setSoundError(true),
   );
+  const prepareSupplySound = useSupplySounds(
+    state.consumed,
+    settings.supplySound && hasSupplies(lesson.id),
+    settings.supplyVolume,
+    () => setSoundError(true),
+  );
   function selectPrayer(p: Prayer, userClick = false) {
     const previous = prayerRef.current;
     if (!busy || !userClick) setOverheadPrayer(p);
@@ -1506,6 +1513,7 @@ function Trainer({
                 selectPrayer(prayerRef.current === p ? 'off' : p, true)
               }
               onSupply={(item) => {
+                prepareSupplySound();
                 supplyRef.current = item;
                 setQueuedSupply(item);
               }}

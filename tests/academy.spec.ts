@@ -1461,3 +1461,192 @@ test('mobile run keeps pause, enemy cues and prayer clicks in the viewport', asy
   await page.clock.runFor(1800);
   await expect(page.locator('.run-stats')).toHaveText(tick!);
 });
+
+test('supplies play accepted sounds, change dose sprites, leave vials and obey mute', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    if (!localStorage.getItem('inferno-tips-settings-v1'))
+      localStorage.setItem(
+        'inferno-tips-settings-v1',
+        JSON.stringify({
+          prayerSound: false,
+          tickSound: false,
+          supplySound: true,
+          supplyVolume: 25,
+        }),
+      );
+    const logs: { duration: number; gain: number }[] = [];
+    const decoded: number[] = [];
+    Object.assign(window, { supplyAudioStarts: logs, supplyDecoded: decoded });
+    const Native = window.AudioContext;
+    window.AudioContext = class extends Native {
+      lastGain = 0;
+      override async decodeAudioData(data: ArrayBuffer) {
+        const buffer = await super.decodeAudioData(data);
+        decoded.push(buffer.duration);
+        return buffer;
+      }
+      override createGain() {
+        const gain = super.createGain();
+        const connect = gain.connect.bind(gain);
+        gain.connect = ((...args: Parameters<typeof connect>) => {
+          this.lastGain = gain.gain.value;
+          return connect(...args);
+        }) as typeof gain.connect;
+        return gain;
+      }
+      override createBufferSource() {
+        const source = super.createBufferSource();
+        const start = source.start.bind(source);
+        source.start = (...args) => {
+          logs.push({
+            duration: source.buffer?.duration || 0,
+            gain: this.lastGain,
+          });
+          start(...args);
+        };
+        return source;
+      }
+    };
+  });
+  const starts = () =>
+    page.evaluate(
+      () =>
+        (
+          window as unknown as {
+            supplyAudioStarts: { duration: number; gain: number }[];
+          }
+        ).supplyAudioStarts,
+    );
+  await page.clock.install();
+  await open(page);
+  await page.clock.pauseAt(new Date());
+  await lesson(page, 'Brew and restore between flicks');
+  await page.waitForLoadState('networkidle');
+  await start(page, false);
+  await page.keyboard.press('Escape');
+  const slots = page.locator('.inventory-slot');
+  await expect(slots.nth(0).locator('img')).toHaveAttribute(
+    'src',
+    '/icons/brew-4.png',
+  );
+  await expect(slots.nth(1).locator('img')).toHaveAttribute(
+    'src',
+    '/icons/brew-2.png',
+  );
+  await slots.nth(1).click();
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (window as unknown as { supplyDecoded: number[] }).supplyDecoded
+            .length,
+      ),
+    )
+    .toBe(2);
+  expect(await starts()).toHaveLength(0);
+  await page.clock.runFor(600);
+  await expect(slots.nth(1).locator('img')).toHaveAttribute(
+    'src',
+    '/icons/brew-1.png',
+  );
+  await expect.poll(async () => (await starts()).length).toBe(1);
+  await slots.nth(1).click();
+  await page.clock.runFor(600);
+  await expect(page.locator('.game-panel-status')).toContainText(
+    'Still on cooldown',
+  );
+  await expect(slots.nth(1).locator('img')).toHaveAttribute(
+    'src',
+    '/icons/brew-1.png',
+  );
+  expect(await starts()).toHaveLength(1);
+  await page.getByRole('button', { name: 'Pause', exact: true }).click();
+  await page.clock.runFor(1800);
+  expect(await starts()).toHaveLength(1);
+  await page.getByRole('button', { name: 'Resume', exact: true }).click();
+  await page.clock.runFor(600);
+  await slots.nth(1).click();
+  await page.clock.runFor(600);
+  await expect(
+    page.getByRole('img', { name: 'Empty vial, slot 2' }),
+  ).toBeVisible();
+  await expect(slots.nth(1).locator('img')).toHaveAttribute(
+    'src',
+    '/icons/vial.png',
+  );
+  await expect.poll(async () => (await starts()).length).toBe(2);
+  for (const [slot, item, dose] of [
+    [0, 'brew', 3],
+    [0, 'brew', 2],
+    [0, 'brew', 1],
+    [0, 'brew', 0],
+    [2, 'restore', 1],
+    [2, 'restore', 0],
+  ] as const) {
+    await page.clock.runFor(1200);
+    await slots.nth(slot).click();
+    await page.clock.runFor(600);
+    await expect(slots.nth(slot).locator('img')).toHaveAttribute(
+      'src',
+      dose ? `/icons/${item}-${dose}.png` : '/icons/vial.png',
+    );
+  }
+  await expect(page.getByRole('button', { name: /^Drink / })).toHaveCount(0);
+  await expect(page.locator('.supply-count')).toHaveText(
+    'Brew: 0 doses · Restore: 0 doses',
+  );
+  await expect.poll(async () => (await starts()).length).toBe(8);
+  expect(
+    (await starts()).every((s) => s.gain === 0.25 && s.duration > 1.4),
+  ).toBe(true);
+  await page.getByRole('button', { name: 'End run', exact: true }).click();
+  await expect(slots.nth(0).locator('img')).toHaveAttribute(
+    'src',
+    '/icons/brew-4.png',
+  );
+  await expect(slots.nth(1).locator('img')).toHaveAttribute(
+    'src',
+    '/icons/brew-2.png',
+  );
+  expect(await starts()).toHaveLength(8);
+  await lesson(page, 'Eat between flicks');
+  await page.waitForLoadState('networkidle');
+  await start(page, false);
+  await page.keyboard.press('Escape');
+  await slots.nth(4).click();
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (window as unknown as { supplyDecoded: number[] }).supplyDecoded
+            .length,
+      ),
+    )
+    .toBe(4);
+  await page.clock.runFor(600);
+  await expect(slots.nth(4)).toHaveClass(/empty-slot/);
+  await expect(page.locator('.supply-count')).toHaveText('8 sharks left');
+  await expect.poll(async () => (await starts()).length).toBe(9);
+  // Browser Vorbis decoders can retain a small amount of encoder padding.
+  expect((await starts())[8].duration).toBeCloseTo(1.2, 1);
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await expect(page.getByLabel('Enable food and potion sounds')).toBeChecked();
+  await expect(
+    page.getByRole('slider', { name: 'Food and potion volume' }),
+  ).toHaveValue('25');
+  await page.getByLabel('Enable food and potion sounds').uncheck();
+  await page.reload();
+  await expect(page.locator('astro-island')).not.toHaveAttribute('ssr');
+  await expect(
+    page.getByLabel('Enable food and potion sounds'),
+  ).not.toBeChecked();
+  await lesson(page, 'Eat between flicks');
+  await start(page, false);
+  await page.keyboard.press('Escape');
+  await slots.nth(0).click();
+  await page.clock.runFor(600);
+  await expect(slots.nth(0)).toHaveClass(/empty-slot/);
+  expect(await starts()).toHaveLength(0);
+});

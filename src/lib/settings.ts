@@ -13,6 +13,8 @@ export interface Settings {
   tickSound: boolean;
   prayerSound: boolean;
   prayerVolume: number;
+  supplySound: boolean;
+  supplyVolume: number;
   volume: number;
 }
 export const defaultSettings: Settings = {
@@ -21,6 +23,8 @@ export const defaultSettings: Settings = {
   tickSound: false,
   prayerSound: true,
   prayerVolume: 50,
+  supplySound: true,
+  supplyVolume: 50,
   volume: 50,
 };
 function parse(raw: string | null): unknown {
@@ -64,6 +68,17 @@ export function parseSettings(
       value.prayerVolume <= 100
         ? value.prayerVolume
         : defaultSettings.prayerVolume,
+    supplySound:
+      typeof value?.supplySound === 'boolean'
+        ? value.supplySound
+        : defaultSettings.supplySound,
+    supplyVolume:
+      typeof value?.supplyVolume === 'number' &&
+      Number.isFinite(value.supplyVolume) &&
+      value.supplyVolume >= 0 &&
+      value.supplyVolume <= 100
+        ? value.supplyVolume
+        : defaultSettings.supplyVolume,
     volume:
       typeof value?.volume === 'number' &&
       Number.isFinite(value.volume) &&

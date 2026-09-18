@@ -74,4 +74,27 @@ describe('saved site settings', () => {
     });
     expect(original.tabKeys).toEqual({ inventory: 'Escape', prayers: 'F1' });
   });
+  it('migrates and validates supply audio independently', () => {
+    expect(parseSettings(JSON.stringify({ prayerSound: false }))).toMatchObject(
+      {
+        prayerSound: false,
+        supplySound: true,
+        supplyVolume: 50,
+      },
+    );
+    expect(
+      parseSettings(JSON.stringify({ supplySound: false, supplyVolume: 0 })),
+    ).toMatchObject({
+      supplySound: false,
+      supplyVolume: 0,
+    });
+    expect(
+      parseSettings(
+        JSON.stringify({ supplySound: 'false', supplyVolume: 101 }),
+      ),
+    ).toMatchObject({
+      supplySound: true,
+      supplyVolume: 50,
+    });
+  });
 });
