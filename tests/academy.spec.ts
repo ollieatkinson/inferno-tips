@@ -1320,7 +1320,7 @@ test('prayer circles keep the previous highlight until the shared tick boundary'
   await ranged.click();
   await expect(magic).toHaveAttribute('data-lit', 'true');
   await expect(ranged).toHaveAttribute('data-lit', 'true');
-  await expect(magic).toHaveAttribute('aria-pressed', 'false');
+  await expect(magic).toHaveAttribute('aria-pressed', 'true');
   await expect(ranged).toHaveAttribute('aria-pressed', 'true');
   const glow = await ranged.evaluate((el) => ({
     image: getComputedStyle(el, '::before').backgroundImage,
@@ -1357,6 +1357,52 @@ test('prayer circles keep the previous highlight until the shared tick boundary'
     .click();
   await expect(page.locator('.prayer-button[data-lit="true"]')).toHaveCount(0);
 });
+
+for (const challenge of [false, true]) {
+  test(`prayer icons toggle independently before server reconciliation (${challenge ? 'challenge' : 'guided'})`, async ({
+    page,
+  }) => {
+    await page.clock.install();
+    await page.clock.pauseAt(new Date());
+    await open(page);
+    await lesson(page, 'One-tick alternating');
+    await start(page, challenge);
+    const magic = page.getByRole('button', { name: 'Magic', exact: true });
+    const ranged = page.getByRole('button', { name: 'Ranged', exact: true });
+    const melee = page.getByRole('button', { name: 'Melee', exact: true });
+    const lit = page.locator('.prayer-button[data-lit="true"]');
+    const overhead = page.locator('[data-player] .overhead');
+    await magic.click();
+    await page.clock.runFor(600);
+    await page.clock.runFor(100);
+    await ranged.click();
+    await melee.click();
+    await expect(lit).toHaveCount(3);
+    await expect(
+      page.locator('.prayer-button[aria-pressed="true"]'),
+    ).toHaveCount(3);
+    await expect(overhead).toHaveAttribute('data-prayer', 'magic');
+    // Each still-lit icon toggles its own client bit, not the selected prayer.
+    // These orders also switch the server selection back through each prayer.
+    await magic.click();
+    await expect(magic).toHaveAttribute('data-lit', 'false');
+    await expect(ranged).toHaveAttribute('data-lit', 'true');
+    await expect(melee).toHaveAttribute('data-lit', 'true');
+    await ranged.click();
+    await melee.click();
+    await expect(lit).toHaveCount(0);
+    await page.clock.runFor(499);
+    await expect(lit).toHaveCount(0);
+    await expect(overhead).toHaveAttribute('data-prayer', 'magic');
+    await page.clock.runFor(1);
+    await expect(lit).toHaveCount(1);
+    await expect(melee).toHaveAttribute('data-lit', 'true');
+    await expect(melee).toHaveAttribute('aria-pressed', 'true');
+    await expect(overhead).toHaveAttribute('data-prayer', 'melee');
+    // Ranged looked active during tick 2 but was not the final protection.
+    await expect(page.locator('.run-stats')).toContainText('50%');
+  });
+}
 
 test('overheads commit on ticks and incoming attacks retain their resolved hitsplats', async ({
   page,

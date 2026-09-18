@@ -146,3 +146,10 @@ Screenshots and raw DevTools output are temporary verification artifacts, not sh
 - All 94 unit tests passed. Five relevant production browser checks passed, covering complete blowpipe, movement and gauntlet challenges, guided-only enemy highlights, persistent movement, last-click orders, cooldown recovery, pause/reset, projectiles and mobile layout.
 - Chrome DevTools: reviewed desktop and 390 × 844 mobile screenshots. Played 12 ticks using the real browser clock: six shots, two lengths, no lost attack ticks and 100% accuracy. No horizontal overflow or console warnings/errors were observed. Mobile lane targets remained at least 40 px wide.
 - Final Astro check/build passed with no errors, warnings or hints.
+
+## Independent client prayer circles
+
+- Researched the archived client prayer click/render scripts, separating local per-icon highlight bits from tick-committed protection. Corrected rapid repeat clicks on a still-lit previous prayer; accessible pressed states now follow the displayed circles. Added a short explanation to the alternating lesson and documented the source age and network-timing limits in `docs/research.md`.
+- Eight production browser checks passed: complete one-tick alternating and conservation drills, normal toggles/settings, prayer audio, shared-boundary circles, independent repeat clicks in guided and challenge modes, and overhead/hitsplat timing. New cases verify that three local circles can briefly be lit, each can be toggled independently, reconciliation restores one circle, and intermediate highlights do not count as simultaneous protection.
+- Chrome DevTools with the real clock showed Magic and Ranged lit together while the committed overhead remained Magic; after resuming for a tick, only Ranged remained lit and the overhead changed to Ranged. Reviewed the desktop screenshot. No console warnings or errors.
+- All 94 unit tests passed. Astro check/build passed without errors, warnings or hints.

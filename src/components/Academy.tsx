@@ -894,21 +894,22 @@ function Trainer({
     settings.supplyVolume,
     () => setSoundError(true),
   );
-  function selectPrayer(p: Prayer, userClick = false) {
-    const previous = prayerRef.current;
-    if (!busy || !userClick) setOverheadPrayer(p);
-    // Client-side activation lights immediately. Conflicting prayer circles
-    // reconcile on the shared game tick; an explicit off click clears its own.
+  function selectPrayer(p: Prayer, clicked?: Exclude<Prayer, 'off'>) {
+    if (!busy || !clicked) setOverheadPrayer(p);
+    // The client toggles only the clicked icon's bit, independently of the
+    // server's mutually exclusive protection. Reconcile on the shared tick.
+    // In particular, clicking a still-lit previous prayer clears its circle
+    // even though that order will switch protection back at the next tick.
     setLitPrayers((lit) =>
-      p === 'off'
-        ? userClick
-          ? lit.filter((active) => active !== previous)
-          : []
-        : busy
-          ? [...new Set([...lit, p])]
+      busy && clicked
+        ? lit.includes(clicked)
+          ? lit.filter((active) => active !== clicked)
+          : [...lit, clicked]
+        : p === 'off'
+          ? []
           : [p],
     );
-    if (userClick && p !== prayerRef.current)
+    if (clicked && p !== prayerRef.current)
       playPrayerSound(prayerRef.current, p);
     if (status === 'running' && p !== prayerRef.current)
       transitionsRef.current.push(p);
@@ -1556,7 +1557,6 @@ function Trainer({
             {lesson.id !== 'blowpipe' && (
               <GamePanels
                 id={lesson.id}
-                prayer={prayer}
                 activePrayer={displayedOverhead}
                 litPrayers={
                   busy ? litPrayers : prayer === 'off' ? [] : [prayer]
@@ -1569,7 +1569,7 @@ function Trainer({
                 supplyMessage={state.supplyMessage}
                 onPanel={setPanel}
                 onPrayer={(p) =>
-                  selectPrayer(prayerRef.current === p ? 'off' : p, true)
+                  selectPrayer(prayerRef.current === p ? 'off' : p, p)
                 }
                 onSupply={(item) => {
                   prepareSupplySound();

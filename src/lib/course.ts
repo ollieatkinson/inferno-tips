@@ -79,6 +79,7 @@ export const lessons: Lesson[] = [
     objective: 'Alternate Magic and Ranged on every tick, starting with Magic.',
     steps: [
       'Prepare Magic for tick 1, Ranged for tick 2, then repeat.',
+      'Both prayer circles can briefly stay lit after a switch. When the old circle clears on the tick, switch back to it. Two circles do not mean two protections.',
       'The three-tick gap between a blob’s read and attack means the opposite prayer is active at its attack check. The projectile lands later.',
       'Keep the rhythm steady. This drill scores every tick of the pattern, even when no attack occurs.',
     ],
