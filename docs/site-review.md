@@ -13,12 +13,12 @@ Corrected an alternation instruction that called the blob's prayer check “impa
 - Added URLs for each site section and drill. Refresh, bookmarking and browser Back/Forward now retain the destination. Refreshing a drill starts a fresh run; it does not restore an active encounter.
 - Replaced “Back to practice grounds” with a return label matching the launch location, including the originating lesson.
 - Updated page titles and heading focus when navigating.
-- Kept Pause and End run visible while scrolling within an active trainer. Narrow screens show the current mode as a compact label while the mode controls are locked during the run.
+- Kept Pause and End run visible while scrolling within an active trainer. The mode controls stay in place while locked during the run, keeping the layout stable when starting.
 - Corrected the drill-card heading level and accessible grouping of encounter controls/effects. The home button uses its visible text as its accessible name.
 
 ## Next improvements, in priority order
 
-1. **Mobile guided practice:** the preview, encounter and full game panel cannot all fit together at 390 × 844. Starting a run scrolls to the encounter, leaving the preview above it. Prayer targets, enemy cues and Pause are visible together, but consulting the full upcoming pattern still requires scrolling. A deliberately compact mobile practice layout deserves its own design pass.
+1. **Mobile guided practice:** the preview, encounter and full game panel cannot all fit together at 390 × 844. The preview is above the encounter; starting a run now preserves the current scroll position. Prayer targets, enemy cues and Pause are visible together, but consulting the full upcoming pattern still requires scrolling. A deliberately compact mobile practice layout deserves its own design pass.
 2. **Lesson-to-drill access:** related drills appear at the end of each long chapter. Put a specific practice action alongside the relevant lesson so a learner does not have to finish or scroll past several knowledge checks first.
 3. **Reduce duplicate guidance:** the mager trainer has an attack cycle, enemy countdown, tick bar, prayer table and coach text. Preserve the useful cues, but decide which belong before a run and which need to remain during it.
 4. **Shorten the mobile course introduction:** site navigation and the chapter list occupy most of the first screen. A compact chapter selector could bring the first lesson into view sooner.

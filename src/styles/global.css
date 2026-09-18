@@ -685,6 +685,7 @@ footer a {
   background: var(--panel);
   border-radius: 8px;
   overflow: clip;
+  overflow-anchor: none;
 }
 .training-toolbar {
   display: flex;
@@ -697,9 +698,6 @@ footer a {
 .training-toolbar > span {
   font-size: 10px;
   color: var(--muted);
-}
-.running-mode-label {
-  display: none;
 }
 .training-panel[data-busy='true'] .training-toolbar {
   position: sticky;
@@ -3275,15 +3273,8 @@ select:focus-visible {
     width: 100%;
     margin-left: 0;
   }
-  .training-panel[data-busy='true'] .training-toolbar .mode-switch {
-    display: none;
-  }
-  .training-panel[data-busy='true'] .running-mode-label {
-    display: inline;
-  }
-  .training-panel[data-busy='true'] .training-toolbar .training-actions {
-    order: 0;
-    width: auto;
+  .training-panel[data-busy='true'] .training-arena {
+    scroll-margin-top: 124px;
   }
 }
 

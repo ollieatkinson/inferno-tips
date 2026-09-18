@@ -848,6 +848,7 @@ function Trainer({
   const savedRef = useRef(false);
   const resultRef = useRef<HTMLHeadingElement>(null);
   const trainingRef = useRef<HTMLElement>(null);
+  const startFocus = useRef<'stay' | 'return' | null>(null);
   const ms = 600;
   const cycleLength = isJad(lesson.id)
     ? jadPeriod(lesson.id)
@@ -919,7 +920,8 @@ function Trainer({
       setSoundError(true);
     }
   }
-  function begin() {
+  function begin(fromResults = false) {
+    startFocus.current = fromResults ? 'return' : 'stay';
     void prepareAudio();
     setState(initialState(Math.floor(Math.random() * 100000)));
     transitionsRef.current = [];
@@ -934,18 +936,24 @@ function Trainer({
     setInterrupted(false);
     savedRef.current = false;
     setStatus('countdown');
-    requestAnimationFrame(() => {
-      trainingRef.current
-        ?.querySelector('.training-arena')
-        ?.scrollIntoView({ block: 'start' });
-    });
   }
-  function beginChallenge() {
+  function beginChallenge(fromResults = false) {
     setMode('challenge');
-    begin();
-    trainingRef.current?.scrollIntoView({ block: 'start' });
-    trainingRef.current?.focus({ preventScroll: true });
+    begin(fromResults);
   }
+  useLayoutEffect(() => {
+    if (status !== 'countdown' || !startFocus.current) return;
+    const returnToTrainer = startFocus.current === 'return';
+    startFocus.current = null;
+    trainingRef.current?.focus({ preventScroll: true });
+    // Results live below the trainer. Return once, after they are removed;
+    // starting from the trainer itself must not move the viewport.
+    if (returnToTrainer)
+      trainingRef.current?.scrollIntoView({
+        block: 'start',
+        behavior: 'instant',
+      });
+  }, [status]);
   function pause() {
     setInterrupted(true);
     setStatus('paused');
@@ -1132,11 +1140,6 @@ function Trainer({
           tabIndex={-1}
         >
           <div className="training-toolbar">
-            {busy && (
-              <span className="running-mode-label">
-                {mode === 'guided' ? 'Guided practice' : 'Challenge'}
-              </span>
-            )}
             <div
               className="mode-switch"
               role="group"
@@ -1174,8 +1177,8 @@ function Trainer({
                     className="button primary"
                     onClick={
                       status === 'done' && mode === 'guided'
-                        ? beginChallenge
-                        : begin
+                        ? () => beginChallenge()
+                        : () => begin()
                     }
                   >
                     <Icon name="play" size={15} />
@@ -1188,7 +1191,10 @@ function Trainer({
                         : 'Start challenge'}
                   </button>
                   {status === 'done' && mode === 'guided' && (
-                    <button className="button secondary" onClick={begin}>
+                    <button
+                      className="button secondary"
+                      onClick={() => begin()}
+                    >
                       Repeat guided practice
                     </button>
                   )}
@@ -1222,13 +1228,11 @@ function Trainer({
             </div>
             <span>{ms / 1000}s / tick</span>
           </div>
-          {status === 'ready' && (
-            <p className="mode-description">
-              {mode === 'guided'
-                ? 'Guided practice shows prayer hints. Try the challenge after a run.'
-                : 'Challenge hides prayer hints. The timing stays at 0.6 seconds per tick.'}
-            </p>
-          )}
+          <p className="mode-description">
+            {mode === 'guided'
+              ? 'Guided practice shows prayer hints. Try the challenge after a run.'
+              : 'Challenge hides prayer hints. The timing stays at 0.6 seconds per tick.'}
+          </p>
           <div className="run-stats">
             <div>
               <small>TICK</small>
@@ -1681,17 +1685,16 @@ function Trainer({
           )}
           <div className="result-actions">
             {mode === 'guided' && (
-              <button className="button primary" onClick={beginChallenge}>
+              <button
+                className="button primary"
+                onClick={() => beginChallenge(true)}
+              >
                 Start challenge <Icon name="arrow" size={16} />
               </button>
             )}
             <button
               className={`button ${mode === 'guided' ? 'secondary' : 'primary'}`}
-              onClick={() => {
-                begin();
-                trainingRef.current?.scrollIntoView({ block: 'start' });
-                trainingRef.current?.focus({ preventScroll: true });
-              }}
+              onClick={() => begin(true)}
             >
               {mode === 'guided'
                 ? 'Repeat guided practice'

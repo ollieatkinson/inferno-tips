@@ -771,7 +771,18 @@ test('guided results start a fresh challenge with one click', async ({
       includeHidden: true,
     }),
   ).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.locator('.running-mode-label')).toHaveText('Challenge');
+  await expect(
+    page.getByRole('button', { name: 'Challenge', exact: true }),
+  ).toBeVisible();
+  expect((await page.locator('.training-panel').boundingBox())!.y).toBeCloseTo(
+    0,
+    0,
+  );
+  await page.clock.runFor(30);
+  expect((await page.locator('.training-panel').boundingBox())!.y).toBeCloseTo(
+    0,
+    0,
+  );
   await expect(
     page.getByRole('region', { name: 'Interactive practice' }),
   ).toBeFocused();
@@ -1442,6 +1453,10 @@ test('mobile run keeps pause, enemy cues and prayer clicks in the viewport', asy
   await lesson(page, 'Flick the mager');
   await page.clock.pauseAt(new Date());
   await start(page, false);
+  // A deliberate user scroll keeps controls reachable; Start no longer scrolls.
+  await page
+    .locator('.training-arena')
+    .evaluate((arena) => arena.scrollIntoView({ block: 'start' }));
   await page.clock.runFor(30);
   const pause = page.getByRole('button', { name: 'Pause', exact: true });
   const magic = page.getByRole('button', { name: 'Magic', exact: true });
@@ -1650,3 +1665,51 @@ test('supplies play accepted sounds, change dose sprites, leave vials and obey m
   await expect(slots.nth(0)).toHaveClass(/empty-slot/);
   expect(await starts()).toHaveLength(0);
 });
+
+for (const width of [1440, 390]) {
+  for (const mode of ['guided', 'challenge'] as const) {
+    test(`starting ${mode} at ${width}px preserves the viewport and control positions`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width, height: 1000 });
+      await page.clock.install();
+      await open(page);
+      await lesson(page, 'Flick the mager');
+      await page.clock.pauseAt(new Date());
+      if (mode === 'challenge')
+        await page
+          .getByRole('button', { name: 'Challenge', exact: true })
+          .click();
+      await page
+        .locator('.training-toolbar')
+        .evaluate((toolbar) => toolbar.scrollIntoView({ block: 'start' }));
+      const positions = () =>
+        page.evaluate(() => ({
+          scroll: scrollY,
+          arena: document
+            .querySelector('.training-arena')!
+            .getBoundingClientRect().top,
+          controls: document
+            .querySelector('.game-side-panel')!
+            .getBoundingClientRect().top,
+        }));
+      const before = await positions();
+      await page
+        .getByRole('button', {
+          name: mode === 'guided' ? 'Start guided practice' : 'Start challenge',
+          exact: true,
+        })
+        .click();
+      await page.clock.runFor(30);
+      expect(await positions()).toEqual(before);
+      await expect(
+        page.getByRole('region', { name: 'Interactive practice' }),
+      ).toBeFocused();
+      for (let tick = 0; tick < 3; tick++) await page.clock.runFor(600);
+      expect(await positions()).toEqual(before);
+      await expect(
+        page.getByText('Preparing tick 1', { exact: true }),
+      ).toBeVisible();
+    });
+  }
+}

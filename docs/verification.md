@@ -126,3 +126,10 @@ Screenshots and raw DevTools output are temporary verification artifacts, not sh
 - The new browser regression consumes both brew bottles and all restore doses, checks every sprite transition, exhausted vials, rejected cooldown clicks, pause, reset, food removal/counts, distinct decoded eating/drinking clips, volume and mute persistence.
 - Chrome DevTools real-time run: consumed both doses in the second brew bottle. Observed the one-dose sprite, then the empty vial; two native audio buffer starts used the drinking clip. Other bottles were unchanged, the dose total fell from six to four, and no horizontal overflow or console errors/warnings were found. Reviewed the desktop inventory screenshot.
 - `npm test`: 89 tests passed. Astro check/build: no diagnostics. All seven relevant production browser checks passed across the initial batch and focused rerun, including complete food/potion challenges and existing prayer audio. The new test's duration tolerance allows browser Vorbis decoder padding.
+
+## Stable challenge start
+
+- Removed the scheduled encounter scroll from ordinary starts and the competing scroll calls in the results actions. Starting in the trainer focuses it with `preventScroll`; starting from results returns to the trainer once after the results are removed.
+- Kept the mode description and mobile toolbar layout in place during count-in/running. Disabled scroll anchoring within the trainer so the sticky toolbar does not introduce a one-pixel viewport adjustment.
+- Four regressions assert identical scroll position, encounter position and control position before/after guided and challenge starts at 1440 px and 390 px, through the count-in. The results-to-challenge and manually scrolled mobile-control tests also pass: six production browser tests total. Astro check/build passed without diagnostics.
+- Chrome DevTools real-clock challenge: desktop scroll stayed at 278 px and both encounter/control top positions remained 309.421875 px through count-in; trainer retained focus. Mobile likewise retained its scroll and control positions. No console errors or warnings.
