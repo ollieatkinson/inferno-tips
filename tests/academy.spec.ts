@@ -1320,3 +1320,66 @@ test('prayer circles keep the previous highlight until the shared tick boundary'
     .click();
   await expect(page.locator('.prayer-button[data-lit="true"]')).toHaveCount(0);
 });
+
+test('overheads commit on ticks and incoming attacks retain their resolved hitsplats', async ({
+  page,
+}) => {
+  await page.clock.install();
+  await page.clock.pauseAt(new Date());
+  await open(page);
+  await lesson(page, 'Flick the mager');
+  await start(page, false);
+  const overhead = page.locator('[data-player] .overhead');
+  const magic = page.getByRole('button', { name: 'Magic', exact: true });
+  const ranged = page.getByRole('button', { name: 'Ranged', exact: true });
+  await magic.click();
+  await expect(overhead).toHaveAttribute('data-prayer', 'off');
+  await page.clock.runFor(600);
+  await expect(overhead).toHaveAttribute('data-prayer', 'magic');
+  await ranged.click();
+  await expect(overhead).toHaveAttribute('data-prayer', 'magic');
+  await expect(page.locator('.game-panel-status')).toContainText(
+    'Active: Magic',
+  );
+  await page.clock.runFor(599);
+  await expect(overhead).toHaveAttribute('data-prayer', 'magic');
+  await page.clock.runFor(1);
+  await expect(overhead).toHaveAttribute('data-prayer', 'range');
+  await page.clock.runFor(700);
+  const hit = page.locator('[data-hit="1-mager"]');
+  await expect(hit).toHaveAttribute('data-phase', 'projectile');
+  const shot = hit.locator('.enemy-projectile');
+  await expect(shot).toBeVisible();
+  await page.getByRole('button', { name: 'Pause', exact: true }).click();
+  const position = await shot.getAttribute('style');
+  await page.clock.runFor(1000);
+  await expect(shot).toHaveAttribute('style', position!);
+  await page.getByRole('button', { name: 'Resume', exact: true }).click();
+  await page.clock.runFor(400);
+  await expect(hit.locator('.player-hitsplat')).toBeVisible();
+  await expect(hit.locator('.player-hitsplat')).toHaveClass(/blocked/);
+  await expect(hit.locator('.player-hitsplat')).toHaveText('0');
+  // The missed tick-5 attack stays red even if corrected during its flight.
+  await page.clock.runFor(1100);
+  await magic.click();
+  await page.clock.runFor(1800);
+  const missed = page.locator('[data-hit="5-mager"] .player-hitsplat');
+  await expect(missed).toBeVisible();
+  await expect(missed).toHaveClass(/damage/);
+  expect(Number(await missed.textContent())).toBeGreaterThan(0);
+  await page.getByRole('button', { name: 'End run', exact: true }).click();
+  await expect(page.locator('[data-hit]')).toHaveCount(0);
+  await lesson(page, 'Blob, mager and movement');
+  await start(page, false);
+  await magic.click();
+  await page.clock.runFor(600);
+  await expect(page.locator('.movement-player .overhead')).toHaveAttribute(
+    'data-prayer',
+    'magic',
+  );
+  await page.getByRole('button', { name: /Tile 4, 2, target/ }).click();
+  await expect(page.locator('.tile.player .overhead')).toHaveAttribute(
+    'data-prayer',
+    'magic',
+  );
+});

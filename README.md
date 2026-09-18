@@ -78,7 +78,8 @@ The runtime uses local WebP sheets (about 460 KB total), with no 3D renderer dep
 ```sh
 npm ci --prefix scripts/monster-sprites
 PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/path/to/chromium node scripts/monster-sprites/render.mjs
-npx prettier --write src/lib/monsterSprites.json docs/monster-models.json
+PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/path/to/chromium node scripts/monster-sprites/render-projectiles.mjs
+npx prettier --write src/lib/monsterSprites.json docs/monster-models.json docs/projectile-models.json
 ```
 
-The script downloads six public model files to a temporary directory, captures the source attack clips at 20 fps with a fixed camera, and records their URLs and hashes. Normal development, builds and tests do not need these tools or source models.
+The script downloads six public model files to a temporary directory, captures the source attack clips at 20 fps with a fixed camera, and records their URLs and hashes. The projectile exporter captures four additional game models as compact static sprites. Normal development, builds and tests do not need these tools or source models.

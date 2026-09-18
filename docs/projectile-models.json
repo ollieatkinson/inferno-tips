@@ -1,0 +1,18 @@
+{
+  "magic": {
+    "url": "https://oldschool-cdn.com/models/mage_projectile.glb",
+    "sha256": "b9b124f7135af4c629c7688efbe4741df75b83db6d411c2b80a9800046e64f61"
+  },
+  "range": {
+    "url": "https://oldschool-cdn.com/models/range_projectile.glb",
+    "sha256": "854c4d26c5e0dc743a5eaf788f56eb56013dd7bcd919d4ff4ed10c578b521c73"
+  },
+  "jad-magic": {
+    "url": "https://oldschool-cdn.com/models/jad_mage_front.glb",
+    "sha256": "a6662ffa9cccbf92f61ec6f6757bacffee511582dfa892730e080d824dfeb05c"
+  },
+  "jad-range": {
+    "url": "https://oldschool-cdn.com/models/jad_range.glb",
+    "sha256": "866144d831363b40a5bcf848546752f42537ba2a92407d8751b4a6c0071caabd"
+  }
+}

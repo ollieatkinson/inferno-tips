@@ -14,6 +14,7 @@
     <script type="module">
       import * as THREE from 'three';
       import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+      import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
       const renderer = new THREE.WebGLRenderer({
         alpha: true,
         antialias: true,
@@ -24,9 +25,9 @@
       document.body.appendChild(renderer.domElement);
       let scene, model, mixer, clips, camera, action;
       window.loadModel = async (name, indices = [0, 2]) => {
-        const gltf = await new GLTFLoader().loadAsync(
-          '/models/' + name + '.glb',
-        );
+        const gltf = await new GLTFLoader()
+          .setMeshoptDecoder(MeshoptDecoder)
+          .loadAsync('/models/' + name + '.glb');
         scene = new THREE.Scene();
         model = gltf.scene;
         scene.add(model);
@@ -61,6 +62,7 @@
           }
           a.stop();
         }
+        if (box.isEmpty()) box.setFromObject(model, true);
         const center = box.getCenter(new THREE.Vector3());
         const size = box.getSize(new THREE.Vector3());
         const radius = Math.max(size.x, size.y, size.z) * 0.6;
@@ -90,11 +92,13 @@
       };
       window.frame = (index, time) => {
         mixer.stopAllAction();
-        action = mixer.clipAction(clips[index]);
-        action.setLoop(THREE.LoopOnce);
-        action.clampWhenFinished = true;
-        action.play();
-        mixer.setTime(time);
+        if (index >= 0) {
+          action = mixer.clipAction(clips[index]);
+          action.setLoop(THREE.LoopOnce);
+          action.clampWhenFinished = true;
+          action.play();
+          mixer.setTime(time);
+        }
         renderer.render(scene, camera);
         return renderer.domElement.toDataURL('image/png');
       };

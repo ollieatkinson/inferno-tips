@@ -71,6 +71,7 @@ const itemAction = (item: Supply) =>
 export function GamePanels({
   id,
   prayer,
+  activePrayer,
   litPrayers,
   panel,
   tabKeys,
@@ -84,6 +85,7 @@ export function GamePanels({
 }: {
   id: LessonId;
   prayer: Prayer;
+  activePrayer: Prayer;
   litPrayers: Prayer[];
   panel: 'prayers' | 'inventory';
   tabKeys: Settings['tabKeys'];
@@ -227,7 +229,7 @@ export function GamePanels({
         )}
       </div>
       <div className="game-panel-status">
-        <span>Active: {prayerLabel(prayer)}</span>
+        <span>Active: {prayerLabel(activePrayer)}</span>
         <p>
           {panel === 'prayers'
             ? 'Click a protection prayer to toggle it.'

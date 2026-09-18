@@ -5,6 +5,7 @@ import { Overview } from './Overview';
 import { losSetups, drillLosSetups } from '../lib/los';
 import { SettingsPage } from './SettingsPage';
 import { PrayerPreview } from './PrayerPreview';
+import { CombatEffects } from './CombatEffects';
 import { EnemyScene } from './EnemyScene';
 import { GamePanels } from './GamePanels';
 import { usePrayerSounds } from './usePrayerSounds';
@@ -782,6 +783,7 @@ function Trainer({
   >('ready');
   const [state, setState] = useState<DrillState>(initialState);
   const [prayer, setPrayer] = useState<Prayer>('off');
+  const [overheadPrayer, setOverheadPrayer] = useState<Prayer>('off');
   const [litPrayers, setLitPrayers] = useState<Prayer[]>([]);
   const [tile, setTile] = useState(12);
   const [countdown, setCountdown] = useState(3);
@@ -825,6 +827,7 @@ function Trainer({
   const magerLesson = lesson.id === 'rhythm' || hasSupplies(lesson.id);
   const busy =
     status === 'running' || status === 'countdown' || status === 'paused';
+  const displayedOverhead = busy ? overheadPrayer : prayer;
   completeRef.current = onComplete;
   soundRef.current = sound;
   const playPrayerSound = usePrayerSounds(
@@ -834,6 +837,7 @@ function Trainer({
   );
   function selectPrayer(p: Prayer, userClick = false) {
     const previous = prayerRef.current;
+    if (!busy || !userClick) setOverheadPrayer(p);
     // Client-side activation lights immediately. Conflicting prayer circles
     // reconcile on the shared game tick; an explicit off click clears its own.
     setLitPrayers((lit) =>
@@ -927,6 +931,7 @@ function Trainer({
     const timer = window.setTimeout(() => {
       beep();
       setLitPrayers(prayerRef.current === 'off' ? [] : [prayerRef.current]);
+      setOverheadPrayer(prayerRef.current);
       if (countdown === 1) {
         transitionsRef.current = [];
         setStatus('running');
@@ -954,6 +959,7 @@ function Trainer({
       setAttackQueued(false);
       beep();
       setLitPrayers(prayerRef.current === 'off' ? [] : [prayerRef.current]);
+      setOverheadPrayer(prayerRef.current);
       setState((prev) =>
         advance(
           prev,
@@ -1270,7 +1276,19 @@ function Trainer({
                           onClick={() => move(i)}
                         >
                           {i === tile ? (
-                            <GameIcon name="player" />
+                            <span className="movement-player" data-player>
+                              <span
+                                className="overhead"
+                                data-prayer={displayedOverhead}
+                              >
+                                {displayedOverhead !== 'off' && (
+                                  <GameIcon
+                                    name={`protect-${displayedOverhead}`}
+                                  />
+                                )}
+                              </span>
+                              <GameIcon name="player" />
+                            </span>
                           ) : i === target ? (
                             <span>◇</span>
                           ) : null}
@@ -1287,16 +1305,23 @@ function Trainer({
                 ) : (
                   <>
                     <div className="arena-floor" />
-                    <div className="player-avatar">
-                      <div className="overhead">
-                        {prayer !== 'off' && (
-                          <GameIcon name={`protect-${prayer}`} />
+                    <div className="player-avatar" data-player>
+                      <div className="overhead" data-prayer={displayedOverhead}>
+                        {displayedOverhead !== 'off' && (
+                          <GameIcon name={`protect-${displayedOverhead}`} />
                         )}
                       </div>
                       <GameIcon name="player" />
                     </div>
                   </>
                 )}
+                <CombatEffects
+                  id={lesson.id}
+                  tick={state.tick}
+                  hits={state.attackResults}
+                  running={status === 'running'}
+                  active={status === 'running' || status === 'paused'}
+                />
                 {status === 'countdown' && (
                   <div className="arena-overlay">
                     <strong>{countdown}</strong>
@@ -1330,6 +1355,18 @@ function Trainer({
                   </div>
                 )}
               </div>
+              {lesson.id !== 'blowpipe' && (
+                <p className="combat-key">
+                  <span>
+                    <img src="/effects/hitsplat-miss.png" alt="" /> Blue 0:
+                    protected
+                  </span>
+                  <span>
+                    <img src="/effects/hitsplat-damage.png" alt="" /> Red:
+                    simulated damage
+                  </span>
+                </p>
+              )}
               <div className="tick-track">
                 <div className="tick-label">
                   <span>
@@ -1399,6 +1436,7 @@ function Trainer({
             <GamePanels
               id={lesson.id}
               prayer={prayer}
+              activePrayer={displayedOverhead}
               litPrayers={busy ? litPrayers : prayer === 'off' ? [] : [prayer]}
               panel={panel}
               tabKeys={tabKeys}

@@ -97,3 +97,13 @@ Screenshots and raw DevTools output are temporary verification artifacts, not sh
 - The browser regression switches 100 ms into a tick, checks both circles at 599 ms, and confirms only the selected circle at 600 ms. It also covers tab switching, off/on clicks, pause/resume and restarting.
 - Production build/check and five relevant browser tests passed, including full alternation and one-tick flick challenges, player controls, prayer audio and the new highlight test.
 - Chrome DevTools: inspected the original sprite on mobile and observed Magic and Ranged lit together after switching, then only Ranged after the next tick. No console warnings or errors.
+
+## Overheads, projectiles and player hitsplats
+
+- Overhead protection changes on the shared tick, including countdown ticks and the movement-grid player. Clicking another prayer within a tick keeps the current overhead until that tick completes.
+- Physical enemy attacks record their protected/unprotected outcome once. Projectiles and hitsplats use that recorded result, so switching prayer during flight cannot change the landing feedback. Blob reads and quiet pattern checks do not create hits; mitigation drills can correctly show an unprotected secondary attacker.
+- Added original red/blue hitsplat sprites and local renders of mager, ranger and Jad projectiles. Ranger volleys use two shots; Jad's ranged rocks fall toward the player. Blob and bat use simplified coloured orbs. Melee creates a hitsplat without a projectile.
+- Blue zero means protected; red 1–18 numbers are labelled simulated damage. These are illustrative feedback numbers without HP, armour or combat-roll simulation. Compact-screen flight times are presentation delays and do not alter prayer-check timing.
+- Effects follow the player, separate enemy hitsplats into distinct positions, freeze on pause and clear on reset. Reduced-motion mode omits projectile travel and shows impacts on tick updates.
+- Chrome DevTools: observed live projectiles and red impacts on desktop; inspected paused projectile and blue-zero frames at 390 × 844 with the pause overlay temporarily hidden. The overhead and hit align with the player, with no horizontal overflow or console warnings/errors.
+- Production build/check passed without diagnostics; 88 unit tests passed. All 48 browser tests passed across batches, including every full challenge, real-clock timing, projectile pause/resume, immutable hit outcomes, overhead tick boundaries and movement. The active-prayer label follows the committed overhead rather than a pending click.

@@ -1,3 +1,4 @@
+import { resolveAttacks, type AttackResult } from './combatEffects';
 import { TOTAL_TICKS, type LessonId, type Prayer } from './course';
 import {
   monsterEvents,
@@ -22,6 +23,7 @@ export interface DrillState {
   seed: number;
   checks: Check[];
   monsterEvents: MonsterEvent[];
+  attackResults: AttackResult[];
   streak: number;
   bestStreak: number;
   consumed: Record<Supply, number>;
@@ -38,6 +40,7 @@ export const initialState = (seed = 0): DrillState => ({
   seed,
   checks: [],
   monsterEvents: [],
+  attackResults: [],
   streak: 0,
   bestStreak: 0,
   consumed: { shark: 0, brew: 0, restore: 0 },
@@ -293,11 +296,13 @@ export function advance(
     streak = check.correct ? streak + 1 : 0;
     bestStreak = Math.max(bestStreak, streak);
   }
+  const events = monsterEvents(id, tick, pending, pendingB, state.seed);
   return {
     tick,
-    monsterEvents: [
-      ...state.monsterEvents,
-      ...monsterEvents(id, tick, pending, pendingB, state.seed),
+    monsterEvents: [...state.monsterEvents, ...events],
+    attackResults: [
+      ...state.attackResults,
+      ...resolveAttacks(id, events, prayer, state.seed),
     ],
     pending,
     pendingB,
