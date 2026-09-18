@@ -102,6 +102,7 @@ export function EnemyScene({
   return (
     <div
       className={`enemy-scene ${enemies.length === 3 ? 'three-enemies' : ''}`}
+      role="group"
       aria-label="Enemy attacks"
     >
       {enemies.map((enemy) => {

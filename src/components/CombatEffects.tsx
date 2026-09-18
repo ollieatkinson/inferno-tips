@@ -114,6 +114,7 @@ export function CombatEffects({
   return (
     <div
       className="combat-effects"
+      role="group"
       ref={root}
       aria-label="Incoming attack effects"
     >

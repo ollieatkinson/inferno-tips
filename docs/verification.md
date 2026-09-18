@@ -107,3 +107,14 @@ Screenshots and raw DevTools output are temporary verification artifacts, not sh
 - Effects follow the player, separate enemy hitsplats into distinct positions, freeze on pause and clear on reset. Reduced-motion mode omits projectile travel and shows impacts on tick updates.
 - Chrome DevTools: observed live projectiles and red impacts on desktop; inspected paused projectile and blue-zero frames at 390 × 844 with the pause overlay temporarily hidden. The overhead and hit align with the player, with no horizontal overflow or console warnings/errors.
 - Production build/check passed without diagnostics; 88 unit tests passed. All 48 browser tests passed across batches, including every full challenge, real-clock timing, projectile pause/resume, immutable hit outcomes, overhead tick boundaries and movement. The active-prayer label follows the committed overhead rather than a pending click.
+
+## Site correctness and usability review
+
+- Reviewed homepage, course, drill library, settings and trainer in Chrome DevTools at desktop and 390 × 844 mobile sizes. No horizontal overflow or console warnings/errors were observed in the reviewed views.
+- Added bookmarkable section/drill routes and descriptive return destinations. Three browser regressions cover refresh/history, returning to the originating lesson, and keeping mobile Pause, enemy cues and prayer buttons in view.
+- Kept run controls visible while scrolling. Played two-tick alternating through visible prayer controls using the real browser clock: tick 12, 14 correct checks, 100%, followed by pause. This verifies interaction behavior, not first-time learner comprehension.
+- Spot-checked blob timing and single/triple Jad cadence against the Wiki, reviewed the existing research boundaries, and clarified prayer-check versus projectile-impact wording.
+- Lighthouse snapshots exposed a skipped drill-card heading level, an invalid ARIA label on the effects container, a home-button name mismatch, and a skipped heading level in the paused state. Corrected these semantics. Snapshot audits are limited automated checks, not a complete accessibility assessment.
+- `npm test`: 88 passing tests. Astro check/build: no diagnostics. Nineteen relevant production browser tests passed, including guided-to-challenge, settings, contextual LoS links, navigation, mobile controls and real-clock timing. Seven relevant tests passed again after the main semantic fixes; the real-clock run completed in 24 seconds including count-in.
+- Remaining design priorities and review limits are recorded in `docs/site-review.md`.
+- Final production Lighthouse snapshots for the drill library and paused trainer both reported accessibility 100 with no failed audits. Confirmed the paused heading and inspected the underlying report results, including the previously unscored name mismatch.

@@ -111,6 +111,7 @@ type Page =
 
 export default function Academy() {
   const [page, setPage] = useState<Page>('overview');
+  const returnRoute = useRef('#drills');
   const [settings, setSettings] = useState(readSettings);
   const [settingsError, setSettingsError] = useState(false);
   function saveSettings(value: Settings) {
@@ -137,7 +138,32 @@ export default function Academy() {
     }
   }, []);
   useEffect(() => {
-    const followLessonLink = () => {
+    const followRoute = () => {
+      const route = window.location.hash.slice(1);
+      const drill = lessons.find((l) => `drill-${l.id}` === route);
+      if (drill) {
+        setActive(drill);
+        setPage('drills');
+        setCourseEntry(undefined);
+        window.scrollTo(0, 0);
+        return;
+      }
+      if (
+        [
+          'overview',
+          'course',
+          'drills',
+          'progress',
+          'resources',
+          'settings',
+        ].includes(route)
+      ) {
+        setPage(route as Page);
+        setCourseEntry(undefined);
+        setActive(null);
+        window.scrollTo(0, 0);
+        return;
+      }
       const id = window.location.hash.replace(/^#lesson-/, '');
       if (!window.location.hash) {
         setPage('overview');
@@ -150,10 +176,18 @@ export default function Academy() {
       setPage('course');
       setActive(null);
     };
-    followLessonLink();
-    window.addEventListener('hashchange', followLessonLink);
-    return () => window.removeEventListener('hashchange', followLessonLink);
+    followRoute();
+    window.addEventListener('hashchange', followRoute);
+    return () => window.removeEventListener('hashchange', followRoute);
   }, []);
+  useEffect(() => {
+    const heading = document.querySelector('main h1');
+    document.title = `${heading?.textContent || 'Prayer drills & wave-solving guide'} — Inferno Tips`;
+    if (!courseEntry && heading instanceof HTMLElement) {
+      heading.tabIndex = -1;
+      heading.focus({ preventScroll: true });
+    }
+  }, [page, active, courseEntry]);
   const mastered = lessons.filter(
     (l) => (progress[l.id]?.passes || 0) >= 2,
   ).length;
@@ -162,12 +196,7 @@ export default function Academy() {
     lessons[lessons.length - 1];
   function navigate(p: Page) {
     setCourseEntry(undefined);
-    if (window.location.hash.startsWith('#lesson-'))
-      window.history.replaceState(
-        null,
-        '',
-        window.location.pathname + window.location.search,
-      );
+    window.location.hash = p;
     setPage(p);
     setActive(null);
     window.scrollTo(0, 0);
@@ -179,6 +208,8 @@ export default function Academy() {
     setActive(null);
   }
   function launch(l: Lesson) {
+    if (!active) returnRoute.current = window.location.hash || '#overview';
+    window.location.hash = `drill-${l.id}`;
     setActive(l);
     window.scrollTo(0, 0);
   }
@@ -206,11 +237,7 @@ export default function Academy() {
         Skip to content
       </a>
       <aside className="sidebar">
-        <button
-          className="brand"
-          onClick={() => navigate('overview')}
-          aria-label="Inferno Tips home"
-        >
+        <button className="brand" onClick={() => navigate('overview')}>
           <span className="brand-mark">
             <Icon name="flame" size={27} />
           </span>
@@ -218,6 +245,7 @@ export default function Academy() {
             inferno<span className="muted">.tips</span>
             <small>OSRS INFERNO GUIDE</small>
           </span>
+          <span className="sr-only">Home</span>
         </button>
         <div className="nav-label">PRACTICE</div>
         <nav aria-label="Main navigation">
@@ -313,7 +341,19 @@ export default function Academy() {
               settings={settings}
               lesson={active}
               progress={progress[active.id]}
-              onExit={() => setActive(null)}
+              exitLabel={
+                returnRoute.current.startsWith('#lesson-') ||
+                returnRoute.current === '#course'
+                  ? 'Back to learning path'
+                  : returnRoute.current === '#overview'
+                    ? 'Back to overview'
+                    : returnRoute.current === '#progress'
+                      ? 'Back to your progress'
+                      : 'Back to practice drills'
+              }
+              onExit={() => {
+                window.location.hash = returnRoute.current;
+              }}
               onComplete={saveRun}
               onNext={() => {
                 const index = learningOrder.findIndex(
@@ -503,7 +543,7 @@ function DrillCard({
         {index !== undefined ? `0${index + 1} / ` : ''}
         {lesson.tag}
       </span>
-      <h3>{lesson.title}</h3>
+      <h2>{lesson.title}</h2>
       <p>{lesson.description}</p>
       <div className="drill-card-bottom">
         <span>
@@ -761,6 +801,7 @@ function Trainer({
   lesson,
   progress,
   onExit,
+  exitLabel,
   onComplete,
   onNext,
 }: {
@@ -768,6 +809,7 @@ function Trainer({
   lesson: Lesson;
   progress: { passes: number; best: number } | undefined;
   onExit: () => void;
+  exitLabel: string;
   onComplete: (
     id: LessonId,
     score: number,
@@ -1061,7 +1103,7 @@ function Trainer({
   return (
     <div className="trainer-page">
       <button className="text-button back-button" onClick={onExit}>
-        ← Back to practice grounds
+        ← {exitLabel}
       </button>
       <div className="page-heading">
         <div>
@@ -1077,12 +1119,22 @@ function Trainer({
       <div className="trainer-layout">
         <section
           className="training-panel"
+          data-busy={busy}
           aria-label="Interactive practice"
           ref={trainingRef}
           tabIndex={-1}
         >
           <div className="training-toolbar">
-            <div className="mode-switch" aria-label="Training mode">
+            {busy && (
+              <span className="running-mode-label">
+                {mode === 'guided' ? 'Guided practice' : 'Challenge'}
+              </span>
+            )}
+            <div
+              className="mode-switch"
+              role="group"
+              aria-label="Training mode"
+            >
               <button
                 disabled={busy}
                 aria-pressed={mode === 'guided'}
@@ -1226,7 +1278,11 @@ function Trainer({
             </p>
           )}
           {magerLesson && (
-            <div className="attack-cycle" aria-label="Mager attack cycle">
+            <div
+              className="attack-cycle"
+              role="group"
+              aria-label="Mager attack cycle"
+            >
               <div className="attack-countdown">
                 <GameIcon name="protect-magic" />
                 <strong>
@@ -1266,6 +1322,7 @@ function Trainer({
                   <>
                     <div
                       className="movement-grid"
+                      role="group"
                       aria-label="Movement practice grid"
                     >
                       {Array.from({ length: 25 }, (_, i) => (
@@ -1337,7 +1394,7 @@ function Trainer({
                 {status === 'paused' && (
                   <div className="arena-overlay">
                     <Icon name="clock" size={35} />
-                    <h3>Practice paused</h3>
+                    <h2>Practice paused</h2>
                     <p>
                       Paused runs count as practice.
                       <br />

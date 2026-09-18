@@ -765,8 +765,13 @@ test('guided results start a fresh challenge with one click', async ({
     .click();
   await expect(results).toHaveCount(0);
   await expect(
-    page.getByRole('button', { name: 'Challenge', exact: true }),
+    page.getByRole('button', {
+      name: 'Challenge',
+      exact: true,
+      includeHidden: true,
+    }),
   ).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('.running-mode-label')).toHaveText('Challenge');
   await expect(
     page.getByRole('region', { name: 'Interactive practice' }),
   ).toBeFocused();
@@ -1382,4 +1387,77 @@ test('overheads commit on ticks and incoming attacks retain their resolved hitsp
     'data-prayer',
     'magic',
   );
+});
+
+test('page and drill links survive reload and browser history', async ({
+  page,
+}) => {
+  await open(page);
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await expect(page).toHaveURL(/#settings$/);
+  await page.reload();
+  await expect(
+    page.getByRole('heading', { name: 'Settings', exact: true }),
+  ).toBeVisible();
+  await expect(page).toHaveTitle('Settings — Inferno Tips');
+  await lesson(page, 'Flick the mager');
+  await expect(page).toHaveURL(/#drill-rhythm$/);
+  await page.goBack();
+  await expect(
+    page.getByRole('heading', { name: 'Practice drills', exact: true }),
+  ).toBeVisible();
+  await page.goForward();
+  await expect(
+    page.getByRole('heading', { name: 'Flick the mager', exact: true }),
+  ).toBeVisible();
+  await page.reload();
+  await expect(
+    page.getByRole('heading', { name: 'Flick the mager', exact: true }),
+  ).toBeVisible();
+  await expect(page).toHaveTitle('Flick the mager — Inferno Tips');
+  await page.getByRole('button', { name: 'Back to practice drills' }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Practice drills', exact: true }),
+  ).toBeVisible();
+});
+
+test('returning from a related drill keeps the lesson destination', async ({
+  page,
+}) => {
+  await page.goto('/#lesson-blob-anchor');
+  await expect(page.locator('astro-island')).not.toHaveAttribute('ssr');
+  await page.locator('.chapter-practice button').first().click();
+  await expect(page).toHaveURL(/#drill-/);
+  await page.getByRole('button', { name: 'Back to learning path' }).click();
+  await expect(page).toHaveURL(/#lesson-blob-anchor$/);
+  await expect(page.locator('#lesson-blob-anchor')).toBeFocused();
+});
+
+test('mobile run keeps pause, enemy cues and prayer clicks in the viewport', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.clock.install();
+  await open(page);
+  await lesson(page, 'Flick the mager');
+  await page.clock.pauseAt(new Date());
+  await start(page, false);
+  await page.clock.runFor(30);
+  const pause = page.getByRole('button', { name: 'Pause', exact: true });
+  const magic = page.getByRole('button', { name: 'Magic', exact: true });
+  for (const control of [pause, magic, page.locator('.enemy-name')]) {
+    const bounds = (await control.boundingBox())!;
+    expect(bounds.y).toBeGreaterThanOrEqual(0);
+    expect(bounds.y + bounds.height).toBeLessThanOrEqual(844);
+  }
+  await magic.click();
+  await page.clock.runFor(600);
+  await expect(page.locator('.run-stats')).toContainText('100%');
+  await pause.click();
+  await expect(
+    page.getByRole('heading', { name: 'Practice paused' }),
+  ).toBeVisible();
+  const tick = await page.locator('.run-stats').textContent();
+  await page.clock.runFor(1800);
+  await expect(page.locator('.run-stats')).toHaveText(tick!);
 });
