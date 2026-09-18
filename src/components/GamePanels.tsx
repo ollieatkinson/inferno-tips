@@ -191,9 +191,7 @@ export function GamePanels({
                 );
               })}
             </div>
-            <div className="native-prayer-footer">
-              No prayer drain in drills
-            </div>
+            <div className="native-prayer-footer" aria-hidden="true" />
           </>
         ) : (
           <div className="native-inventory-grid">
