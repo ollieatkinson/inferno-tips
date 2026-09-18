@@ -156,7 +156,10 @@ test('two passes master a lesson, persist on reload, and reset only after confir
   await page.clock.pauseAt(new Date());
   await start(page);
   await perfectRun(page, 'blob');
-  await page.getByRole('button', { name: 'Try again', exact: true }).click();
+  await page
+    .getByRole('region', { name: 'Run results' })
+    .getByRole('button', { name: 'Try challenge again', exact: true })
+    .click();
   for (let i = 0; i < 3; i++) await page.clock.runFor(600);
   await perfectRun(page, 'blob');
   await page.reload();
@@ -325,11 +328,12 @@ test('prayers toggle with clicks and custom tab keys persist', async ({
   await expect(
     page.getByRole('button', { name: 'Off', exact: true }),
   ).toHaveCount(0);
-  await page.getByText('Configure tab keys', { exact: true }).click();
-  await page.getByLabel('Inventory key', { exact: true }).selectOption('F3');
   await page
-    .getByRole('heading', { name: 'Eat between flicks', exact: true })
+    .locator('.sidebar')
+    .getByRole('button', { name: 'Settings', exact: true })
     .click();
+  await page.getByLabel('Inventory key', { exact: true }).selectOption('F3');
+  await lesson(page, 'Eat between flicks');
   await page.keyboard.press('F3');
   await expect(page.getByRole('button', { name: /^Eat shark/ })).toBeVisible();
   await page.reload();
@@ -361,7 +365,10 @@ test('Esc opens inventory during a run and tab binding collisions swap safely', 
     page.getByRole('button', { name: 'Magic', exact: true }),
   ).toBeVisible();
   await page.getByRole('button', { name: 'Pause', exact: true }).click();
-  await page.getByText('Configure tab keys', { exact: true }).click();
+  await page
+    .locator('.sidebar')
+    .getByRole('button', { name: 'Settings', exact: true })
+    .click();
   await expect(page.getByLabel('Inventory key', { exact: true })).toHaveValue(
     'Escape',
   );
@@ -715,4 +722,161 @@ test('new course notes and chapter contents work on mobile', async ({
       () => document.documentElement.scrollWidth <= innerWidth,
     ),
   ).toBe(true);
+});
+
+test('guided results start a fresh challenge with one click', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await open(page);
+  await lesson(page, 'Flick the mager');
+  await page.clock.install();
+  await page.clock.pauseAt(new Date());
+  await start(page, false);
+  await perfectRun(page, 'rhythm');
+  const results = page.getByRole('region', { name: 'Run results' });
+  await expect(
+    results.getByRole('heading', { name: 'Guided practice complete' }),
+  ).toBeVisible();
+  await expect(results).toContainText('Same drill, same timing');
+  await expect(
+    results.getByRole('button', { name: 'Start challenge', exact: true }),
+  ).toBeInViewport();
+  await expect(
+    results.getByRole('button', { name: 'Repeat guided practice' }),
+  ).toBeVisible();
+  await results
+    .getByRole('button', { name: 'Start challenge', exact: true })
+    .click();
+  await expect(results).toHaveCount(0);
+  await expect(
+    page.getByRole('button', { name: 'Challenge', exact: true }),
+  ).toHaveAttribute('aria-pressed', 'true');
+  await expect(
+    page.getByRole('region', { name: 'Interactive practice' }),
+  ).toBeFocused();
+  await expect(page.locator('.arena-overlay strong')).toHaveText('3');
+  for (let i = 0; i < 3; i++) await page.clock.runFor(600);
+  await expect(
+    page.getByText('Preparing tick 1', { exact: true }),
+  ).toBeVisible();
+  await expect(page.locator('.live-coach')).toContainText(
+    'Prayer hints are hidden',
+  );
+  await perfectRun(page, 'rhythm');
+  await expect(results).toContainText('✓ Mastery pass earned');
+  const saved = await page.evaluate(() =>
+    JSON.parse(localStorage.getItem('inferno-tips-progress-v1')!),
+  );
+  expect(saved.rhythm.passes).toBe(1);
+});
+
+test('site settings migrate tab keys and apply across drills without clearing progress', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await open(page);
+  await page.evaluate(() => {
+    localStorage.setItem(
+      'inferno-tips-tab-keys-v1',
+      JSON.stringify({ inventory: 'F4', prayers: 'F5' }),
+    );
+    localStorage.setItem(
+      'inferno-tips-progress-v1',
+      JSON.stringify({
+        rhythm: { attempts: 1, best: 95, passes: 1, practiceBest: 0 },
+      }),
+    );
+  });
+  await page.reload();
+  await expect(page.locator('astro-island')).not.toHaveAttribute('ssr');
+  await page
+    .locator('.sidebar')
+    .getByRole('button', { name: 'Settings', exact: true })
+    .click();
+  await expect(page.getByLabel('Inventory key', { exact: true })).toHaveValue(
+    'F4',
+  );
+  await expect(page.getByLabel('Prayer tab key', { exact: true })).toHaveValue(
+    'F5',
+  );
+  await page.getByLabel('Default practice mode').selectOption('challenge');
+  await page.getByLabel('Enable tick sound').check();
+  await page.getByRole('slider', { name: 'Tick sound volume' }).fill('25');
+  await page.reload();
+  await expect(page.locator('astro-island')).not.toHaveAttribute('ssr');
+  await page
+    .locator('.sidebar')
+    .getByRole('button', { name: 'Settings', exact: true })
+    .click();
+  await expect(page.getByLabel('Enable tick sound')).toBeChecked();
+  await expect(
+    page.getByRole('slider', { name: 'Tick sound volume' }),
+  ).toHaveValue('25');
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await lesson(page, 'Eat between flicks');
+  await expect(
+    page.getByRole('button', { name: 'Challenge', exact: true }),
+  ).toHaveAttribute('aria-pressed', 'true');
+  await expect(
+    page.getByText('Configure tab keys', { exact: true }),
+  ).toHaveCount(0);
+  await expect(page.getByLabel('Enable tick sound')).toHaveCount(0);
+  await page.keyboard.press('F4');
+  await expect(page.getByRole('button', { name: /^Eat shark/ })).toBeVisible();
+  await page.keyboard.press('F5');
+  await expect(
+    page.getByRole('button', { name: 'Magic', exact: true }),
+  ).toBeVisible();
+  await lesson(page, 'Flick the bat');
+  await expect(
+    page.getByRole('button', { name: 'Start challenge', exact: true }),
+  ).toBeVisible();
+  await page
+    .locator('.sidebar')
+    .getByRole('button', { name: 'Settings', exact: true })
+    .click();
+  await page.getByRole('button', { name: 'Restore default settings' }).click();
+  await expect(page.getByLabel('Inventory key', { exact: true })).toHaveValue(
+    'Escape',
+  );
+  await expect(page.getByLabel('Prayer tab key', { exact: true })).toHaveValue(
+    'F1',
+  );
+  await expect(page.getByLabel('Default practice mode')).toHaveValue('guided');
+  await expect(page.getByLabel('Enable tick sound')).not.toBeChecked();
+  await page
+    .getByRole('button', { name: 'Your progress', exact: true })
+    .click();
+  await expect(
+    page.locator('.progress-table').getByText('1/2 passes', { exact: true }),
+  ).toHaveCount(1);
+});
+
+test('blocked storage still allows site settings for the current visit', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(Storage.prototype, 'setItem', {
+      value: () => {
+        throw new Error('Storage blocked');
+      },
+    });
+  });
+  await open(page);
+  await page
+    .locator('.sidebar')
+    .getByRole('button', { name: 'Settings', exact: true })
+    .click();
+  await page.getByLabel('Inventory key', { exact: true }).selectOption('F3');
+  await expect(page.locator('.settings-page .storage-notice')).toContainText(
+    'Settings work for this visit',
+  );
+  await lesson(page, 'Eat between flicks');
+  await page.keyboard.press('F3');
+  await expect(page.getByRole('button', { name: /^Eat shark/ })).toBeVisible();
 });

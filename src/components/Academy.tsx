@@ -2,6 +2,14 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { LearningPath, KNOWLEDGE_KEY } from './LearningPath';
 import { chapters, fieldLessons } from '../lib/curriculum';
 import { Overview } from './Overview';
+import { SettingsPage } from './SettingsPage';
+import {
+  readSettings,
+  SETTINGS_KEY,
+  LEGACY_TAB_KEYS,
+  tabKeyLabel,
+  type Settings,
+} from '../lib/settings';
 import {
   lessons,
   PASS_SCORE,
@@ -56,6 +64,7 @@ function Icon({ name, size = 20 }: { name: string; size?: number }) {
     target:
       'M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0M17 12a5 5 0 1 1-10 0 5 5 0 0 1 10 0M12 10v4m-2-2h4',
     reset: 'M3 10a9 9 0 1 1 1 8M3 3v7h7',
+    settings: 'M4 7h16M4 17h16M8 4v6m8 4v6',
   };
   return (
     <svg
@@ -93,10 +102,24 @@ const learningOrder = chapters
   .flatMap((c) => c.drills)
   .map((id) => lessons.find((l) => l.id === id)!);
 
-type Page = 'overview' | 'course' | 'drills' | 'progress' | 'resources';
+type Page =
+  'overview' | 'course' | 'drills' | 'progress' | 'resources' | 'settings';
 
 export default function Academy() {
   const [page, setPage] = useState<Page>('overview');
+  const [settings, setSettings] = useState(readSettings);
+  const [settingsError, setSettingsError] = useState(false);
+  function saveSettings(value: Settings) {
+    setSettings(value);
+    try {
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(value));
+      // Older versions still read tab bindings from this key.
+      localStorage.setItem(LEGACY_TAB_KEYS, JSON.stringify(value.tabKeys));
+      setSettingsError(false);
+    } catch {
+      setSettingsError(true);
+    }
+  }
   const [courseEntry, setCourseEntry] = useState<string>();
   const [active, setActive] = useState<Lesson | null>(null);
   const [progress, setProgress] = useState<Progress>({});
@@ -234,6 +257,13 @@ export default function Academy() {
           Wave simulator
           <Icon name="external" size={14} />
         </a>
+        <button
+          className={`nav-item ${page === 'settings' ? 'active' : ''}`}
+          aria-current={page === 'settings' ? 'page' : undefined}
+          onClick={() => navigate('settings')}
+        >
+          <Icon name="settings" /> Settings
+        </button>
         <div className="sidebar-bottom">
           <p>Progress is saved in this browser.</p>
           <a href="/credits/">Sources & simulation limits ↗</a>
@@ -252,6 +282,7 @@ export default function Academy() {
                     drills: 'Practice drills',
                     progress: 'Your progress',
                     resources: 'Guides & resources',
+                    settings: 'Settings',
                   }[page]}
             </b>
           </div>
@@ -275,6 +306,7 @@ export default function Academy() {
           {active ? (
             <Trainer
               key={active.id}
+              settings={settings}
               lesson={active}
               progress={progress[active.id]}
               onExit={() => setActive(null)}
@@ -413,6 +445,13 @@ export default function Academy() {
                 </>
               )}
               {page === 'resources' && <Resources />}
+              {page === 'settings' && (
+                <SettingsPage
+                  settings={settings}
+                  onChange={saveSettings}
+                  saveError={settingsError}
+                />
+              )}
             </>
           )}
           <footer>
@@ -713,42 +752,15 @@ function Resources() {
   );
 }
 
-const tabKeyOptions = [
-  'Escape',
-  ...Array.from({ length: 12 }, (_, i) => `F${i + 1}`),
-];
-const tabKeyLabel = (key: string) => (key === 'Escape' ? 'Esc' : key);
-
-function readTabKeys() {
-  const defaults = { inventory: 'Escape', prayers: 'F1' };
-  if (typeof window === 'undefined') return defaults;
-  try {
-    const stored = JSON.parse(
-      localStorage.getItem('inferno-tips-tab-keys-v1') || 'null',
-    );
-    if (
-      stored &&
-      tabKeyOptions.includes(stored.inventory) &&
-      tabKeyOptions.includes(stored.prayers) &&
-      stored.inventory !== stored.prayers
-    )
-      return {
-        inventory: String(stored.inventory),
-        prayers: String(stored.prayers),
-      };
-  } catch {
-    /* Invalid or blocked storage keeps the default keys. */
-  }
-  return defaults;
-}
-
 function Trainer({
+  settings,
   lesson,
   progress,
   onExit,
   onComplete,
   onNext,
 }: {
+  settings: Settings;
   lesson: Lesson;
   progress: { passes: number; best: number } | undefined;
   onExit: () => void;
@@ -761,7 +773,7 @@ function Trainer({
   ) => void;
   onNext: () => void;
 }) {
-  const [mode, setMode] = useState<Mode>('guided');
+  const [mode, setMode] = useState<Mode>(settings.defaultMode);
   const [status, setStatus] = useState<
     'ready' | 'countdown' | 'running' | 'paused' | 'done'
   >('ready');
@@ -770,11 +782,10 @@ function Trainer({
   const [tile, setTile] = useState(12);
   const [countdown, setCountdown] = useState(3);
   const [interrupted, setInterrupted] = useState(false);
-  const [sound, setSound] = useState(false);
+  const sound = settings.tickSound;
   const [soundError, setSoundError] = useState(false);
   const [panel, setPanel] = useState<'prayers' | 'inventory'>('prayers');
-  const [tabKeys, setTabKeys] = useState(readTabKeys);
-  const [keyError, setKeyError] = useState(false);
+  const tabKeys = settings.tabKeys;
   const [queuedSupply, setQueuedSupply] = useState<Supply | null>(null);
   const supplyRef = useRef<Supply | null>(null);
   const transitionsRef = useRef<Prayer[]>([]);
@@ -787,6 +798,7 @@ function Trainer({
   const completeRef = useRef(onComplete);
   const savedRef = useRef(false);
   const resultRef = useRef<HTMLHeadingElement>(null);
+  const trainingRef = useRef<HTMLElement>(null);
   const ms = 600;
   const cycleLength = isJad(lesson.id)
     ? jadPeriod(lesson.id)
@@ -821,7 +833,18 @@ function Trainer({
     tileRef.current = t;
     setTile(t);
   }
+  async function prepareAudio() {
+    if (!settings.tickSound) return;
+    try {
+      audioRef.current ||= new AudioContext();
+      await audioRef.current.resume();
+      setSoundError(false);
+    } catch {
+      setSoundError(true);
+    }
+  }
   function begin() {
+    void prepareAudio();
     setState(initialState(Math.floor(Math.random() * 100000)));
     transitionsRef.current = [];
     attackRef.current = false;
@@ -836,20 +859,11 @@ function Trainer({
     savedRef.current = false;
     setStatus('countdown');
   }
-  function changeTabKey(tab: 'inventory' | 'prayers', key: string) {
-    const other = tab === 'inventory' ? 'prayers' : 'inventory';
-    const updated = {
-      ...tabKeys,
-      [tab]: key,
-      ...(tabKeys[other] === key ? { [other]: tabKeys[tab] } : {}),
-    };
-    setTabKeys(updated);
-    try {
-      localStorage.setItem('inferno-tips-tab-keys-v1', JSON.stringify(updated));
-      setKeyError(false);
-    } catch {
-      setKeyError(true);
-    }
+  function beginChallenge() {
+    setMode('challenge');
+    begin();
+    trainingRef.current?.scrollIntoView({ block: 'start' });
+    trainingRef.current?.focus({ preventScroll: true });
   }
   function pause() {
     setInterrupted(true);
@@ -857,14 +871,20 @@ function Trainer({
   }
   function beep() {
     const ctx = audioRef.current;
-    if (!soundRef.current || !ctx || ctx.state !== 'running') return;
+    if (
+      !soundRef.current ||
+      !settings.volume ||
+      !ctx ||
+      ctx.state !== 'running'
+    )
+      return;
     const oscillator = ctx.createOscillator();
     const gain = ctx.createGain();
     oscillator.connect(gain);
     gain.connect(ctx.destination);
     oscillator.frequency.value = 660;
-    gain.gain.setValueAtTime(0.035, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.06);
+    gain.gain.setValueAtTime((0.07 * settings.volume) / 100, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + 0.06);
     oscillator.start();
     oscillator.stop(ctx.currentTime + 0.07);
   }
@@ -931,7 +951,12 @@ function Trainer({
     }
   }, [state, mode, lesson.id, interrupted]);
   useEffect(() => {
-    if (status === 'done') resultRef.current?.focus();
+    if (status === 'done') {
+      resultRef.current
+        ?.closest('.results')
+        ?.scrollIntoView({ block: 'start' });
+      resultRef.current?.focus({ preventScroll: true });
+    }
   }, [status]);
   useEffect(() => {
     const visibility = () => {
@@ -1012,7 +1037,12 @@ function Trainer({
         <GameIcon name={lesson.icon} className="lesson-heading-icon" />
       </div>
       <div className="trainer-layout">
-        <section className="training-panel" aria-label="Interactive practice">
+        <section
+          className="training-panel"
+          aria-label="Interactive practice"
+          ref={trainingRef}
+          tabIndex={-1}
+        >
           <div className="training-toolbar">
             <div className="mode-switch" aria-label="Training mode">
               <button
@@ -1042,6 +1072,13 @@ function Trainer({
             </div>
             <span>{ms / 1000}s / tick</span>
           </div>
+          {status === 'ready' && (
+            <p className="mode-description">
+              {mode === 'guided'
+                ? 'Guided practice shows prayer hints. Try the challenge after a run.'
+                : 'Challenge hides prayer hints. The timing stays at 0.6 seconds per tick.'}
+            </p>
+          )}
           <div className="run-stats">
             <div>
               <small>TICK</small>
@@ -1459,14 +1496,30 @@ function Trainer({
           </div>
           <div className="training-actions">
             {status === 'ready' || status === 'done' ? (
-              <button className="button primary" onClick={begin}>
-                <Icon name="play" size={15} />
-                {status === 'done'
-                  ? 'Try again'
-                  : mode === 'guided'
-                    ? 'Start guided practice'
-                    : 'Start challenge'}
-              </button>
+              <>
+                <button
+                  className="button primary"
+                  onClick={
+                    status === 'done' && mode === 'guided'
+                      ? beginChallenge
+                      : begin
+                  }
+                >
+                  <Icon name="play" size={15} />
+                  {status === 'done'
+                    ? mode === 'guided'
+                      ? 'Start challenge'
+                      : 'Try challenge again'
+                    : mode === 'guided'
+                      ? 'Start guided practice'
+                      : 'Start challenge'}
+                </button>
+                {status === 'done' && mode === 'guided' && (
+                  <button className="button secondary" onClick={begin}>
+                    Repeat guided practice
+                  </button>
+                )}
+              </>
             ) : (
               <>
                 <button
@@ -1491,27 +1544,6 @@ function Trainer({
                 </button>
               </>
             )}
-            <label className="sound-toggle">
-              <input
-                type="checkbox"
-                checked={sound}
-                onChange={async (e) => {
-                  const enabled = e.target.checked;
-                  setSound(enabled);
-                  if (enabled) {
-                    try {
-                      audioRef.current ||= new AudioContext();
-                      await audioRef.current.resume();
-                      setSoundError(false);
-                    } catch {
-                      setSound(false);
-                      setSoundError(true);
-                    }
-                  }
-                }}
-              />
-              Tick sound
-            </label>
           </div>
           {soundError && (
             <p className="fine-print" role="status">
@@ -1524,40 +1556,6 @@ function Trainer({
             {hasMovement(lesson.id) ? 'Click the marked tile to move. ' : ''}Use
             the Pause button to take a break.
           </p>
-          <details className="tab-key-settings">
-            <summary>Configure tab keys</summary>
-            <p>
-              Choose Esc or F1–F12 to match your OSRS tab settings. Keys only
-              open a tab; they never activate a prayer or consume an item.
-              Changes save on this browser. Choosing the other tab’s key swaps
-              the two bindings.
-            </p>
-            <div>
-              {(['inventory', 'prayers'] as const).map((tab) => (
-                <label key={tab}>
-                  {tab === 'inventory' ? 'Inventory key' : 'Prayer tab key'}
-                  <select
-                    aria-label={
-                      tab === 'inventory' ? 'Inventory key' : 'Prayer tab key'
-                    }
-                    value={tabKeys[tab]}
-                    onChange={(e) => changeTabKey(tab, e.target.value)}
-                  >
-                    {tabKeyOptions.map((key) => (
-                      <option key={key} value={key}>
-                        {tabKeyLabel(key)}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              ))}
-            </div>
-            {keyError && (
-              <p role="status">
-                Tab keys work for this visit, but could not be saved.
-              </p>
-            )}
-          </details>
         </section>
         <aside className="lesson-notes">
           <span className="eyebrow">BEFORE YOU BEGIN</span>
@@ -1646,9 +1644,11 @@ function Trainer({
                   : 'PRACTICE COMPLETE'}
               </span>
               <h2 ref={resultRef} tabIndex={-1}>
-                {score >= PASS_SCORE
-                  ? 'That’s a rhythm worth keeping.'
-                  : 'Another rep. Another step forward.'}
+                {mode === 'guided'
+                  ? 'Guided practice complete'
+                  : !interrupted && score >= PASS_SCORE
+                    ? 'Challenge passed'
+                    : 'Challenge complete'}
               </h2>
               <p>{coaching(state.checks)}</p>
             </div>
@@ -1656,6 +1656,36 @@ function Trainer({
               {score}
               <span>%</span>
             </strong>
+          </div>
+          {mode === 'guided' && (
+            <p className="challenge-next-step">
+              Next: try the challenge with prayer hints hidden. Same drill, same
+              timing. Score {PASS_SCORE}% or more without pausing to earn a
+              challenge pass.
+            </p>
+          )}
+          <div className="result-actions">
+            {mode === 'guided' && (
+              <button className="button primary" onClick={beginChallenge}>
+                Start challenge <Icon name="arrow" size={16} />
+              </button>
+            )}
+            <button
+              className={`button ${mode === 'guided' ? 'secondary' : 'primary'}`}
+              onClick={() => {
+                begin();
+                trainingRef.current?.scrollIntoView({ block: 'start' });
+                trainingRef.current?.focus({ preventScroll: true });
+              }}
+            >
+              {mode === 'guided'
+                ? 'Repeat guided practice'
+                : 'Try challenge again'}
+              <Icon name="reset" size={16} />
+            </button>
+            <button className="text-button" onClick={onNext}>
+              Next drill <Icon name="arrow" size={16} />
+            </button>
           </div>
           <div className="result-details">
             <span>
@@ -1710,30 +1740,6 @@ function Trainer({
               ))}
             </div>
           </details>
-          <div className="result-actions">
-            <button className="button primary" onClick={begin}>
-              Repeat this drill
-              <Icon name="reset" size={16} />
-            </button>
-            {mode === 'guided' && (
-              <button
-                className="button secondary"
-                onClick={() => {
-                  setMode('challenge');
-                  setStatus('ready');
-                  setState(initialState());
-                  window.scrollTo({ top: 0 });
-                }}
-              >
-                Try without hints
-                <Icon name="arrow" size={16} />
-              </button>
-            )}
-            <button className="text-button" onClick={onNext}>
-              Explore next lesson
-              <Icon name="arrow" size={16} />
-            </button>
-          </div>
         </section>
       )}
       <p className="fine-print">

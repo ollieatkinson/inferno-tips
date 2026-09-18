@@ -958,18 +958,6 @@ kbd {
   border-top: 1px solid var(--border);
   padding: 17px 22px;
 }
-.sound-toggle {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 10px;
-  color: #a9b199;
-  margin-left: auto;
-  cursor: pointer;
-}
-.sound-toggle input {
-  accent-color: var(--orange);
-}
 .control-note {
   padding: 0 22px 18px;
   font-size: 9px;
@@ -1645,9 +1633,6 @@ kbd {
     font-size: 10px;
     padding: 10px 12px;
   }
-  .sound-toggle {
-    font-size: 9px;
-  }
   .live-coach {
     padding: 15px;
     min-height: 86px;
@@ -1845,38 +1830,6 @@ kbd {
   font-size: 9px;
   font-weight: 500;
 }
-.tab-key-settings {
-  margin: 0 22px 18px;
-  border-top: 1px solid #353e2b;
-  padding-top: 12px;
-  font-size: 10px;
-  color: #a6b492;
-}
-.tab-key-settings summary {
-  cursor: pointer;
-}
-.tab-key-settings p {
-  margin: 10px 0;
-  font-size: 10px;
-}
-.tab-key-settings > div {
-  display: flex;
-  gap: 18px;
-}
-.tab-key-settings label {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 10px;
-}
-.tab-key-settings select {
-  padding: 5px 8px;
-  background: #2d3523;
-  color: #dde4ca;
-  border: 1px solid #56603f;
-  border-radius: 4px;
-  font: inherit;
-}
 .attack-cycle {
   background: #252b1f;
   padding: 14px 22px;
@@ -2014,16 +1967,6 @@ kbd {
     padding: 12px 14px 0;
     font-size: 9px;
     flex-wrap: wrap;
-  }
-  .tab-key-settings {
-    margin-inline: 14px;
-  }
-  .tab-key-settings > div {
-    gap: 12px;
-  }
-  .tab-key-settings label {
-    gap: 6px;
-    font-size: 9px;
   }
   .attack-cycle {
     padding: 13px 14px;
@@ -2847,5 +2790,100 @@ select:focus-visible {
   }
   .course-layout .knowledge-check {
     padding: 16px;
+  }
+}
+
+.mode-description {
+  padding: 12px 22px;
+  border-bottom: 1px solid var(--border);
+  color: #b7bdb3;
+  font-size: 13px;
+}
+.challenge-next-step {
+  color: #d8e0ca;
+  font-size: 14px;
+  max-width: 68ch;
+  margin-top: 18px;
+}
+
+.settings-page {
+  max-width: 960px;
+}
+.settings-page section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+  padding: 30px 0;
+  border-top: 1px solid var(--border);
+}
+.settings-page h2 {
+  font-size: 22px;
+  margin-bottom: 12px;
+}
+.settings-page p {
+  font-size: 14px;
+  color: var(--muted);
+}
+.settings-fields {
+  display: grid;
+  gap: 18px;
+}
+.settings-fields label {
+  display: grid;
+  gap: 10px;
+  font-size: 14px;
+}
+.settings-fields select {
+  padding: 12px;
+  width: 100%;
+  border: 1px solid #555b50;
+  border-radius: 4px;
+  background: var(--panel);
+  color: inherit;
+  font: inherit;
+}
+.settings-fields .settings-check {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.settings-check input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--orange);
+}
+.settings-page .setting-help {
+  font-size: 13px;
+}
+.settings-volume {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+.settings-volume input {
+  flex: 1;
+  min-width: 0;
+  accent-color: var(--orange);
+}
+.settings-volume output {
+  min-width: 4ch;
+  font-variant-numeric: tabular-nums;
+}
+.settings-reset {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  align-items: center;
+  border-top: 1px solid var(--border);
+  padding-top: 24px;
+}
+.settings-reset p {
+  font-size: 13px;
+}
+@media (max-width: 650px) {
+  .settings-page section {
+    grid-template-columns: 1fr;
+    gap: 22px;
+    padding: 24px 0;
   }
 }
