@@ -1,6 +1,6 @@
 # inferno-tips
 
-An Astro site for learning Old School RuneScape Inferno mechanics through short, repeatable exercises. Eight ordered chapters contain 22 field lessons with knowledge checks and 20 timed drills. Learning path teaches decisions; Practice drills is a searchable, filterable exercise library.
+An Astro site for learning Old School RuneScape Inferno mechanics through short, repeatable exercises. Eight ordered chapters contain 28 field lessons with knowledge checks and 20 timed drills. The overview links common mistakes to specific lessons and drills. Learning path has chapter navigation, lesson contents and bookmarkable lesson links; Practice drills is a searchable, filterable exercise library.
 
 ## Run locally
 
@@ -30,7 +30,7 @@ The repository includes `.nvmrc` with Node 22. No Cloudflare adapter is required
 
 ## Course and drills
 
-The path covers attack cues, blobs, one-tick alternating, one- and two-tick stacks, positioning, melee digs, inventory recovery, late-wave priorities, Jad/triples and Zuk decisions. Optional techniques include two-tick alternating and phase repair, one-tick conservation, and melee–blob mitigation.
+The path covers attack cues, blobs, one-tick alternating, one- and two-tick stacks, positioning, melee digs, screen setup, early-wave rehearsal, weapon drag, inventory recovery, end-of-wave preparation and breaks, late-wave priorities, Jad/triples, Zuk set targeting and healer decisions. Optional techniques include two-tick alternating and phase repair, one-tick conservation, and melee–blob mitigation.
 
 Twenty timed drills include the original mager, blob, stack, movement and supply exercises, plus bat timing, a ranger anchor, differently phased double blobs, off–on conservation, two-tick alignment/repair, reverse flicking, melee–blob triage, Jad/triple cue reactions and shoot–step coordination. The interactive phase lab shows why changing the blob’s first scan can make a two-tick pattern fail.
 

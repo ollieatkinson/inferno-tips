@@ -40,7 +40,7 @@ The creators differ on gear, freezes, healer tags and preferred wave solves. The
 | One-tick prayer conservation              | DearLola 15:58; OSRS Wiki Prayer                      | Separate click-trace drill; held prayer and click spam do not pass                             |
 | Standard pillar stack                     | Gnomonkey 1:13:08; DearLola 1:59:50                   | One-tick stack drill; back-first explanation and LoS assignment                                |
 | Two-tick offset by exposure               | Hug my cat 6:25; DearLola 53:32, 1:32:35              | Existing two-tick stack drill, positioning lesson, contextual source links                     |
-| Flick and move                            | Hug my cat 2:54, 3:30; DearLola 1:02:50               | Switch & step; blob+mager+movement; LoS transfer tasks                                         |
+| Flick and move                            | Hug my cat 2:54, 3:30; DearLola 1:02:50               | Flick and move; blob+mager+movement; LoS transfer tasks                                        |
 | Corner traps, destacking, weapon drag     | DearLola 19:36, 36:11, 44:51                          | Field lessons and repeatable LoS assignments                                                   |
 | Melee digs and next safe tile             | Gnomonkey 57:50; DearLola 1:27:58                     | Dig-plan scenario; different pillar sides and attack-history caveat                            |
 | Inventory, healing and restoration        | Gnomonkey 1:25:51, 1:36:16, 1:46:01                   | Food and brew/restore drills; one-action recovery and potion-purpose lessons                   |
@@ -77,3 +77,18 @@ The creators differ on gear, freezes, healer tags and preferred wave solves. The
 Single/triple Jad cadence was cross-checked against [JalTok-Jad](https://oldschool.runescape.wiki/w/JalTok-Jad) and the companion simulator’s delayed-attack implementation.
 
 Supporting references: [Inferno strategies](https://oldschool.runescape.wiki/w/Inferno/Strategies), [Prayer](https://oldschool.runescape.wiki/w/Prayer), [Ranged boosts](https://oldschool.runescape.wiki/w/Ranged), [Armadyl brew](https://oldschool.runescape.wiki/w/Armadyl_brew), [Potions](https://oldschool.runescape.wiki/w/Potions). Search-index excerpts were accessible where Wiki page fetching was blocked.
+
+## Second review: practical gaps and navigation
+
+Revisited both downloaded, timestamped transcripts and extracted the 2:54 movement instruction directly from Hug my cat’s video. This pass adds six decision lessons (28 total), keeping the 20 timing drills separate from full encounter practice:
+
+- **Screen setup** — dearlola1, [2:18–5:06](https://www.youtube.com/watch?v=r3s4rbTd4QU&t=138s): prayer tick indicator, true tile, personal attack timer and weapon charges. The pre-entry checklist is our synthesis, not a prescribed plugin pack. The personal attack timer is explicitly not an enemy predictor.
+- **Early-wave rehearsal** — Gnomonkey, [27:23–28:46](https://www.youtube.com/watch?v=2xviK0wGI-o&t=1643s): learn ranger–blob alternating early, including the action that interrupts it, instead of postponing the first attempt to a dangerous late wave. The course adds controlled practice conditions and a retreat.
+- **Weapon drag** — dearlola1, [58:56–59:14](https://www.youtube.com/watch?v=r3s4rbTd4QU&t=3536s), also 32:48: a cast pulls the player out and exposes a blob. This expands the previous passing mention into an explicit route-and-range decision.
+- **Between waves** — dearlola1, [2:11:45–2:13:42](https://www.youtube.com/watch?v=r3s4rbTd4QU&t=7905s): queued logout, preparing for Jad, and clearing the collapsing pillars. Cross-checked the end-of-wave logout request against the [Wiki strategy page](https://oldschool.runescape.wiki/w/Inferno/Strategies). It is not an instant pause while enemies remain.
+- **Zuk set targeting** — Gnomonkey, [1:37:42–1:38:45](https://www.youtube.com/watch?v=2xviK0wGI-o&t=5862s): first-set management, deliberately delayed mager tag and returning damage to Zuk. The learner route distinguishes tagging each enemy from the creator’s optimised shield-health trade. Cross-checked shield targeting against [TzKal-Zuk](https://oldschool.runescape.wiki/w/TzKal-Zuk).
+- **Movement during two-tick holds** — Hug my cat, [2:54 onward](https://www.youtube.com/watch?v=zTQdupqm-lM&t=174s): standalone blob, movement, then mager. The lesson separates fitting a click into the hold from the new line of sight and blob phase that the move may create.
+
+The homepage’s six troubleshooting entries are original summaries of these and the existing lessons. Each links to the source demonstration and the relevant lesson; appropriate entries also launch the matching drill. The between-wave checklist and three-question attempt review are editorial practice aids. No new engine behavior or full combat simulation is claimed.
+
+Removed the promotional hero, ornamental arena, motivational cards and duplicated drill cards from the overview. The course uses a compact chapter rail, lesson contents and readable sections instead of nested lesson cards. Drill titles now name the technique. Lesson hashes preserve access after a reload, and existing progress IDs and answer indices remain intact.

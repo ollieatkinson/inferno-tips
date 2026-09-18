@@ -30,62 +30,86 @@ export const chapters: {
 }[] = [
   {
     id: 'foundation',
-    title: 'Read the attack, protect the beat',
+    title: 'Attack timing & setup',
     description:
       'Start with a four-tick mager. Learn what the cue means before adding another enemy.',
     drills: ['rhythm', 'bat'],
   },
   {
     id: 'blobs',
-    title: 'Blobs and your prayer anchor',
+    title: 'Blobs & alternating',
     description:
       'Understand the read, then use a fixed-style enemy to keep your alternating prayers in phase.',
     drills: ['blob', 'alternate', 'anchor-range', 'double-blob'],
   },
   {
     id: 'position',
-    title: 'Make the wave simpler',
+    title: 'Pillars & positioning',
     description:
       'Line of sight, corner traps, pillar stacks and a plan for the next melee dig.',
     drills: ['stack-one', 'stack', 'movement'],
   },
   {
     id: 'supplies',
-    title: 'Make room to recover',
+    title: 'Supplies & recovery',
     description:
       'Inventory clicks, stat restoration and healing without losing the next prayer.',
     drills: ['food', 'potions'],
   },
   {
     id: 'late',
-    title: 'Solve the dangerous waves',
+    title: 'Late-wave solves',
     description:
       'Choose priorities, manage respawns and keep a recovery plan under pressure.',
     drills: ['reverse', 'gauntlet'],
   },
   {
     id: 'jads',
-    title: 'Jad, healers and triples',
+    title: 'Jad & triples',
     description:
       'Recognise the cue. Protect first. Add one deliberate action at a time.',
     drills: ['jad', 'triples'],
   },
   {
     id: 'zuk',
-    title: 'Stay with the shield, keep shooting',
+    title: 'Zuk',
     description:
       'Know the thresholds, plan the healer send and understand why lost attacks matter.',
     drills: ['blowpipe'],
   },
   {
     id: 'advanced',
-    title: 'Optional techniques, with tradeoffs',
+    title: 'Optional techniques',
     description:
       'Useful tools to explore after the essentials. These are not all requirements for a first cape.',
     drills: ['two-tick', 'two-tick-repair', 'flick', 'melee-blob'],
   },
 ];
 export const fieldLessons: FieldLesson[] = [
+  {
+    id: 'screen-setup',
+    chapter: 'foundation',
+    title: 'Set up the cues you actually use',
+    summary:
+      'Keep your prayer buttons, enemy animation and true tile easy to see.',
+    paragraphs: [
+      'DearLola uses a prayer tick indicator to keep an established flick steady, and true tile to see where the game considers him to be. The moving player model can trail that position. Neither overlay decides which prayer the next enemy needs.',
+      'An attack timer tracks your weapon cooldown, not the enemy’s. Use it to find a movement or supply window after your shot. Keep the window size and tab keys consistent between practice and a real attempt; a new layout adds another thing to relearn.',
+      'Before entering, check your weapon charges and ammunition, spell runes, autocast selection and tab bindings. Use a familiar layout so you can find each control while watching the next attack.',
+    ],
+    question:
+      'Your weapon timer reaches zero while the mager is between attacks. What does the timer tell you?',
+    options: [
+      'The mager is about to check your prayer.',
+      'Your weapon is ready to attack again.',
+      'Your next movement will be protected.',
+    ],
+    answer: 1,
+    explanation:
+      'It describes your attack cycle. Read the enemy separately; a personal cooldown is not an enemy countdown.',
+    source: 'lola',
+    seconds: 138,
+  },
   {
     id: 'prayer-choice',
     chapter: 'foundation',
@@ -123,13 +147,38 @@ export const fieldLessons: FieldLesson[] = [
     options: [
       'Yes, every prayer is checked on projectile impact.',
       'No. Re-establish the next four-tick attack without panicking.',
-      'Only if you double-click Ranged.',
+      'Yes, if the projectile is still travelling when you switch.',
     ],
     answer: 1,
     explanation:
       'The mager has already checked protection. Recover the next attack; do not learn projectile arrival as the mager cue.',
     source: 'lola',
     seconds: 4116,
+  },
+  {
+    id: 'early-rehearsal',
+    chapter: 'foundation',
+    title: 'Practise the awkward solve before wave 58',
+    summary:
+      'Use an early ranger and blob to learn the pattern while there is less going on.',
+    paragraphs: [
+      'Gnomonkey deliberately practises one-tick alternating on an early ranger–blob spawn instead of always hiding one of them. If every early solve avoids the mechanic, your first forced attempt may arrive deep into the run.',
+      'First rehearse in the drill and LoS tool. In a real early wave, keep a known retreat, enough health and no additional uncontrolled attacker. Start with Ranged on the ranger’s attack, alternate, and then return to cover. Add an attack or one movement only after the anchor stays protected.',
+      'Treat the attempt as a specific test: did you miss the initial ranger cue, drift a tick, or stop switching while clicking something else? Repeat that part. Getting further in the waves is useful feedback, but it does not identify the mistake by itself.',
+    ],
+    question:
+      'You can alternate while standing still but lose the prayer whenever you click a target. What should you practise next?',
+    options: [
+      'Add one target click to a controlled alternating setup, then return to prayer.',
+      'Repeat only stationary alternating until the score improves.',
+      'Replace the pattern with two-tick alternating immediately.',
+    ],
+    answer: 0,
+    explanation:
+      'Train the action that breaks the pattern. Keep the same anchor and add one click before increasing the workload.',
+    source: 'gnome',
+    seconds: 1643,
+    los: 'Build an isolated ranger and blob at range. Establish the alternating pattern, then add a single movement while watching the ranger attack. Reset to the same layout and repeat.',
   },
   {
     id: 'blob-anchor',
@@ -144,7 +193,7 @@ export const fieldLessons: FieldLesson[] = [
     question:
       'You are alternating perfectly, but every ranger attack is unprotected. What needs correcting?',
     options: [
-      'Click twice as fast.',
+      'Keep the same phase and wait for the ranger to line up.',
       'Switch to two-tick alternating without checking the blob.',
       'Align Ranged with the ranger’s attack, then continue alternating.',
     ],
@@ -188,7 +237,7 @@ export const fieldLessons: FieldLesson[] = [
     ],
     question: 'Before leaving a corner trap to attack, what should you check?',
     options: [
-      'Whether the enemy has a colourful outline.',
+      'Whether your weapon can reach it, without checking how the enemy will move.',
       'Whether your move lets it round the corner, and whether returning still restores cover.',
       'Only your distance from the nearest pillar.',
     ],
@@ -212,7 +261,7 @@ export const fieldLessons: FieldLesson[] = [
       'You are safely alternating a mager and blob, but have no safe move if the melee digs. What is the next priority?',
     options: [
       'Ignore the melee until its animation begins.',
-      'Turn prayer off to think.',
+      'Keep attacking the controlled mager and choose a retreat when the melee appears.',
       'Choose a retreat or remove the melee before it breaks the solve.',
     ],
     answer: 2,
@@ -221,6 +270,31 @@ export const fieldLessons: FieldLesson[] = [
     source: 'gnome',
     seconds: 3470,
     los: 'Add a melee behind the north pillar, plus a mager on the other side. Step until the melee digs. Compare escape tiles while keeping the mager’s line of sight visible.',
+  },
+  {
+    id: 'weapon-drag',
+    chapter: 'position',
+    title: 'An attack click can move you',
+    summary:
+      'Check the route as well as the target, especially after a weapon switch.',
+    paragraphs: [
+      'A target outside your weapon’s range can pull you out from behind a pillar. A spell can do the same. DearLola shows a freeze click exposing a blob, then explains why he steps back after casting.',
+      'Before clicking, check whether you can attack from the current tile with the equipped weapon. A position that works for your bow may not work for the blowpipe. Watch true tile and recheck which enemies can see you after any movement.',
+      'If you are pulled out, restore a safe position and the next required prayer. Returning does not undo a blob read or an attack already checked. Do not spam the target again while trying to recover.',
+    ],
+    question:
+      'You switch to a blowpipe behind a pillar and the target is outside its range. What can the next attack click do?',
+    options: [
+      'Keep you in place because you were previously attacking it.',
+      'Wait in place until the enemy walks into blowpipe range.',
+      'Move you into range and expose another enemy.',
+    ],
+    answer: 2,
+    explanation:
+      'The equipped weapon determines attack range. The resulting route may break the solve even if the target itself is safe.',
+    source: 'lola',
+    seconds: 3536,
+    los: 'Choose a target beyond blowpipe range near a pillar. Compare the tiles from which your bow and blowpipe can reach it. Inspect every newly exposed enemy along the approach, then repeat with a spell cast.',
   },
   {
     id: 'pillar-stack',
@@ -259,7 +333,7 @@ export const fieldLessons: FieldLesson[] = [
     options: [
       'Drink several doses before looking at Jad again.',
       'Catch the next prayer, take one dose, then catch the next prayer.',
-      'Immediately stop attacking and switch all prayers off.',
+      'Heal to full before returning to the prayer tab.',
     ],
     answer: 1,
     explanation:
@@ -302,7 +376,7 @@ export const fieldLessons: FieldLesson[] = [
       'You are about to kill a blob beside a pillar. What should you plan before its death?',
     options: [
       'The children’s exposure, your next protection, and a safe healing position.',
-      'Turn prayer off as soon as the large blob dies.',
+      'Keep the parent blob’s last protection until a bloblet projectile arrives.',
       'Always run beside the bloblets to group them.',
     ],
     answer: 0,
@@ -311,6 +385,30 @@ export const fieldLessons: FieldLesson[] = [
     source: 'gnome',
     seconds: 615,
     los: 'Kill a blob from each side of the pillar and inspect the three bloblets. Compare which style sees you before stepping, then move to isolate one at a time.',
+  },
+  {
+    id: 'between-waves',
+    chapter: 'supplies',
+    title: 'Prepare before killing the last enemy',
+    summary:
+      'Use a controlled end of wave to heal, restore and set up the next opening.',
+    paragraphs: [
+      'Keep protection on the remaining enemy while you prepare. Check health, prayer, any stats reduced by brewing, your next weapon or spell, and the tile you want for the next spawn. A safe healing target is useful only while it is still alive.',
+      'If you need a break, use the Inferno’s logout request during the wave; it pauses progression when the wave is cleared. Wait for that confirmation. It is not an instant pause for an active wave, and hiding behind a pillar does not by itself pause the encounter. Log out and back in when ready to continue.',
+      'DearLola demonstrates this before Jad. At the end of wave 66, also move clear of the pillars before they collapse. Prepare the next protection before resuming instead of opening the inventory as the next wave appears.',
+    ],
+    question:
+      'You have one controlled enemy left and want a break. What is the safe sequence?',
+    options: [
+      'Stand behind the pillar and leave the game running.',
+      'Request the end-of-wave pause, finish the wave safely, and confirm it has paused.',
+      'Close the client immediately and assume the wave is saved.',
+    ],
+    answer: 1,
+    explanation:
+      'The logout request stops the next wave after the current one is cleared. It does not protect you during the remaining fight.',
+    source: 'lola',
+    seconds: 7905,
   },
   {
     id: 'wave-opening',
@@ -448,6 +546,30 @@ export const fieldLessons: FieldLesson[] = [
     seconds: 5305,
   },
   {
+    id: 'zuk-sets',
+    chapter: 'zuk',
+    title: 'Take the set off the shield',
+    summary:
+      'The ranger and mager initially attack the shield. Tagging changes their target.',
+    paragraphs: [
+      'Track the set as well as Zuk. Attacking each set enemy draws it onto you; an untagged enemy keeps damaging the shield. Stay behind the moving shield while doing this. A shot is not worth stepping into Zuk’s attack.',
+      'The usual learner plan protects Magic once the mager is on you and removes the ranger quickly, with health and special attacks prepared. A tagged mager can then be held under Magic while you attack Zuk. Recheck the set before a threshold or healer send.',
+      'Gnomonkey’s first-set example delays the mager tag to fit his shield position and damage plan. That is a deliberate trade of shield health for attacks, not a reason to forget the mager. Practise the straightforward tag-and-kill sequence before borrowing a faster route.',
+    ],
+    question:
+      'You killed the ranger but never attacked the set mager. Why can the shield still be losing health?',
+    options: [
+      'The untagged mager is still attacking the shield.',
+      'Protect from Magic redirects the mager automatically.',
+      'Every set enemy switches to you when one is killed.',
+    ],
+    answer: 0,
+    explanation:
+      'Aggro is handled per enemy. Tag the mager from a shield-safe position and protect against it; killing the ranger does not tag it for you.',
+    source: 'gnome',
+    seconds: 5862,
+  },
+  {
     id: 'zuk-thresholds',
     chapter: 'zuk',
     title: 'Know what the next threshold starts',
@@ -461,7 +583,7 @@ export const fieldLessons: FieldLesson[] = [
     options: [
       'Healers have spawned, so rush to tag them.',
       'The paused set timer gives a window to kill the mager and prepare for Jad.',
-      'The shield becomes invulnerable for the rest of the fight.',
+      'The timer resets, so you can ignore the tagged mager and keep attacking Zuk.',
     ],
     answer: 1,
     explanation:
@@ -560,6 +682,31 @@ export const fieldLessons: FieldLesson[] = [
     seconds: 334,
   },
   {
+    id: 'two-tick-movement',
+    chapter: 'advanced',
+    title: 'Use the hold tick for one extra action',
+    summary:
+      'A two-tick hold gives a click window; movement still changes who can see you.',
+    paragraphs: [
+      'Hug my cat adds movement after the standalone blob pattern, then introduces the mager. Follow that order: first protect a blob in a known phase, then add a nearby destination click during a hold, then return to the prayer controls for the next change.',
+      'The hold tick belongs to the existing pattern. It is not an extra tick added to it. Inventory clicks or movement must fit before the next scheduled switch. Start with one action, rather than filling the window with a chain of clicks.',
+      'Recheck the solve when moving exposes a new enemy. A newly visible blob can read a different half of the hold, and a mager needs its own attack protected. The phase lab tests the prayer pattern; the LoS tool tests the route. Success in one does not establish the other.',
+    ],
+    question:
+      'Your two-tick pattern works, but moving reveals a second blob. What must you check?',
+    options: [
+      'Only whether the movement click happened during a hold.',
+      'Whether both blobs have a compatible read phase and the anchor remains protected.',
+      'Whether you can extend the next prayer hold by one tick.',
+    ],
+    answer: 1,
+    explanation:
+      'A click fitting between prayer changes does not make the new exposure safe. Keep the anchor protected and reassess the blob phases.',
+    source: 'two',
+    seconds: 174,
+    los: 'Start with one blob in a known two-tick phase. Add a short move, then place a second blob beyond the corner. Step through when it first sees you and inspect its read before assuming the same pattern covers it.',
+  },
+  {
     id: 'optional-tools',
     chapter: 'advanced',
     title: 'Use advanced tools for a reason',
@@ -572,7 +719,7 @@ export const fieldLessons: FieldLesson[] = [
     question: 'Which goal should decide whether to use an advanced technique?',
     options: [
       'Make the current wave safer or simpler without exceeding your attention budget.',
-      'Use the highest number of clicks possible.',
+      'Use the same method as the demonstration, even with a different spawn.',
       'Avoid every potion even if the run becomes unstable.',
     ],
     answer: 0,

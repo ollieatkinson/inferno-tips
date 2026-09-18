@@ -89,7 +89,7 @@ test('overview, local artwork, resources, and credits render without errors', as
   page.on('pageerror', (e) => errors.push(e.message));
   await open(page);
   await expect(
-    page.getByRole('heading', { name: 'Your cape starts here.' }),
+    page.getByRole('heading', { name: 'Inferno practice & notes' }),
   ).toBeVisible();
   expect(
     await page
@@ -123,12 +123,12 @@ test('overview, local artwork, resources, and credits render without errors', as
 for (const [id, name] of [
   ['rhythm', 'Flick the mager'],
   ['blob', 'Read the blob'],
-  ['alternate', 'One tick at a time'],
-  ['stack', 'Handle the stack'],
-  ['movement', 'Switch & step'],
+  ['alternate', 'One-tick alternating'],
+  ['stack', 'Flick a two-tick stack'],
+  ['movement', 'Flick and move'],
   ['food', 'Eat between flicks'],
-  ['potions', 'Brew, restore, refocus'],
-  ['gauntlet', 'Put it all together'],
+  ['potions', 'Brew and restore between flicks'],
+  ['gauntlet', 'Blob, mager and movement'],
 ]) {
   test(`${id}: complete a perfect challenge through real controls`, async ({
     page,
@@ -185,7 +185,7 @@ test('guided runs and paused challenges never award mastery', async ({
   page,
 }) => {
   await open(page);
-  await lesson(page, 'Handle the stack');
+  await lesson(page, 'Flick a two-tick stack');
   await page.clock.install();
   await page.clock.pauseAt(new Date());
   await start(page, false);
@@ -195,7 +195,7 @@ test('guided runs and paused challenges never award mastery', async ({
   await start(page);
   await page.getByRole('button', { name: 'Pause', exact: true }).click();
   await expect(
-    page.getByRole('heading', { name: 'Take a breath.' }),
+    page.getByRole('heading', { name: 'Practice paused' }),
   ).toBeVisible();
   await page.clock.runFor(5000);
   await expect(page.locator('.run-stats').getByText('0 / 36')).toBeVisible();
@@ -247,9 +247,9 @@ test('mobile has usable navigation, movement, and no horizontal overflow', async
   });
   await page.getByRole('button', { name: 'Guides & resources' }).click();
   await expect(
-    page.getByRole('heading', { name: 'Good practice. Great teachers.' }),
+    page.getByRole('heading', { name: 'Guides & tools' }),
   ).toBeVisible();
-  await lesson(page, 'Switch & step');
+  await lesson(page, 'Flick and move');
   await page.getByRole('button', { name: 'Tile 4, 2, target' }).click();
   await expect(
     page.getByRole('button', { name: 'Tile 4, 2, target, player' }),
@@ -291,7 +291,7 @@ test('corrupt or blocked storage cannot prevent practice', async ({ page }) => {
   await expect(page.getByRole('status')).toContainText(
     'Browser storage is unavailable',
   );
-  await page.getByRole('button', { name: 'Start learning' }).click();
+  await page.getByRole('button', { name: 'Start drill →' }).click();
   await expect(
     page.getByRole('button', { name: 'Start guided practice' }),
   ).toBeVisible();
@@ -350,7 +350,7 @@ test('Esc opens inventory during a run and tab binding collisions swap safely', 
   await page.keyboard.press('Escape');
   await expect(page.getByRole('button', { name: /^Eat shark/ })).toBeVisible();
   await expect(
-    page.getByRole('heading', { name: 'Take a breath.' }),
+    page.getByRole('heading', { name: 'Practice paused' }),
   ).toHaveCount(0);
   await page.clock.runFor(600);
   await expect(
@@ -452,7 +452,7 @@ test('hidden tabs and timer stalls pause rather than running through missed beat
     document.dispatchEvent(new Event('visibilitychange'));
   });
   await expect(
-    page.getByRole('heading', { name: 'Take a breath.' }),
+    page.getByRole('heading', { name: 'Practice paused' }),
   ).toBeVisible();
   await page.clock.runFor(5000);
   await expect(page.locator('.run-stats').getByText('0 / 36')).toBeVisible();
@@ -468,7 +468,7 @@ test('hidden tabs and timer stalls pause rather than running through missed beat
   await page.clock.runFor(600);
   await page.clock.fastForward(5000);
   await expect(
-    page.getByRole('heading', { name: 'Take a breath.' }),
+    page.getByRole('heading', { name: 'Practice paused' }),
   ).toBeVisible();
   await expect(page.locator('.run-stats').getByText('0 / 36')).toBeVisible();
 });
@@ -479,7 +479,7 @@ test('course teaches decisions, retains knowledge, and has a working phase lab',
   await open(page);
   await page.getByRole('button', { name: /^Learning path/ }).click();
   await expect(
-    page.getByRole('heading', { name: 'Learn the decision. Then the clicks.' }),
+    page.getByRole('heading', { name: 'Learning path' }),
   ).toBeVisible();
   await expect(page.locator('.drill-card')).toHaveCount(0);
   await page
@@ -492,7 +492,7 @@ test('course teaches decisions, retains knowledge, and has a working phase lab',
     .getByRole('radio', { name: 'Hold Protect from Magic while killing them.' })
     .check();
   await expect(
-    page.getByText(/1 \/ 22 knowledge checks understood/),
+    page.getByText(/1 \/ 28 checks answered correctly/),
   ).toBeVisible();
   await page.reload();
   await expect(page.locator('astro-island')).not.toHaveAttribute('ssr');
@@ -518,7 +518,7 @@ test('course teaches decisions, retains knowledge, and has a working phase lab',
     .getByRole('button', { name: 'Practice drills', exact: true })
     .click();
   await page.getByLabel('Find a drill').fill('two-tick');
-  await expect(page.locator('.drill-card')).toHaveCount(2);
+  await expect(page.locator('.drill-card')).toHaveCount(3);
   await page.getByLabel('Find a drill').fill('not-a-real-drill');
   await expect(page.getByText(/No drills match/)).toBeVisible();
   await expect(page.locator('.topbar-los')).toHaveAttribute(
@@ -528,9 +528,9 @@ test('course teaches decisions, retains knowledge, and has a working phase lab',
 });
 
 for (const [id, name] of [
-  ['bat', 'The bat has a different beat'],
+  ['bat', 'Flick the bat'],
   ['anchor-range', 'Anchor on the ranger'],
-  ['double-blob', 'Two blobs, one anchor'],
+  ['double-blob', 'Alternate with two blobs'],
   ['stack-one', 'A one-tick pillar stack'],
   ['flick', 'One-tick prayer flick'],
   ['two-tick', 'Two-tick alternating'],
@@ -538,8 +538,8 @@ for (const [id, name] of [
   ['reverse', 'Reverse flick the bat'],
   ['melee-blob', 'Melee and blob triage'],
   ['jad', 'Read Jad, then pray'],
-  ['triples', 'Three Jads, one decision'],
-  ['blowpipe', 'Shoot, step, shoot'],
+  ['triples', 'Triple Jad prayer cues'],
+  ['blowpipe', 'Blowpipe attack and movement'],
 ])
   test(`${id}: expanded drill works through its visible controls`, async ({
     page,
@@ -623,4 +623,96 @@ test('conservation drill rejects a held prayer and course fits a narrow viewport
     path: 'test-results/course-mobile.png',
     fullPage: true,
   });
+});
+
+test('problem shortcuts open the right lesson and survive a reload', async ({
+  page,
+}) => {
+  await open(page);
+  const fix = page
+    .locator('.troubleshooting details')
+    .filter({ hasText: 'My safe tile stops being safe when I attack' });
+  await fix.locator('summary').click();
+  await expect(fix).toContainText('current weapon’s range');
+  await fix.getByRole('button', { name: 'Read the lesson →' }).click();
+  await expect(page).toHaveURL(/#lesson-weapon-drag$/);
+  await expect(
+    page.getByRole('heading', { name: 'An attack click can move you' }),
+  ).toBeFocused();
+  await expect(
+    page.getByRole('link', { name: 'Watch the example · dearlola1 · 58:56 ↗' }),
+  ).toHaveAttribute(
+    'href',
+    'https://www.youtube.com/watch?v=r3s4rbTd4QU&t=3536s',
+  );
+  await page
+    .getByRole('radio', {
+      name: 'Move you into range and expose another enemy.',
+    })
+    .check();
+  await page.reload();
+  await expect(page.locator('astro-island')).not.toHaveAttribute('ssr');
+  await expect(
+    page.getByRole('heading', { name: 'An attack click can move you' }),
+  ).toBeFocused();
+  await expect(
+    page.getByRole('radio', {
+      name: 'Move you into range and expose another enemy.',
+    }),
+  ).toBeChecked();
+  await page.getByRole('button', { name: 'Overview', exact: true }).click();
+  const prayerFix = page
+    .locator('.troubleshooting details')
+    .filter({ hasText: 'The ranger hits me through my alternating prayers' });
+  await prayerFix.locator('summary').click();
+  await prayerFix.getByRole('button', { name: 'Practise this →' }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Anchor on the ranger', exact: true }),
+  ).toBeVisible();
+});
+
+test('new course notes and chapter contents work on mobile', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await open(page);
+  await page
+    .getByRole('button', { name: 'Supplies & recovery 4 lessons' })
+    .click();
+  await page
+    .getByRole('link', {
+      name: 'Prepare before killing the last enemy',
+      exact: true,
+    })
+    .click();
+  await expect(
+    page.getByRole('heading', {
+      name: 'Prepare before killing the last enemy',
+    }),
+  ).toBeFocused();
+  await page
+    .getByRole('radio', {
+      name: 'Request the end-of-wave pause, finish the wave safely, and confirm it has paused.',
+    })
+    .check();
+  await expect(
+    page
+      .locator('.field-lesson')
+      .filter({ hasText: 'Prepare before killing the last enemy' })
+      .getByRole('status'),
+  ).toContainText('Correct.');
+  await page.getByRole('button', { name: /07 Zuk/ }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Take the set off the shield' }),
+  ).toBeVisible();
+  await page
+    .getByRole('radio', {
+      name: 'The untagged mager is still attacking the shield.',
+    })
+    .check();
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
 });

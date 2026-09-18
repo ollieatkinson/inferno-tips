@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { LearningPath, KNOWLEDGE_KEY } from './LearningPath';
-import { chapters } from '../lib/curriculum';
+import { chapters, fieldLessons } from '../lib/curriculum';
+import { Overview } from './Overview';
 import {
   lessons,
   PASS_SCORE,
@@ -96,6 +97,7 @@ type Page = 'overview' | 'course' | 'drills' | 'progress' | 'resources';
 
 export default function Academy() {
   const [page, setPage] = useState<Page>('overview');
+  const [courseEntry, setCourseEntry] = useState<string>();
   const [active, setActive] = useState<Lesson | null>(null);
   const [progress, setProgress] = useState<Progress>({});
   const [storageError, setStorageError] = useState(false);
@@ -107,6 +109,24 @@ export default function Academy() {
       setStorageError(true);
     }
   }, []);
+  useEffect(() => {
+    const followLessonLink = () => {
+      const id = window.location.hash.replace(/^#lesson-/, '');
+      if (!window.location.hash) {
+        setPage('overview');
+        setCourseEntry(undefined);
+        setActive(null);
+        return;
+      }
+      if (!fieldLessons.some((l) => l.id === id)) return;
+      setCourseEntry(id);
+      setPage('course');
+      setActive(null);
+    };
+    followLessonLink();
+    window.addEventListener('hashchange', followLessonLink);
+    return () => window.removeEventListener('hashchange', followLessonLink);
+  }, []);
   const mastered = lessons.filter(
     (l) => (progress[l.id]?.passes || 0) >= 2,
   ).length;
@@ -114,9 +134,22 @@ export default function Academy() {
     learningOrder.find((l) => (progress[l.id]?.passes || 0) < 2) ||
     lessons[lessons.length - 1];
   function navigate(p: Page) {
+    setCourseEntry(undefined);
+    if (window.location.hash.startsWith('#lesson-'))
+      window.history.replaceState(
+        null,
+        '',
+        window.location.pathname + window.location.search,
+      );
     setPage(p);
     setActive(null);
     window.scrollTo(0, 0);
+  }
+  function openField(id: string) {
+    window.location.hash = `lesson-${id}`;
+    setCourseEntry(id);
+    setPage('course');
+    setActive(null);
   }
   function launch(l: Lesson) {
     setActive(l);
@@ -156,10 +189,10 @@ export default function Academy() {
           </span>
           <span>
             inferno<span className="muted">.tips</span>
-            <small>THE PRACTICE GROUNDS</small>
+            <small>OSRS INFERNO GUIDE</small>
           </span>
         </button>
-        <div className="nav-label">YOUR TRAINING</div>
+        <div className="nav-label">PRACTICE</div>
         <nav aria-label="Main navigation">
           {(
             [
@@ -183,7 +216,7 @@ export default function Academy() {
             </button>
           ))}
         </nav>
-        <div className="nav-label resources-label">GO A LITTLE DEEPER</div>
+        <div className="nav-label resources-label">REFERENCE</div>
         <button
           className={`nav-item ${page === 'resources' ? 'active' : ''}`}
           onClick={() => navigate('resources')}
@@ -202,24 +235,14 @@ export default function Academy() {
           <Icon name="external" size={14} />
         </a>
         <div className="sidebar-bottom">
-          <div className="cape-badge">
-            <Icon name="flame" size={22} />
-          </div>
-          <strong>One tick closer.</strong>
-          <p>
-            Every good run starts
-            <br />
-            with a little practice.
-          </p>
-          <div className="fan-label">
-            <span /> Made for the OSRS community
-          </div>
+          <p>Progress is saved in this browser.</p>
+          <a href="/credits/">Sources & simulation limits ↗</a>
         </div>
       </aside>
       <div className="main-shell">
         <header className="topbar">
           <div className="breadcrumb">
-            The practice grounds <span>/</span>{' '}
+            Inferno Tips <span>/</span>{' '}
             <b>
               {active
                 ? active.title
@@ -266,224 +289,20 @@ export default function Academy() {
           ) : (
             <>
               {page === 'overview' && (
-                <>
-                  <div className="page-heading">
-                    <div>
-                      <span className="eyebrow">
-                        LESS PANIC. MORE PRACTICE.
-                      </span>
-                      <h1>Your cape starts here.</h1>
-                      <p>
-                        Break the Inferno down. Build the muscle memory. Go
-                        again.
-                      </p>
-                    </div>
-                    <span className="small-tag">
-                      <span className="orange-dot" /> OLD SCHOOL RUNESCAPE
-                    </span>
-                  </div>
-                  <section className="hero">
-                    <div className="hero-copy">
-                      <span className="eyebrow">
-                        <span className="orange-dot" /> SMALL DRILLS. BIG
-                        DIFFERENCE.
-                      </span>
-                      <h2>
-                        A little practice.
-                        <br />A better run.
-                      </h2>
-                      <p>
-                        That blob doesn’t have to end your run.
-                        <br />
-                        Learn one mechanic at a time, in a place
-                        <br className="desktop-break" /> where mistakes cost
-                        nothing.
-                      </p>
-                      <button
-                        className="button primary"
-                        onClick={() => launch(next)}
-                      >
-                        {Object.keys(progress).length
-                          ? 'Continue learning'
-                          : 'Start learning'}
-                        <Icon name="arrow" size={18} />
-                      </button>
-                      <span className="hero-note">
-                        {lessons.length} drills <span>·</span> Bite-sized
-                        practice <span>·</span> Zero supplies
-                      </span>
-                    </div>
-                    <div className="hero-art" aria-hidden="true">
-                      <div className="arena-glow" />
-                      <div className="orbit orbit-one" />
-                      <div className="orbit orbit-two" />
-                      <div className="isometric-floor" />
-                      <div className="lava-crack crack-one" />
-                      <div className="lava-crack crack-two" />
-                      <img className="hero-blob" src="/icons/blob.png" alt="" />
-                      <div className="float-prayer magic">
-                        <GameIcon name="protect-magic" />
-                      </div>
-                      <div className="float-prayer ranged">
-                        <GameIcon name="protect-range" />
-                      </div>
-                      <div className="mob-label">
-                        <span />
-                        JAL-AK<span className="muted"> / </span> THE BLOB
-                      </div>
-                      <div className="tick-caption">
-                        <i />
-                        <i />
-                        <i className="lit" />
-                        <i />
-                        <i />
-                        <i />
-                        <span>READ. SWITCH. REPEAT.</span>
-                      </div>
-                    </div>
-                  </section>
-                  <div className="stat-strip">
-                    <div>
-                      <span className="stat-icon">
-                        <Icon name="book" />
-                      </span>
-                      <p>
-                        <strong>Learn the why</strong>
-                        <span>Understand before you click.</span>
-                      </p>
-                    </div>
-                    <div>
-                      <span className="stat-icon">
-                        <Icon name="target" />
-                      </span>
-                      <p>
-                        <strong>Practise the how</strong>
-                        <span>Short drills. Instant feedback.</span>
-                      </p>
-                    </div>
-                    <div>
-                      <span className="stat-icon">
-                        <Icon name="chart" />
-                      </span>
-                      <p>
-                        <strong>Make it second nature</strong>
-                        <span>Build consistency, not just a score.</span>
-                      </p>
-                    </div>
-                  </div>
-                  <div className="overview-columns">
-                    <section className="path-section">
-                      <div className="section-heading">
-                        <div>
-                          <span className="eyebrow">
-                            A PLAN, NOT A PLAYLIST
-                          </span>
-                          <h2>Your learning path</h2>
-                        </div>
-                        <button
-                          className="text-button"
-                          onClick={() => navigate('course')}
-                        >
-                          View course
-                          <Icon name="arrow" size={16} />
-                        </button>
-                      </div>
-                      <p className="section-intro">
-                        Start simple. Add a little pressure when you’re ready.
-                      </p>
-                      <div className="compact-lessons">
-                        {lessons.slice(0, 3).map((l, i) => (
-                          <button
-                            className="lesson-row"
-                            key={l.id}
-                            onClick={() => launch(l)}
-                          >
-                            <span
-                              className={`lesson-number ${progress[l.id]?.passes === 2 ? 'complete' : ''}`}
-                            >
-                              {progress[l.id]?.passes === 2 ? (
-                                <Icon name="check" size={16} />
-                              ) : (
-                                `0${i + 1}`
-                              )}
-                            </span>
-                            <span className="lesson-row-copy">
-                              <strong>{l.title}</strong>
-                              <small>{l.description}</small>
-                            </span>
-                            <span className="row-level">{l.level}</span>
-                            <Icon name="arrow" size={17} />
-                          </button>
-                        ))}
-                      </div>
-                      <div className="path-footer">
-                        <span>YOUR PROGRESS</span>
-                        <div className="mini-progress">
-                          <i
-                            style={{
-                              width: `${(mastered / lessons.length) * 100}%`,
-                            }}
-                          />
-                        </div>
-                        <b>
-                          {mastered} / {lessons.length} mastered
-                        </b>
-                      </div>
-                    </section>
-                    <aside className="coach-card">
-                      <span className="eyebrow">
-                        <Icon name="flame" size={16} /> THE RIGHT MINDSET
-                      </span>
-                      <h3>
-                        You don’t need to
-                        <br />
-                        learn it all at once.
-                      </h3>
-                      <p>
-                        Pick one mechanic. Find the beat. Repeat until it feels
-                        familiar.
-                        <br />
-                        That’s when it’s starting to stick.
-                      </p>
-                      <div className="coach-rule" />
-                      <span className="coach-tip">Today’s goal</span>
-                      <strong>One drill. A little more confidence.</strong>
-                      <button
-                        className="text-button"
-                        onClick={() => launch(next)}
-                      >
-                        Let’s do it
-                        <Icon name="arrow" size={16} />
-                      </button>
-                    </aside>
-                  </div>
-                  <div className="section-heading practice-heading">
-                    <div>
-                      <span className="eyebrow">STRAIGHT INTO THE ACTION</span>
-                      <h2>Pick something to practise</h2>
-                    </div>
-                    <button
-                      className="text-button"
-                      onClick={() => navigate('drills')}
-                    >
-                      All drills
-                      <Icon name="arrow" size={16} />
-                    </button>
-                  </div>
-                  <div className="drill-grid">
-                    {[lessons[1], lessons[3], lessons[4]].map((l) => (
-                      <DrillCard
-                        key={l.id}
-                        lesson={l}
-                        onClick={() => launch(l)}
-                        progress={progress}
-                      />
-                    ))}
-                  </div>
-                </>
+                <Overview
+                  next={next}
+                  launch={launch}
+                  openField={openField}
+                  openDrills={() => navigate('drills')}
+                />
               )}
               {page === 'course' && (
-                <LearningPath launch={launch} progress={progress} />
+                <LearningPath
+                  key={courseEntry || 'course'}
+                  initialLesson={courseEntry}
+                  launch={launch}
+                  progress={progress}
+                />
               )}
               {page === 'drills' && (
                 <DrillLibrary launch={launch} progress={progress} />
@@ -492,11 +311,10 @@ export default function Academy() {
                 <>
                   <div className="page-heading">
                     <div>
-                      <span className="eyebrow">CONSISTENCY IS THE GOAL</span>
-                      <h1>Every rep counts.</h1>
+                      <span className="eyebrow">SAVED RESULTS</span>
+                      <h1>Your practice results</h1>
                       <p>
-                        Your progress stays in this browser. No account, no
-                        leaderboard pressure.
+                        Challenge passes and best scores, saved in this browser.
                       </p>
                     </div>
                   </div>
@@ -600,7 +418,7 @@ export default function Academy() {
           <footer>
             <span className="footer-brand">
               <Icon name="flame" size={18} />
-              inferno.tips <span>Made for the climb.</span>
+              inferno.tips
             </span>
             <p>
               Fan-made. Not affiliated with Jagex.
@@ -682,8 +500,8 @@ function DrillLibrary({
     <>
       <div className="page-heading">
         <div>
-          <span className="eyebrow">REPEAT THE SKILL YOU NEED</span>
-          <h1>Welcome to the practice grounds.</h1>
+          <span className="eyebrow">TIMING & CONTROLS</span>
+          <h1>Practice drills</h1>
           <p>
             Every drill is open. Filter by skill, pick a weak spot and start a
             36-tick run. Both modes use the real 0.6-second beat.
@@ -757,8 +575,11 @@ function Resources() {
       <div className="page-heading">
         <div>
           <span className="eyebrow">LEARN FROM THE COMMUNITY</span>
-          <h1>Good practice. Great teachers.</h1>
-          <p>A few places to go when you want to see the bigger picture.</p>
+          <h1>Guides & tools</h1>
+          <p>
+            The demonstrations behind these lessons, plus tools for practising
+            complete waves.
+          </p>
         </div>
       </div>
       <div className="resource-grid">
@@ -770,7 +591,7 @@ function Resources() {
         >
           <span className="resource-symbol video-symbol">▶</span>
           <span className="eyebrow">WATCH / HUG MY CAT</span>
-          <h2>Two-tick timing, made visible.</h2>
+          <h2>Hug my cat: two-tick guide</h2>
           <p>
             On-screen timelines explain blob scan phases, setting up an offset
             and recovering a misaligned cycle. This guide has visual
@@ -786,7 +607,7 @@ function Resources() {
         >
           <span className="resource-symbol video-symbol">▶</span>
           <span className="eyebrow">WATCH / DEARLOLA1</span>
-          <h2>Make the wave simpler.</h2>
+          <h2>dearlola1: full Inferno guide</h2>
           <p>
             The 2026 any-gear guide covers corner traps, isolation, blob
             flinches, reverse flicking, melee digs, Jads and Zuk. Learn the
@@ -802,7 +623,7 @@ function Resources() {
         >
           <span className="resource-symbol video-symbol">▶</span>
           <span className="eyebrow">WATCH / GNOMONKEY</span>
-          <h2>A full run, explained.</h2>
+          <h2>Gnomonkey: Golden Trio guide</h2>
           <p>
             Gnomonkey’s Golden Trio guide: modern supplies, wave priorities,
             one-tick alternating and a detailed Zuk damage comparison.
@@ -822,7 +643,7 @@ function Resources() {
             <Icon name="book" size={30} />
           </span>
           <span className="eyebrow">READ / OSRS WIKI</span>
-          <h2>Your reference, between runs.</h2>
+          <h2>OSRS Wiki: Inferno strategies</h2>
           <p>
             Monster details, equipment, supplies, and wave strategy. Keep the
             Wiki close for the details that don’t need another guide here.
@@ -842,7 +663,7 @@ function Resources() {
             <Icon name="grid" size={30} />
           </span>
           <span className="eyebrow">EXPLORE / INFERNO LOS</span>
-          <h2>Make sense of a messy wave.</h2>
+          <h2>Inferno line of sight</h2>
           <p>
             Move enemies, inspect line of sight, and step through a stack. Bring
             your prayer rhythm into the companion wave simulator.
@@ -855,7 +676,7 @@ function Resources() {
       </div>
       <section className="tips-panel">
         <span className="eyebrow">BETWEEN ATTEMPTS</span>
-        <h2>A better practice loop.</h2>
+        <h2>After a failed attempt</h2>
         <div>
           <article>
             <b>01</b>
@@ -1410,7 +1231,7 @@ function Trainer({
             {status === 'paused' && (
               <div className="arena-overlay">
                 <Icon name="clock" size={35} />
-                <h3>Take a breath.</h3>
+                <h3>Practice paused</h3>
                 <p>
                   Paused runs count as practice.
                   <br />
@@ -1740,7 +1561,7 @@ function Trainer({
         </section>
         <aside className="lesson-notes">
           <span className="eyebrow">BEFORE YOU BEGIN</span>
-          <h2>What to practise.</h2>
+          <h2>Drill instructions</h2>
           <ol>
             {lesson.steps.map((s) => (
               <li key={s}>{s}</li>
@@ -1786,8 +1607,8 @@ function Trainer({
             </a>
           </div>
           <div className="mastery-note">
-            <span className="eyebrow">MAKE IT STICK</span>
-            <h3>90% twice. Then move on.</h3>
+            <span className="eyebrow">CHALLENGE PASSES</span>
+            <h3>Two passes at 90%</h3>
             <p>
               Finish two uninterrupted challenges at 90% or above. Guided runs
               help you get there.

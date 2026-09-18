@@ -38,7 +38,7 @@ export const lessons: Lesson[] = [
   {
     id: 'rhythm',
     title: 'Flick the mager',
-    tag: 'THE FOUNDATIONS',
+    tag: 'LAZY FLICKING',
     description: 'See the attack. Learn the four-tick cycle.',
     icon: 'protect-magic',
     level: 'Foundation',
@@ -55,7 +55,7 @@ export const lessons: Lesson[] = [
   {
     id: 'blob',
     title: 'Read the blob',
-    tag: 'KNOW YOUR ENEMY',
+    tag: 'BLOB READS',
     description: 'Understand the scan. Make the right switch.',
     icon: 'blob',
     level: 'Foundation',
@@ -71,9 +71,9 @@ export const lessons: Lesson[] = [
   },
   {
     id: 'alternate',
-    title: 'One tick at a time',
-    tag: 'BUILD MUSCLE MEMORY',
-    description: 'Make alternating prayers feel second nature.',
+    title: 'One-tick alternating',
+    tag: 'ONE-TICK ALTERNATING',
+    description: 'Switch between Magic and Ranged every game tick.',
     icon: 'protect-range',
     level: 'Developing',
     objective: 'Alternate Magic and Ranged on every tick, starting with Magic.',
@@ -87,8 +87,8 @@ export const lessons: Lesson[] = [
   },
   {
     id: 'stack',
-    title: 'Handle the stack',
-    tag: 'TWO THREATS. ONE PLAN.',
+    title: 'Flick a two-tick stack',
+    tag: 'OFFSET ATTACKS',
     description: 'Keep a mager and ranger on separate beats.',
     icon: 'mager',
     level: 'Developing',
@@ -103,8 +103,8 @@ export const lessons: Lesson[] = [
   },
   {
     id: 'movement',
-    title: 'Switch & step',
-    tag: 'FREE UP YOUR CLICKS',
+    title: 'Flick and move',
+    tag: 'MOVEMENT',
     description: 'Keep your prayer while finding the next tile.',
     icon: 'player',
     level: 'Advanced',
@@ -121,7 +121,7 @@ export const lessons: Lesson[] = [
   {
     id: 'food',
     title: 'Eat between flicks',
-    tag: 'MAKE ROOM FOR ANOTHER CLICK',
+    tag: 'FOOD',
     description: 'Protect, eat, and get back to your prayers.',
     icon: 'shark',
     level: 'Developing',
@@ -137,8 +137,8 @@ export const lessons: Lesson[] = [
   },
   {
     id: 'potions',
-    title: 'Brew, restore, refocus',
-    tag: 'KEEP YOUR PLACE IN THE CYCLE',
+    title: 'Brew and restore between flicks',
+    tag: 'POTIONS',
     description: 'Fit a brew-and-restore sequence around flicks.',
     icon: 'brew',
     level: 'Advanced',
@@ -154,9 +154,9 @@ export const lessons: Lesson[] = [
   },
   {
     id: 'gauntlet',
-    title: 'Put it all together',
-    tag: 'YOUR FINAL CHECKPOINT',
-    description: 'A blob, a mager, and a reason to keep moving.',
+    title: 'Blob, mager and movement',
+    tag: 'COMBINED PRACTICE',
+    description: 'Alternate around a mager while moving every four ticks.',
     icon: 'ranger',
     level: 'Advanced',
     objective:
@@ -172,11 +172,11 @@ export const lessons: Lesson[] = [
 ];
 lessons.push({
   id: 'bat',
-  title: 'The bat has a different beat',
+  title: 'Flick the bat',
   icon: 'protect-range',
   level: 'Foundation',
   optional: false,
-  tag: 'BUILD YOUR TOOLKIT',
+  tag: 'TIMING DRILL',
   description: 'Protect Ranged every three ticks, then toggle off.',
   objective: 'Protect Ranged every three ticks, then toggle off.',
   steps: [
@@ -194,7 +194,7 @@ lessons.push({
   icon: 'ranger',
   level: 'Developing',
   optional: false,
-  tag: 'BUILD YOUR TOOLKIT',
+  tag: 'TIMING DRILL',
   description: 'Start Ranged, then alternate every tick while a blob attacks.',
   objective: 'Start Ranged, then alternate every tick while a blob attacks.',
   steps: [
@@ -208,11 +208,11 @@ lessons.push({
 });
 lessons.push({
   id: 'double-blob',
-  title: 'Two blobs, one anchor',
+  title: 'Alternate with two blobs',
   icon: 'blob',
   level: 'Developing',
   optional: false,
-  tag: 'BUILD YOUR TOOLKIT',
+  tag: 'TIMING DRILL',
   description: 'Cover a mager and two blobs with different scan timings.',
   objective: 'Cover a mager and two blobs with different scan timings.',
   steps: [
@@ -230,7 +230,7 @@ lessons.push({
   icon: 'mager',
   level: 'Developing',
   optional: false,
-  tag: 'BUILD YOUR TOOLKIT',
+  tag: 'TIMING DRILL',
   description: 'Cover the back mager, then the front ranger one tick later.',
   objective: 'Cover the back mager, then the front ranger one tick later.',
   steps: [
@@ -308,7 +308,7 @@ lessons.push({
   icon: 'bat',
   level: 'Advanced',
   optional: false,
-  tag: 'BUILD YOUR TOOLKIT',
+  tag: 'TIMING DRILL',
   description: 'Protect every mager attack; cover the bat during the gaps.',
   objective: 'Protect every mager attack; cover the bat during the gaps.',
   steps: [
@@ -346,7 +346,7 @@ lessons.push({
   icon: 'jad',
   level: 'Developing',
   optional: false,
-  tag: 'BUILD YOUR TOOLKIT',
+  tag: 'TIMING DRILL',
   description: 'React to the attack cue before the prayer check.',
   objective: 'React to the attack cue before the prayer check.',
   steps: [
@@ -360,11 +360,11 @@ lessons.push({
 });
 lessons.push({
   id: 'triples',
-  title: 'Three Jads, one decision',
+  title: 'Triple Jad prayer cues',
   icon: 'jad',
   level: 'Advanced',
   optional: false,
-  tag: 'BUILD YOUR TOOLKIT',
+  tag: 'TIMING DRILL',
   description:
     'Read a new Jad cue every three ticks without assuming alternating styles.',
   objective:
@@ -380,11 +380,11 @@ lessons.push({
 });
 lessons.push({
   id: 'blowpipe',
-  title: 'Shoot, step, shoot',
+  title: 'Blowpipe attack and movement',
   icon: 'player',
   level: 'Advanced',
   optional: false,
-  tag: 'BUILD YOUR TOOLKIT',
+  tag: 'TIMING DRILL',
   description:
     'Click Attack on odd ticks and reach the marked tile on even ticks.',
   objective:
