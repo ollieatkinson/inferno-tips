@@ -1,0 +1,511 @@
+{
+  "mager": {
+    "label": "Isolated mager",
+    "description": "One mager at range; its first attack is on the next tick.",
+    "scenario": {
+      "version": 1,
+      "kind": "custom",
+      "player": [16, 10],
+      "pillars": [true, true, true],
+      "mobs": [
+        {
+          "id": 1,
+          "type": "mager",
+          "x": 8,
+          "y": 10,
+          "cooldown": 1
+        }
+      ]
+    }
+  },
+  "bat": {
+    "label": "Isolated bat",
+    "description": "One bat in attack range, with a three-tick attack cycle.",
+    "scenario": {
+      "version": 1,
+      "kind": "custom",
+      "player": [16, 10],
+      "pillars": [true, true, true],
+      "mobs": [
+        {
+          "id": 1,
+          "type": "bat",
+          "x": 12,
+          "y": 10,
+          "cooldown": 1
+        }
+      ]
+    }
+  },
+  "blob": {
+    "label": "Blob read",
+    "description": "One blob at range, ready to read your prayer on the next tick.",
+    "scenario": {
+      "version": 1,
+      "kind": "custom",
+      "player": [16, 10],
+      "pillars": [true, true, true],
+      "mobs": [
+        {
+          "id": 1,
+          "type": "blob",
+          "x": 20,
+          "y": 7,
+          "cooldown": 0
+        }
+      ]
+    }
+  },
+  "blob-flinch": {
+    "label": "Blob behind the pillar",
+    "description": "One blob with a Magic attack pending in three ticks. You are already behind the north pillar.",
+    "scenario": {
+      "version": 1,
+      "kind": "custom",
+      "player": [16, 5],
+      "pillars": [true, true, true],
+      "mobs": [
+        {
+          "id": 1,
+          "type": "blob",
+          "x": 20,
+          "y": 7,
+          "cooldown": 3,
+          "pendingStyle": "mage",
+          "pendingTicks": 3
+        }
+      ]
+    }
+  },
+  "ranger-blob": {
+    "label": "Ranger and blob",
+    "description": "A ranger and blob can both see you. The ranger attacks and the blob reads on the next tick.",
+    "scenario": {
+      "version": 1,
+      "kind": "custom",
+      "player": [16, 10],
+      "pillars": [true, true, true],
+      "mobs": [
+        {
+          "id": 1,
+          "type": "ranger",
+          "x": 8,
+          "y": 10,
+          "cooldown": 1
+        },
+        {
+          "id": 2,
+          "type": "blob",
+          "x": 13,
+          "y": 5,
+          "cooldown": 1
+        }
+      ]
+    }
+  },
+  "mager-blob": {
+    "label": "Mager and blob",
+    "description": "A mager and blob at range, with their first attack and read on the next tick.",
+    "scenario": {
+      "version": 1,
+      "kind": "custom",
+      "player": [16, 10],
+      "pillars": [true, true, true],
+      "mobs": [
+        {
+          "id": 1,
+          "type": "mager",
+          "x": 8,
+          "y": 10,
+          "cooldown": 1
+        },
+        {
+          "id": 2,
+          "type": "blob",
+          "x": 13,
+          "y": 5,
+          "cooldown": 1
+        }
+      ]
+    }
+  },
+  "two-blobs": {
+    "label": "Mager and two blobs",
+    "description": "A mager and two visible blobs. Their initial reads are one tick apart.",
+    "scenario": {
+      "version": 1,
+      "kind": "custom",
+      "player": [16, 10],
+      "pillars": [true, true, true],
+      "mobs": [
+        {
+          "id": 1,
+          "type": "mager",
+          "x": 8,
+          "y": 10,
+          "cooldown": 1
+        },
+        {
+          "id": 2,
+          "type": "blob",
+          "x": 13,
+          "y": 5,
+          "cooldown": 1
+        },
+        {
+          "id": 3,
+          "type": "blob",
+          "x": 20,
+          "y": 10,
+          "cooldown": 2
+        }
+      ]
+    }
+  },
+  "corner": {
+    "label": "Bat at the pillar",
+    "description": "A bat is trapped west of the north pillar; you start on the east side.",
+    "scenario": {
+      "version": 1,
+      "kind": "custom",
+      "player": [20, 7],
+      "pillars": [true, true, true],
+      "mobs": [
+        {
+          "id": 1,
+          "type": "bat",
+          "x": 15,
+          "y": 7,
+          "cooldown": 0
+        }
+      ]
+    }
+  },
+  "melee-dig": {
+    "label": "Mager and trapped melee",
+    "description": "A visible mager and a trapped melee. The melee is set to check for a dig in three ticks for this exercise.",
+    "scenario": {
+      "version": 1,
+      "kind": "custom",
+      "player": [16, 5],
+      "pillars": [true, true, true],
+      "mobs": [
+        {
+          "id": 1,
+          "type": "mager",
+          "x": 8,
+          "y": 10,
+          "cooldown": 1
+        },
+        {
+          "id": 2,
+          "type": "melee",
+          "x": 20,
+          "y": 7,
+          "cooldown": 0,
+          "dig": {
+            "timer": 3,
+            "count": 0,
+            "sinceAttack": 15,
+            "remaining": 0,
+            "recovery": 0
+          }
+        }
+      ]
+    }
+  },
+  "pillar-stack": {
+    "label": "Ranger–mager pillar stack",
+    "description": "A front ranger and back mager east of the north pillar; you start at the middle of its west face.",
+    "scenario": {
+      "version": 1,
+      "kind": "custom",
+      "player": [16, 6],
+      "pillars": [true, true, true],
+      "mobs": [
+        {
+          "id": 1,
+          "type": "ranger",
+          "x": 20,
+          "y": 6,
+          "cooldown": 0
+        },
+        {
+          "id": 2,
+          "type": "mager",
+          "x": 23,
+          "y": 6,
+          "cooldown": 0
+        }
+      ]
+    }
+  },
+  "weapon-range": {
+    "label": "Weapon range and exposure",
+    "description": "A visible ranger is nine tiles away; a blob is hidden by the north pillar.",
+    "scenario": {
+      "version": 1,
+      "kind": "custom",
+      "player": [16, 5],
+      "pillars": [true, true, true],
+      "mobs": [
+        {
+          "id": 1,
+          "type": "ranger",
+          "x": 12,
+          "y": 16,
+          "cooldown": 1
+        },
+        {
+          "id": 2,
+          "type": "blob",
+          "x": 20,
+          "y": 8,
+          "cooldown": 0
+        }
+      ]
+    }
+  },
+  "bloblets": {
+    "label": "Three bloblets",
+    "description": "The Magic, Ranged and Melee bloblets are already placed east of the north pillar.",
+    "scenario": {
+      "version": 1,
+      "kind": "custom",
+      "player": [16, 5],
+      "pillars": [true, true, true],
+      "mobs": [
+        {
+          "id": 1,
+          "type": "mageBlob",
+          "x": 20,
+          "y": 7,
+          "cooldown": 0
+        },
+        {
+          "id": 2,
+          "type": "rangeBlob",
+          "x": 20,
+          "y": 8,
+          "cooldown": 0
+        },
+        {
+          "id": 3,
+          "type": "meleeBlob",
+          "x": 20,
+          "y": 9,
+          "cooldown": 0
+        }
+      ]
+    }
+  },
+  "late-opening": {
+    "label": "Late-wave exposure",
+    "description": "A fixed practice layout with a mager, ranger, melee, blob and a nibbler beside the south pillar.",
+    "scenario": {
+      "version": 1,
+      "kind": "custom",
+      "player": [16, 5],
+      "pillars": [true, true, true],
+      "mobs": [
+        {
+          "id": 1,
+          "type": "mager",
+          "x": 22,
+          "y": 8,
+          "cooldown": 1
+        },
+        {
+          "id": 2,
+          "type": "ranger",
+          "x": 8,
+          "y": 10,
+          "cooldown": 1
+        },
+        {
+          "id": 3,
+          "type": "melee",
+          "x": 14,
+          "y": 15,
+          "cooldown": 0
+        },
+        {
+          "id": 4,
+          "type": "blob",
+          "x": 22,
+          "y": 14,
+          "cooldown": 1
+        },
+        {
+          "id": 5,
+          "type": "nibbler",
+          "x": 9,
+          "y": 22
+        }
+      ]
+    }
+  },
+  "collision": {
+    "label": "Same-tick ranger and mager",
+    "description": "Both enemies can see you and will attack on the next tick.",
+    "scenario": {
+      "version": 1,
+      "kind": "custom",
+      "player": [16, 10],
+      "pillars": [true, true, true],
+      "mobs": [
+        {
+          "id": 1,
+          "type": "mager",
+          "x": 8,
+          "y": 10,
+          "cooldown": 1
+        },
+        {
+          "id": 2,
+          "type": "ranger",
+          "x": 13,
+          "y": 5,
+          "cooldown": 1
+        }
+      ]
+    }
+  },
+  "two-tick-movement": {
+    "label": "Two-tick movement and a hidden blob",
+    "description": "A mager and one blob are visible. A second blob waits beyond the north pillar.",
+    "scenario": {
+      "version": 1,
+      "kind": "custom",
+      "player": [16, 5],
+      "pillars": [true, true, true],
+      "mobs": [
+        {
+          "id": 1,
+          "type": "mager",
+          "x": 8,
+          "y": 10,
+          "cooldown": 1
+        },
+        {
+          "id": 2,
+          "type": "blob",
+          "x": 13,
+          "y": 10,
+          "cooldown": 1
+        },
+        {
+          "id": 3,
+          "type": "blob",
+          "x": 20,
+          "y": 5,
+          "cooldown": 2
+        }
+      ]
+    }
+  },
+  "two-tick-stack": {
+    "label": "Two-tick attack offset",
+    "description": "A mager attacks on tick 1 and a ranger on tick 3; both repeat every four ticks.",
+    "scenario": {
+      "version": 1,
+      "kind": "custom",
+      "player": [16, 10],
+      "pillars": [true, true, true],
+      "mobs": [
+        {
+          "id": 1,
+          "type": "mager",
+          "x": 8,
+          "y": 10,
+          "cooldown": 1
+        },
+        {
+          "id": 2,
+          "type": "ranger",
+          "x": 13,
+          "y": 5,
+          "cooldown": 3
+        }
+      ]
+    }
+  },
+  "reverse": {
+    "label": "Mager and bat",
+    "description": "A four-tick mager and three-tick bat. Their first attacks coincide; some attacks cannot both be protected.",
+    "scenario": {
+      "version": 1,
+      "kind": "custom",
+      "player": [16, 10],
+      "pillars": [true, true, true],
+      "mobs": [
+        {
+          "id": 1,
+          "type": "mager",
+          "x": 8,
+          "y": 10,
+          "cooldown": 1
+        },
+        {
+          "id": 2,
+          "type": "bat",
+          "x": 12,
+          "y": 10,
+          "cooldown": 1
+        }
+      ]
+    }
+  },
+  "melee-blob": {
+    "label": "Melee and blob",
+    "description": "An adjacent melee and an at-range blob. This is a mitigation setup, with some blob exposure.",
+    "scenario": {
+      "version": 1,
+      "kind": "custom",
+      "player": [16, 10],
+      "pillars": [true, true, true],
+      "mobs": [
+        {
+          "id": 1,
+          "type": "melee",
+          "x": 12,
+          "y": 10,
+          "cooldown": 1
+        },
+        {
+          "id": 2,
+          "type": "blob",
+          "x": 20,
+          "y": 10,
+          "cooldown": 1
+        }
+      ]
+    }
+  },
+  "two-tick-repair": {
+    "label": "Misaligned two-tick blob",
+    "description": "A mager attacks on tick 1; the blob first reads on tick 2. Compare the two two-tick holds.",
+    "scenario": {
+      "version": 1,
+      "kind": "custom",
+      "player": [16, 10],
+      "pillars": [true, true, true],
+      "mobs": [
+        {
+          "id": 1,
+          "type": "mager",
+          "x": 8,
+          "y": 10,
+          "cooldown": 1
+        },
+        {
+          "id": 2,
+          "type": "blob",
+          "x": 13,
+          "y": 5,
+          "cooldown": 2
+        }
+      ]
+    }
+  }
+}

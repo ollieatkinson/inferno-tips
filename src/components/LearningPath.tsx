@@ -8,6 +8,7 @@ import {
 import { lessons, sourceLinks, type Lesson } from '../lib/course';
 import type { Progress } from '../lib/progress';
 import { PhaseLab } from './PhaseLab';
+import { losSetups } from '../lib/los';
 export const KNOWLEDGE_KEY = 'inferno-tips-knowledge-v1';
 export function LearningPath({
   launch,
@@ -159,14 +160,17 @@ export function LearningPath({
                   {l.los && (
                     <div className="los-assignment">
                       <strong>Try this in the LoS tool</strong>
-                      <p>{l.los}</p>
+                      <p className="setup-description">
+                        {losSetups[l.los.setup].description}
+                      </p>
+                      <p>{l.los.task}</p>
                       <a
                         className="button secondary"
-                        href={sourceLinks.los}
+                        href={losSetups[l.los.setup].href}
                         target="_blank"
                         rel="noreferrer"
                       >
-                        Open LoS tool ↗
+                        Open this setup ↗
                       </a>
                     </div>
                   )}

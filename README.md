@@ -34,7 +34,7 @@ The path covers attack cues, blobs, one-tick alternating, one- and two-tick stac
 
 Twenty timed drills include the original mager, blob, stack, movement and supply exercises, plus bat timing, a ranger anchor, differently phased double blobs, off–on conservation, two-tick alignment/repair, reverse flicking, melee–blob triage, Jad/triple cue reactions and shoot–step coordination. The interactive phase lab shows why changing the blob’s first scan can make a two-tick pattern fail.
 
-Each field lesson has a decision question and timestamped source link. Knowledge checks persist separately from timed-drill mastery. Spatial assignments link prominently to the LoS tool; full Jad and Zuk practice links to the combat simulator.
+Each field lesson has a decision question and timestamped source link. Knowledge checks persist separately from timed-drill mastery. Spatial assignments and drill companion links open prepared LoS scenes with relevant enemies, positions and attack state; full Jad and Zuk practice links to the combat simulator.
 
 Both modes use real 600 ms game ticks. Guided mode adds hints; challenges hide them. Two uninterrupted challenges at 90% or higher earn lesson mastery. All lessons remain open for practice. Completed runs show check-by-check feedback, accuracy, and best streak. Progress survives reloads and can be reset with confirmation.
 
@@ -59,3 +59,14 @@ The course draws on the three requested guides by [Hug my cat](https://www.youtu
 This is a focused timing and coordination tool, not a full combat simulator. It does not model damage rolls, prayer drain, latency, gear, stat restoration, pathfinding or full encounters. Jad uses labelled reaction cues; Zuk is taught through decisions and a weapon/movement drill, with full encounter practice linked externally. Mitigation exercises report unprotected attacks separately from correct-priority scores. Supply drills model finite exercise stock and a three-tick eating/drinking cooldown; the fixed dose sequence is not a personalized supply recommendation. Movement targets are an invented practice task, not an Inferno floor hazard. Scores and mastery are learning milestones, not a promise of a cape.
 
 Game artwork and RuneScape trademarks belong to Jagex Ltd. This is an independent fan project. See [THIRD_PARTY.md](THIRD_PARTY.md) and the site’s `/credits/` page for attribution.
+
+## Editing LoS setups
+
+`docs/los-setups.json` contains the readable scene fixtures; `src/lib/losSetups.json` contains generated share links. After editing a fixture, run:
+
+```sh
+node scripts/generate-los-setups.mjs ../inferno-los
+npx prettier --write src/lib/losSetups.json
+```
+
+The generator uses the companion repository’s public encoder and simulator, validates positions and link round-trips, and checks the demonstrated attack sequences. The normal site build and tests need no companion checkout. Lesson assignments select a setup in `curriculum.ts`; drill links are mapped in `los.ts`.

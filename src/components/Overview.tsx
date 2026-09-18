@@ -1,4 +1,5 @@
 import { chapters, fieldLessons, fieldSource } from '../lib/curriculum';
+import { losSetups } from '../lib/los';
 import {
   lessons,
   sourceLinks,
@@ -133,9 +134,8 @@ export function Overview({
             <h2 id="fix-title">What went wrong?</h2>
             <p>Start with the missed attack or unexpected movement.</p>
             {fixes.map((fix) => {
-              const source = fieldSource(
-                fieldLessons.find((l) => l.id === fix.field)!,
-              );
+              const field = fieldLessons.find((l) => l.id === fix.field)!;
+              const source = fieldSource(field);
               return (
                 <details key={fix.field}>
                   <summary>{fix.problem}</summary>
@@ -160,6 +160,16 @@ export function Overview({
                         >
                           Practise this →
                         </button>
+                      )}
+                      {field.los && (
+                        <a
+                          className="source-link"
+                          href={losSetups[field.los.setup].href}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          Open this LoS setup ↗
+                        </a>
                       )}
                       <a
                         className="source-link"

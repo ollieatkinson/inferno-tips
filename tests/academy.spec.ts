@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import losSetups from '../src/lib/losSetups.json' with { type: 'json' };
 
 async function open(page: Page) {
   await page.goto('/');
@@ -879,4 +880,49 @@ test('blocked storage still allows site settings for the current visit', async (
   await lesson(page, 'Eat between flicks');
   await page.keyboard.press('F3');
   await expect(page.getByRole('button', { name: /^Eat shark/ })).toBeVisible();
+});
+
+test('LoS assignments open their prepared scenes from lessons and troubleshooting', async ({
+  page,
+}) => {
+  const { fieldLessons } = await import('../src/lib/curriculum');
+  for (const field of fieldLessons.filter((field) => field.los)) {
+    await page.goto(`/#lesson-${field.id}`);
+    await expect(page.locator('astro-island')).not.toHaveAttribute('ssr');
+    const assignment = page
+      .locator('.field-lesson')
+      .filter({ has: page.locator(`#lesson-${field.id}`) })
+      .locator('.los-assignment');
+    await expect(assignment).toContainText(
+      losSetups[field.los!.setup].description,
+    );
+    await expect(
+      assignment.getByRole('link', { name: 'Open this setup' }),
+    ).toHaveAttribute('href', losSetups[field.los!.setup].href);
+  }
+  await open(page);
+  const problem = page
+    .locator('.troubleshooting details')
+    .filter({ hasText: 'I take a blob hit after getting behind the pillar' });
+  await problem.locator('summary').click();
+  await expect(
+    problem.getByRole('link', { name: 'Open this LoS setup' }),
+  ).toHaveAttribute('href', losSetups['blob-flinch'].href);
+});
+
+test('drill companion links load the matching enemies', async ({ page }) => {
+  await open(page);
+  for (const [title, setup] of [
+    ['Read the blob', 'blob'],
+    ['A one-tick pillar stack', 'pillar-stack'],
+    ['Alternate with two blobs', 'two-blobs'],
+  ] as const) {
+    await lesson(page, title);
+    await expect(
+      page.getByRole('link', { name: 'Open this setup' }),
+    ).toHaveAttribute('href', losSetups[setup].href);
+    await expect(page.locator('.setup-description')).toContainText(
+      losSetups[setup].description,
+    );
+  }
 });

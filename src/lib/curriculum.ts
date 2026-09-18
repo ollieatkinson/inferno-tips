@@ -1,4 +1,5 @@
 import type { LessonId } from './course';
+import type { LosSetupId } from './los';
 export type ChapterId =
   | 'foundation'
   | 'blobs'
@@ -20,7 +21,7 @@ export interface FieldLesson {
   explanation: string;
   source: 'gnome' | 'lola' | 'two';
   seconds: number;
-  los?: string;
+  los?: { setup: LosSetupId; task: string };
 }
 export const chapters: {
   id: ChapterId;
@@ -178,7 +179,10 @@ export const fieldLessons: FieldLesson[] = [
       'Train the action that breaks the pattern. Keep the same anchor and add one click before increasing the workload.',
     source: 'gnome',
     seconds: 1643,
-    los: 'Build an isolated ranger and blob at range. Establish the alternating pattern, then add a single movement while watching the ranger attack. Reset to the same layout and repeat.',
+    los: {
+      setup: 'ranger-blob',
+      task: 'The ranger and blob are already at range. Select Ranged for the first ranger attack, then alternate each tick. Add a single movement after establishing the pattern. Reset to repeat the same layout.',
+    },
   },
   {
     id: 'blob-anchor',
@@ -224,7 +228,10 @@ export const fieldLessons: FieldLesson[] = [
       'Its read selected Magic. Protect that queued attack even after returning to cover.',
     source: 'lola',
     seconds: 846,
-    los: 'Place one blob on the opposite side of a pillar. Step into sight with Ranged, return to cover and inspect the pending Magic attack three ticks after the read.',
+    los: {
+      setup: 'blob-flinch',
+      task: 'This starts just after a Ranged read: you are behind the north pillar and the blob already has a Magic attack pending. Select Magic, then press Step +1 three times without moving. Check the attack timeline: hiding did not cancel the queued hit. Reset to try another prayer.',
+    },
   },
   {
     id: 'corner',
@@ -246,7 +253,10 @@ export const fieldLessons: FieldLesson[] = [
       'The enemy may move when you expose yourself. Returning to your original tile does not always recreate the original trap.',
     source: 'lola',
     seconds: 1176,
-    los: 'Place a bat west of a pillar corner and the player south of it. Compare moving south with moving east, then returning. Repeat with a melee and inspect the different reach.',
+    los: {
+      setup: 'corner',
+      task: 'The bat starts west of the north pillar and you start east. Compare moving one tile east with moving one tile south, then press Step +1. Reset between attempts and watch whether the bat can round the corner. Replace it with a melee to compare reach.',
+    },
   },
   {
     id: 'dig-plan',
@@ -269,7 +279,10 @@ export const fieldLessons: FieldLesson[] = [
       'The current flick is only part of the plan. Remove or manage the upcoming positional threat.',
     source: 'gnome',
     seconds: 3470,
-    los: 'Add a melee behind the north pillar, plus a mager on the other side. Step until the melee digs. Compare escape tiles while keeping the mager’s line of sight visible.',
+    los: {
+      setup: 'melee-dig',
+      task: 'The mager is visible and the melee is trapped across the north pillar. Its modeled dig check is set three ticks away for this exercise. Protect Magic and press Step +1 three times; compare escape tiles as the melee burrows. This preset timer is not a universal in-game countdown.',
+    },
   },
   {
     id: 'weapon-drag',
@@ -294,7 +307,10 @@ export const fieldLessons: FieldLesson[] = [
       'The equipped weapon determines attack range. The resulting route may break the solve even if the target itself is safe.',
     source: 'lola',
     seconds: 3536,
-    los: 'Choose a target beyond blowpipe range near a pillar. Compare the tiles from which your bow and blowpipe can reach it. Inspect every newly exposed enemy along the approach, then repeat with a spell cast.',
+    los: {
+      setup: 'weapon-range',
+      task: 'The ranger is nine tiles away and the blob is hidden by the north pillar. Compare your starting tile with a tile four spaces south: that puts the ranger within five tiles but exposes the blob. Move manually and inspect LoS. This tool does not simulate player attack clicks; rehearse the actual weapon switch in the combat simulator.',
+    },
   },
   {
     id: 'pillar-stack',
@@ -318,7 +334,10 @@ export const fieldLessons: FieldLesson[] = [
       'Offset is created by exposure and movement. The drills deliberately name their starting offset; use the LoS tool to learn how to create it.',
     source: 'gnome',
     seconds: 4388,
-    los: 'Build a ranger–mager stack, start from the middle tile behind the north pillar, and step two tiles west with run enabled. Inspect the back-first attack order. Reverse the stack, then add a blob at the front and compare routes.',
+    los: {
+      setup: 'pillar-stack',
+      task: 'You start beside the middle of the north pillar’s west face. Move two tiles south, then select Magic and press Step +1; switch to Ranged for the next step. This setup produces the back mager’s attack followed by the front ranger one tick later. Reset before changing the stack.',
+    },
   },
   {
     id: 'heal-window',
@@ -384,7 +403,10 @@ export const fieldLessons: FieldLesson[] = [
       'The death changes the wave. A prepared position can isolate the children and provide healing; an unplanned move can expose several styles.',
     source: 'gnome',
     seconds: 615,
-    los: 'Kill a blob from each side of the pillar and inspect the three bloblets. Compare which style sees you before stepping, then move to isolate one at a time.',
+    los: {
+      setup: 'bloblets',
+      task: 'The three bloblets are already placed east of the north pillar. Compare the tiles along its west edge and inspect which styles can see you before stepping. This tool does not simulate killing the parent or blood-barrage healing; use it to plan exposure after the split.',
+    },
   },
   {
     id: 'between-waves',
@@ -431,7 +453,10 @@ export const fieldLessons: FieldLesson[] = [
       'Trading the run for small pillar damage is a poor bargain. Solve the immediate threats and return when the route is safe.',
     source: 'gnome',
     seconds: 3724,
-    los: 'Load a late wave with both a mager and ranger. Compare your opening tile with a route towards a distant nibbler. Find a tile where only one large ranged enemy can attack.',
+    los: {
+      setup: 'late-opening',
+      task: 'This fixed practice layout includes a visible ranger, a mager behind cover and a nibbler beside the south pillar. Compare your opening tile with a route towards that nibbler. Inspect when the mager gains sight. Nibbler movement and pillar damage are not simulated.',
+    },
   },
   {
     id: 'kill-order',
@@ -477,7 +502,10 @@ export const fieldLessons: FieldLesson[] = [
       'Prayer state at the check matters. Reposition or otherwise solve the collision; extra click speed cannot supply two simultaneous protections.',
     source: 'lola',
     seconds: 3654,
-    los: 'Place a mager and ranger with matching cooldowns. Step through the simultaneous check, then isolate one and expose it later to create an offset.',
+    los: {
+      setup: 'collision',
+      task: 'The visible mager and ranger both attack on the next tick. Choose a prayer and press Step +1 to see the conflict in the timeline. Reset, then use the pillar to hide one enemy before exposing it later; inspect the resulting attack offset.',
+    },
   },
   {
     id: 'respawn',
@@ -704,7 +732,10 @@ export const fieldLessons: FieldLesson[] = [
       'A click fitting between prayer changes does not make the new exposure safe. Keep the anchor protected and reassess the blob phases.',
     source: 'two',
     seconds: 174,
-    los: 'Start with one blob in a known two-tick phase. Add a short move, then place a second blob beyond the corner. Step through when it first sees you and inspect its read before assuming the same pattern covers it.',
+    los: {
+      setup: 'two-tick-movement',
+      task: 'A mager and blob are visible; another blob is hidden beyond the north pillar. Begin Magic/Magic/Ranged/Ranged, then add a movement towards the pillar’s south edge during a hold. Step through when the second blob first sees you and compare its read with the original blob. Reset to test a different move.',
+    },
   },
   {
     id: 'optional-tools',

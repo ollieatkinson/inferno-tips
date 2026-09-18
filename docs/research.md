@@ -92,3 +92,11 @@ Revisited both downloaded, timestamped transcripts and extracted the 2:54 moveme
 The homepage’s six troubleshooting entries are original summaries of these and the existing lessons. Each links to the source demonstration and the relevant lesson; appropriate entries also launch the matching drill. The between-wave checklist and three-question attempt review are editorial practice aids. No new engine behavior or full combat simulation is claimed.
 
 Removed the promotional hero, ornamental arena, motivational cards and duplicated drill cards from the overview. The course uses a compact chapter rail, lesson contents and readable sections instead of nested lesson cards. Drill titles now name the technique. Lesson hashes preserve access after a reload, and existing progress IDs and answer indices remain intact.
+
+## Prepared LoS scenes
+
+Lesson assignments now link to named IL2 scenes rather than the empty tool. The readable fixtures are in `docs/los-setups.json`; `scripts/generate-los-setups.mjs` uses the companion’s public encoder and simulator (verified against inferno-los commit `16bc4d1cad05fde52ee0def6c07cbad280cbeb21`). Each scene round-trips through the decoder and has legal NPC placement.
+
+The hidden-blob example deliberately starts after the read, with a Magic attack pending in three ticks and the player already behind the north pillar. The pillar-stack example starts on the west face and uses a two-tile south exit: the back mager attacks first, followed by the front ranger one tick later. These sequences, corner exposure, weapon-range exposure, a same-tick attack collision, a preset melee dig and the hidden second blob are asserted against the companion simulator.
+
+Assignments describe the tool’s actual capabilities: bloblets are pre-placed rather than killed in the simulator; weapon range is compared through manual player positioning; the late-wave opening is an illustrative fixed layout; the melee dig timer is a practice preset. Blood-barrage healing, player attack pathfinding and nibbler damage are not claimed as simulated features.

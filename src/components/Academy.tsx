@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { LearningPath, KNOWLEDGE_KEY } from './LearningPath';
 import { chapters, fieldLessons } from '../lib/curriculum';
 import { Overview } from './Overview';
+import { losSetups, drillLosSetups } from '../lib/los';
 import { SettingsPage } from './SettingsPage';
 import {
   readSettings,
@@ -1014,6 +1015,8 @@ function Trainer({
     hint = 'Read the current Jad cue. Keep protection through its check.';
   const recent = state.checks.at(-1);
   const source = lessonSource(lesson);
+  const setupId = drillLosSetups[lesson.id];
+  const losSetup = setupId ? losSetups[setupId] : undefined;
   const startPrayer =
     lesson.id === 'anchor-range' || lesson.id === 'bat'
       ? 'Ranged'
@@ -1588,19 +1591,22 @@ function Trainer({
                 ? 'Rehearse real attack animations, healer tags and shield movement in the full combat simulator.'
                 : 'Use the LoS tool to explore pillar routes, enemy exposure and the positioning that creates your prayer cycle.'}
             </p>
+            {losSetup && (
+              <p className="setup-description">{losSetup.description}</p>
+            )}
             <a
               className="button secondary"
               href={
                 isJad(lesson.id) || lesson.id === 'blowpipe'
                   ? sourceLinks.combat
-                  : sourceLinks.los
+                  : losSetup?.href || sourceLinks.los
               }
               target="_blank"
               rel="noreferrer"
             >
               {isJad(lesson.id) || lesson.id === 'blowpipe'
                 ? 'Open combat simulator'
-                : 'Open LoS tool'}{' '}
+                : 'Open this setup'}{' '}
               ↗
             </a>
           </div>

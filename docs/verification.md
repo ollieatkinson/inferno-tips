@@ -1,7 +1,7 @@
 # Verification — 18 September 2026
 
-- `npm test`: 55 passing tests. Includes all 20 intended drill techniques, independent attack schedules, all four blob scan phases, bad two-tick alignment, conservation false positives, mitigation exposure, Jad check delay, finite supplies and saved progress.
-- `npm run test:production`: static Astro build/check passed with no diagnostics; all 38 Playwright tests passed against the built preview. Every drill completed through the visible controls. Coverage includes mistakes, mastery persistence, corrupt/blocked storage, mouse prayer toggles, Esc/F1 defaults, saved tab keys and collision swaps, knowledge checks, bookmarkable lesson links, troubleshooting shortcuts, filters, mobile layout and pause behaviour.
+- `npm test`: 56 passing tests. Includes all 20 intended drill techniques, independent attack schedules, all four blob scan phases, bad two-tick alignment, conservation false positives, mitigation exposure, Jad check delay, finite supplies and saved progress.
+- `npm run test:production`: static Astro build/check passed with no diagnostics; 38 existing Playwright tests passed against the built preview; both new LoS link tests passed on the targeted rerun after fixing their JSON import and heading selector. Every drill completed through the visible controls. Coverage includes mistakes, mastery persistence, corrupt/blocked storage, mouse prayer toggles, Esc/F1 defaults, saved tab keys and collision swaps, knowledge checks, bookmarkable lesson links, troubleshooting shortcuts, filters, mobile layout and pause behaviour.
 - Real-clock production run completed 36 ticks plus count-in in approximately 23.9 seconds. Other timing tests use a controlled browser clock to check specific boundaries without flaky mouse scheduling.
 - `npm audit --omit=dev --audit-level=high`: zero vulnerabilities.
 - `git diff --check`: passed.
@@ -37,3 +37,12 @@ Screenshots and raw DevTools output are temporary verification artifacts, not sh
 - Guided results make **Start challenge** the primary action, explain the mode difference, and begin a fresh count-in in one click. **Repeat guided practice** remains available. The results scroll into view; starting the challenge returns focus to the practice panel.
 - Browser regressions cover saved preferences across reloads and different drills, old keybind migration, default reset without lost scores, blocked storage, and completing guided practice followed immediately by a challenge that earns exactly one pass. The new challenge action is checked in the mobile viewport.
 - Final full verification: 55 unit tests, 38 production browser tests, and a clean Astro check/build.
+
+## Contextual LoS links
+
+- Generated and simulator-validated 19 share links, covering all 10 spatial assignments and 17 non-boss drill companions. The ordinary build remains independent of the companion checkout.
+- Chrome DevTools loaded every link on `https://los.inferno.tips/`: all 19 had the expected enemy roster and no import errors.
+- Played the hidden-blob scene: selected Magic and stepped three times; the blob hit was protected on tick 3 while zero enemies could see the player.
+- Played the pillar stack: moved two tiles south, selected Magic for tick 1 and Ranged for tick 2; the back mager and front ranger attacked in that order and both hits were protected.
+- New browser coverage checks every lesson assignment’s scene URL, the overview’s direct blob-scene link, and representative single-blob, stack and double-blob drill links. Unit coverage requires a prepared scene for every non-boss drill.
+- Inspected the blob assignment at 390 × 844: setup description, instructions and link fit without horizontal overflow; the hydrated page had no browser warnings or errors.
