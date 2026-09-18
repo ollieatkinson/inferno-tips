@@ -67,3 +67,9 @@ Screenshots and raw DevTools output are temporary verification artifacts, not sh
 - Re-ran the standalone sprite generator successfully from the checked-in scripts. The normal build and runtime do not depend on its Three.js/Sharp tools or the source models.
 - Final production checks passed for mobile layout, the mager cue, mixed movement attacks/pause, and triple Jad after the final sprite-render optimization and layout adjustment. Astro check reported no errors, warnings or hints.
 - Chrome DevTools live mobile run: followed the gauntlet through tick 10 at real 600 ms timing with 100% accuracy. Observed mager attacks on 1/5/9, blob reads on 1/7 and blob attacks on 4/10; paused animation frames froze. No horizontal overflow or browser console errors.
+
+## Homepage Zuk banner
+
+- Replaced the small blob illustration and plain heading with official Jagex Zuk artwork, a shorter introduction and responsive desktop/mobile crops. Optimized local WebP sources are approximately 106 KB and 38 KB.
+- Chrome DevTools screenshots reviewed at 1440 × 1000 and 390 × 844: Zuk and the heading remain legible, the next-drill action follows directly below, and the page has no horizontal overflow.
+- Production build/check passed without diagnostics. Existing overview/artwork/credits, troubleshooting navigation and LoS-link browser checks all passed.

@@ -75,15 +75,25 @@ export function Overview({
 }) {
   return (
     <>
-      <div className="page-heading home-heading">
-        <div>
-          <h1>Inferno practice & notes</h1>
-          <p>
-            Prayer timing, wave solves and the decisions that get a first cape.
-          </p>
+      <section className="home-banner" aria-labelledby="home-title">
+        <img
+          className="home-banner-art"
+          src="/images/zuk-banner.webp"
+          srcSet="/images/zuk-banner-small.webp 800w, /images/zuk-banner.webp 1600w"
+          sizes="(max-width: 650px) 800px, (max-width: 1100px) 100vw, calc(100vw - 320px)"
+          width={1600}
+          height={934}
+          alt="TzKal-Zuk emerging from the lava of the Inferno."
+          fetchPriority="high"
+        />
+        <div className="home-banner-copy">
+          <h1 id="home-title">Inferno practice & notes</h1>
+          <p>Learn the wave solves. Practise the prayer timing.</p>
         </div>
-        <img src="/icons/blob.png" alt="" className="home-blob" />
-      </div>
+        <a className="home-banner-credit" href="/credits/">
+          Artwork © Jagex
+        </a>
+      </section>
       <section className="practice-start" aria-label="Suggested practice">
         <div>
           <span className="eyebrow">NEXT DRILL</span>
