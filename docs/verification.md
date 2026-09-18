@@ -1,7 +1,7 @@
 # Verification — 18 September 2026
 
-- `npm test`: 56 passing tests. Includes all 20 intended drill techniques, independent attack schedules, all four blob scan phases, bad two-tick alignment, conservation false positives, mitigation exposure, Jad check delay, finite supplies and saved progress.
-- `npm run test:production`: static Astro build/check passed with no diagnostics; 38 existing Playwright tests passed against the built preview; both new LoS link tests passed on the targeted rerun after fixing their JSON import and heading selector. Every drill completed through the visible controls. Coverage includes mistakes, mastery persistence, corrupt/blocked storage, mouse prayer toggles, Esc/F1 defaults, saved tab keys and collision swaps, knowledge checks, bookmarkable lesson links, troubleshooting shortcuts, filters, mobile layout and pause behaviour.
+- `npm test`: 77 passing tests. Includes all 20 intended drill techniques, independent attack schedules, all four blob scan phases, bad two-tick alignment, conservation false positives, mitigation exposure, Jad check delay, finite supplies and saved progress.
+- `npm run test:production`: static Astro build/check passed with no diagnostics; all 41 Playwright tests passed against the built preview. The preview test passed again after the final mobile CSS adjustment. Every drill completed through the visible controls. Coverage includes mistakes, mastery persistence, corrupt/blocked storage, mouse prayer toggles, Esc/F1 defaults, saved tab keys and collision swaps, knowledge checks, bookmarkable lesson links, troubleshooting shortcuts, filters, mobile layout and pause behaviour.
 - Real-clock production run completed 36 ticks plus count-in in approximately 23.9 seconds. Other timing tests use a controlled browser clock to check specific boundaries without flaky mouse scheduling.
 - `npm audit --omit=dev --audit-level=high`: zero vulnerabilities.
 - `git diff --check`: passed.
@@ -46,3 +46,10 @@ Screenshots and raw DevTools output are temporary verification artifacts, not sh
 - Played the pillar stack: moved two tiles south, selected Magic for tick 1 and Ranged for tick 2; the back mager and front ranger attacked in that order and both hits were protected.
 - New browser coverage checks every lesson assignment’s scene URL, the overview’s direct blob-scene link, and representative single-blob, stack and double-blob drill links. Unit coverage requires a prepared scene for every non-boss drill.
 - Inspected the blob assignment at 390 × 844: setup description, instructions and link fit without horizontal overflow; the hydrated page had no browser warnings or errors.
+
+## Guided prayer preview
+
+- Guided practice displays the next six ticks above the prayer controls, with prayer icons, click/hold actions, a next-tick highlight and blob/supply/movement reminders. Challenge mode hides it. Jad keeps cue-based guidance and the weapon drill has no invented prayer cycle.
+- All 17 prayer-pattern previews lead to correct full runs when followed through the scoring engine. Additional unit checks cover real blob reads, queued-attack conflicts, off–on flicks and the end of a run. Forecasting leaves the running state unchanged.
+- Browser regression covers initial two-tick holds, advancement, pause, off–on labels, challenge hiding and mobile width. Inspected the six-column table in Chrome DevTools at 390 × 844; all columns fit, with the prayer controls visible below, with no page overflow or console errors.
+- Chrome DevTools live run: followed the two-tick preview through visible prayer buttons at real game speed, reaching tick 10 with 100% accuracy (12 checks); paused with tick 11 highlighted next.

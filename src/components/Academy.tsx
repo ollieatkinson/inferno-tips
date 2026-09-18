@@ -4,6 +4,7 @@ import { chapters, fieldLessons } from '../lib/curriculum';
 import { Overview } from './Overview';
 import { losSetups, drillLosSetups } from '../lib/los';
 import { SettingsPage } from './SettingsPage';
+import { PrayerPreview } from './PrayerPreview';
 import {
   readSettings,
   SETTINGS_KEY,
@@ -1350,6 +1351,9 @@ function Trainer({
             <p className="exposure-note" role="status">
               {state.exposure}
             </p>
+          )}
+          {mode === 'guided' && status !== 'done' && (
+            <PrayerPreview id={lesson.id} state={state} selected={prayer} />
           )}
           <div
             className="game-panel-tabs"

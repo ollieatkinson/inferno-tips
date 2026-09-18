@@ -926,3 +926,53 @@ test('drill companion links load the matching enemies', async ({ page }) => {
     );
   }
 });
+
+test('guided prayer preview shows upcoming beats, advances, pauses and hides in challenge', async ({
+  page,
+}) => {
+  await page.clock.install();
+  await open(page);
+  await lesson(page, 'Two-tick alternating');
+  const preview = page.getByRole('region', {
+    name: 'Upcoming prayer pattern',
+    exact: true,
+  });
+  await expect(preview).toBeVisible();
+  const prayers = preview.locator('tbody tr').first().locator('td');
+  await expect(prayers).toHaveText([
+    'Magic',
+    'Magic',
+    'Ranged',
+    'Ranged',
+    'Magic',
+    'Magic',
+  ]);
+  await start(page, false);
+  await page.getByRole('button', { name: 'Magic', exact: true }).click();
+  await page.clock.runFor(600);
+  await expect(preview.locator('[aria-current="step"]')).toHaveText('2Next');
+  await page.getByRole('button', { name: 'Pause', exact: true }).click();
+  await page.clock.runFor(1800);
+  await expect(preview.locator('[aria-current="step"]')).toHaveText('2Next');
+  await lesson(page, 'One-tick prayer flick');
+  await expect(
+    preview.getByRole('cell', { name: 'Off → on', exact: true }),
+  ).toHaveCount(5);
+  await page.getByRole('button', { name: 'Challenge', exact: true }).click();
+  await expect(preview).toHaveCount(0);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await lesson(page, 'Read the blob');
+  await expect(preview).toBeVisible();
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  const scroller = page.getByRole('region', {
+    name: 'Prayer pattern table',
+    exact: true,
+  });
+  await scroller.focus();
+  await page.keyboard.press('End');
+  await expect(scroller).toBeFocused();
+});
