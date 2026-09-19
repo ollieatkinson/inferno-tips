@@ -881,6 +881,13 @@ function Trainer({
   const busy =
     status === 'running' || status === 'countdown' || status === 'paused';
   const displayedOverhead = busy ? overheadPrayer : prayer;
+  // Keep the protection that applies to this whole tick visibly lit, even
+  // during an off–on flick. Newly clicked prayers light independently.
+  const displayedLitPrayers = busy
+    ? [...new Set([...litPrayers, overheadPrayer])].filter((p) => p !== 'off')
+    : prayer === 'off'
+      ? []
+      : [prayer];
   completeRef.current = onComplete;
   soundRef.current = sound;
   const playPrayerSound = usePrayerSounds(
@@ -1558,9 +1565,7 @@ function Trainer({
               <GamePanels
                 id={lesson.id}
                 activePrayer={displayedOverhead}
-                litPrayers={
-                  busy ? litPrayers : prayer === 'off' ? [] : [prayer]
-                }
+                litPrayers={displayedLitPrayers}
                 panel={panel}
                 tabKeys={tabKeys}
                 running={status === 'running'}

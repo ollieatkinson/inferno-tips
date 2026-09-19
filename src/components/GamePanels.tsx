@@ -166,9 +166,6 @@ export function GamePanels({
                     key={name}
                     className="prayer-button"
                     data-lit={litPrayers.includes(protection)}
-                    style={{
-                      backgroundPosition: `-${12.5 + (index % 5) * 46}px -158.75px`,
-                    }}
                     aria-label={prayerLabel(protection)}
                     title={name}
                     aria-pressed={litPrayers.includes(protection)}
@@ -187,11 +184,16 @@ export function GamePanels({
                     className="unavailable-prayer"
                     title={`${name} — not used in this drill`}
                     aria-hidden="true"
-                  />
+                  >
+                    <img
+                      className="native-prayer-icon"
+                      src={`/game-ui/prayers/${name.toLowerCase().replaceAll(' ', '_')}.png`}
+                      alt=""
+                    />
+                  </span>
                 );
               })}
             </div>
-            <div className="native-prayer-footer" aria-hidden="true" />
           </>
         ) : (
           <div className="native-inventory-grid">

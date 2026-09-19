@@ -3075,9 +3075,6 @@ select:focus-visible {
   background: url('/game-ui/inventory.png') center / 100% 100% no-repeat;
   image-rendering: pixelated;
 }
-.native-panel.prayers {
-  background-image: url('/game-ui/prayer.png');
-}
 .native-prayer-grid {
   position: absolute;
   top: 20px;
@@ -3095,9 +3092,7 @@ select:focus-visible {
   padding: 0;
   border: 0;
   border-radius: 0;
-  background-image: url('/game-ui/inventory.png');
-  background-size: 254px 343px;
-  background-repeat: no-repeat;
+  background: transparent;
   box-shadow: none;
 }
 .native-prayer-grid .prayer-button::before {
@@ -3123,23 +3118,12 @@ select:focus-visible {
   outline-offset: -2px;
 }
 .unavailable-prayer {
-  background: #423b2cd0;
-  border-radius: 50%;
-  pointer-events: none;
-}
-.native-prayer-footer {
-  position: absolute;
-  bottom: 12px;
-  left: 8px;
-  right: 8px;
-  height: 28px;
   display: grid;
   place-items: center;
-  background: url('/game-ui/inventory.png') center -285px / 254px 343px
-    no-repeat;
-  color: #e1cf9c;
-  font-size: 11px;
-  text-shadow: 1px 1px #18140f;
+  pointer-events: none;
+}
+.unavailable-prayer .native-prayer-icon {
+  opacity: 0.5;
 }
 .native-inventory-grid {
   position: absolute;
