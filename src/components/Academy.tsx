@@ -880,14 +880,12 @@ function Trainer({
   const magerLesson = lesson.id === 'rhythm' || hasSupplies(lesson.id);
   const busy =
     status === 'running' || status === 'countdown' || status === 'paused';
-  const displayedOverhead = busy ? overheadPrayer : prayer;
+  const displayedOverhead = overheadPrayer;
   // Keep the protection that applies to this whole tick visibly lit, even
   // during an off–on flick. Newly clicked prayers light independently.
-  const displayedLitPrayers = busy
-    ? [...new Set([...litPrayers, overheadPrayer])].filter((p) => p !== 'off')
-    : prayer === 'off'
-      ? []
-      : [prayer];
+  const displayedLitPrayers = [
+    ...new Set([...litPrayers, overheadPrayer]),
+  ].filter((p) => p !== 'off');
   completeRef.current = onComplete;
   soundRef.current = sound;
   const playPrayerSound = usePrayerSounds(
@@ -902,13 +900,13 @@ function Trainer({
     () => setSoundError(true),
   );
   function selectPrayer(p: Prayer, clicked?: Exclude<Prayer, 'off'>) {
-    if (!busy || !clicked) setOverheadPrayer(p);
+    if (!clicked) setOverheadPrayer(p);
     // The client toggles only the clicked icon's bit, independently of the
     // server's mutually exclusive protection. Reconcile on the shared tick.
     // In particular, clicking a still-lit previous prayer clears its circle
     // even though that order will switch protection back at the next tick.
     setLitPrayers((lit) =>
-      busy && clicked
+      clicked
         ? lit.includes(clicked)
           ? lit.filter((active) => active !== clicked)
           : [...lit, clicked]
@@ -1000,6 +998,17 @@ function Trainer({
     },
     [],
   );
+  useEffect(() => {
+    if (lesson.id === 'blowpipe' || (status !== 'ready' && status !== 'done'))
+      return;
+    // The prayer book still has a game clock before/after a run. This is only
+    // display reconciliation: no encounter ticks, scoring or metronome audio.
+    const timer = window.setInterval(() => {
+      setLitPrayers(prayerRef.current === 'off' ? [] : [prayerRef.current]);
+      setOverheadPrayer(prayerRef.current);
+    }, ms);
+    return () => window.clearInterval(timer);
+  }, [status, lesson.id, ms]);
   useEffect(() => {
     if (status !== 'countdown') return;
     const timer = window.setTimeout(() => {

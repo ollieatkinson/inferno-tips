@@ -161,3 +161,10 @@ Screenshots and raw DevTools output are temporary verification artifacts, not sh
 - Retrieved RS Mina's reference video and captions; reviewed the 23–26 second switching sequence frame by frame. Source observations and presentation limits are recorded in `docs/research.md`.
 - Chrome DevTools real-clock play confirmed that Magic stays lit after an off click while its overhead remains active, and that switching to Ranged shows both circles. Reviewed the desktop screenshot. The DevTools connection stalled during mobile resizing; a separate Chromium/Playwright review confirmed all icons loaded and no horizontal overflow at 390 × 844, with no page errors. Reviewed that mobile screenshot too.
 - All 94 unit tests and nine relevant production browser tests passed, including full alternating/conservation challenges, prayer audio, inventory controls, tick highlights and overhead/hitsplat checks. Astro check/build passed without diagnostics.
+
+## Prayer timing before starting a drill
+
+- Fixed the confirmed pre-start discrepancy: ready/results screens used immediate single-selection highlights because only running/countdown states had a tick clock. The prayer book now has a silent 600 ms display clock outside runs, using the same local highlights and committed overhead as the trainer. Starting a run clears the preview and replaces that clock; pausing still freezes tick reconciliation.
+- Added a browser regression that switches before Start at two different offsets within a tick. The new prayer lights immediately, both circles remain until the existing boundary, and only the new circle remains afterwards. The encounter stays at tick zero with unchanged statistics. Existing tab-key coverage now checks pre-start overlap too.
+- All 94 unit tests and nine relevant production browser tests passed. Astro check/build passed without diagnostics.
+- Chrome DevTools real-clock pre-start check: Magic lit immediately with Active still None, switching showed Magic + Ranged with Active Magic, then the next tick showed only Ranged with Active Ranged. Statistics were unchanged and Start remained available; no console warnings/errors.

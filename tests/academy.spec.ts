@@ -304,6 +304,8 @@ test('corrupt or blocked storage cannot prevent practice', async ({ page }) => {
 test('prayers toggle with clicks and custom tab keys persist', async ({
   page,
 }) => {
+  await page.clock.install();
+  await page.clock.pauseAt(new Date());
   await open(page);
   await lesson(page, 'Eat between flicks');
   const magic = page.getByRole('button', { name: 'Magic', exact: true });
@@ -314,6 +316,7 @@ test('prayers toggle with clicks and custom tab keys persist', async ({
   await magic.click();
   await expect(magic).toHaveAttribute('aria-pressed', 'false');
   await page.getByRole('button', { name: 'Ranged', exact: true }).click();
+  await page.clock.runFor(600);
   await page.keyboard.press('Escape');
   await expect(
     page.getByRole('button', { name: /^Eat shark/ }).first(),
@@ -325,6 +328,10 @@ test('prayers toggle with clicks and custom tab keys persist', async ({
   ).toHaveAttribute('aria-pressed', 'true');
   await magic.click();
   await expect(magic).toHaveAttribute('aria-pressed', 'true');
+  await expect(
+    page.getByRole('button', { name: 'Ranged', exact: true }),
+  ).toHaveAttribute('aria-pressed', 'true');
+  await page.clock.runFor(600);
   await expect(
     page.getByRole('button', { name: 'Ranged', exact: true }),
   ).toHaveAttribute('aria-pressed', 'false');
@@ -1301,6 +1308,48 @@ test('authentic prayer audio follows toggles and respects saved sound preference
   await magic.click();
   await magic.click();
   expect(await starts()).toHaveLength(0);
+});
+
+test('prayer book has a tick clock before starting without advancing the drill', async ({
+  page,
+}) => {
+  await page.clock.install();
+  await page.clock.pauseAt(new Date());
+  await open(page);
+  await lesson(page, 'One-tick alternating');
+  const magic = page.getByRole('button', { name: 'Magic', exact: true });
+  const ranged = page.getByRole('button', { name: 'Ranged', exact: true });
+  const status = page.locator('.game-panel-status');
+  const stats = await page.locator('.run-stats').textContent();
+  await magic.click();
+  await expect(magic).toHaveAttribute('data-lit', 'true');
+  await expect(status).toContainText('Active: None');
+  await page.clock.runFor(600);
+  await expect(status).toContainText('Active: Magic');
+  await page.clock.runFor(100);
+  await ranged.click();
+  await expect(magic).toHaveAttribute('data-lit', 'true');
+  await expect(ranged).toHaveAttribute('data-lit', 'true');
+  await expect(status).toContainText('Active: Magic');
+  await page.clock.runFor(499);
+  await expect(magic).toHaveAttribute('data-lit', 'true');
+  await page.clock.runFor(1);
+  await expect(magic).toHaveAttribute('data-lit', 'false');
+  await expect(status).toContainText('Active: Ranged');
+  // A late click still uses the existing clock, not a new 600 ms timeout.
+  await page.clock.runFor(550);
+  await magic.click();
+  await expect(ranged).toHaveAttribute('data-lit', 'true');
+  await expect(magic).toHaveAttribute('data-lit', 'true');
+  await page.clock.runFor(50);
+  await expect(ranged).toHaveAttribute('data-lit', 'false');
+  await expect(status).toContainText('Active: Magic');
+  await expect(page.locator('.run-stats')).toHaveText(stats!);
+  await page
+    .getByRole('button', { name: 'Start guided practice', exact: true })
+    .click();
+  await expect(page.locator('.prayer-button[data-lit="true"]')).toHaveCount(0);
+  await expect(status).toContainText('Active: None');
 });
 
 test('prayer circles keep the previous highlight until the shared tick boundary', async ({
