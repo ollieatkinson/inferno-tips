@@ -1,7 +1,8 @@
 import {
   lessons,
   passScore,
-  TOTAL_TICKS,
+  drillTicks,
+  revisedScoring,
   type LessonId,
   type Mode,
 } from './course';
@@ -10,6 +11,8 @@ export interface RecordEntry {
   best: number;
   passes: number;
   practiceBest: number;
+  scoringVersion?: number;
+  previousScoring?: { best: number; passes: number; practiceBest: number };
 }
 export type Progress = Partial<Record<LessonId, RecordEntry>>;
 export const STORAGE_KEY = 'inferno-tips-progress-v1';
@@ -29,9 +32,37 @@ export function parseProgress(raw: string | null): Progress {
       )
         clean[id] = {
           attempts: Math.floor(r.attempts),
-          best: r.best,
-          passes: Math.min(2, Math.floor(r.passes)),
-          practiceBest: r.practiceBest,
+          ...(revisedScoring(id) && r.scoringVersion !== 2
+            ? {
+                previousScoring: {
+                  best: r.best,
+                  passes: Math.min(2, Math.floor(r.passes)),
+                  practiceBest: r.practiceBest,
+                },
+              }
+            : r.previousScoring &&
+                ['best', 'practiceBest', 'passes'].every(
+                  (k) =>
+                    Number.isFinite(r.previousScoring[k]) &&
+                    r.previousScoring[k] >= 0 &&
+                    r.previousScoring[k] <= (k === 'passes' ? 2 : 100),
+                )
+              ? {
+                  previousScoring: {
+                    best: r.previousScoring.best,
+                    passes: r.previousScoring.passes,
+                    practiceBest: r.previousScoring.practiceBest,
+                  },
+                }
+              : {}),
+          best: revisedScoring(id) && r.scoringVersion !== 2 ? 0 : r.best,
+          passes:
+            revisedScoring(id) && r.scoringVersion !== 2
+              ? 0
+              : Math.min(2, Math.floor(r.passes)),
+          practiceBest:
+            revisedScoring(id) && r.scoringVersion !== 2 ? 0 : r.practiceBest,
+          ...(revisedScoring(id) ? { scoringVersion: 2 } : {}),
         };
     }
     return clean;
@@ -47,7 +78,7 @@ export function recordRun(
   tick: number,
   interrupted: boolean,
 ): Progress {
-  if (tick !== TOTAL_TICKS) return progress;
+  if (tick !== drillTicks(id)) return progress;
   const prev = progress[id] || {
     attempts: 0,
     best: 0,
@@ -58,6 +89,10 @@ export function recordRun(
   return {
     ...progress,
     [id]: {
+      ...(revisedScoring(id) ? { scoringVersion: 2 } : {}),
+      ...(prev.previousScoring
+        ? { previousScoring: prev.previousScoring }
+        : {}),
       attempts: prev.attempts + 1,
       best: challenge ? Math.max(prev.best, score) : prev.best,
       practiceBest: challenge

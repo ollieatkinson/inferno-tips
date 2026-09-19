@@ -1,4 +1,4 @@
-import { TOTAL_TICKS, type LessonId, type Prayer } from './course';
+import { drillTicks, type LessonId, type Prayer } from './course';
 import {
   advance,
   expectedPrayer,
@@ -31,7 +31,7 @@ export function prayerPreview(
   let previous = selected;
   for (
     let tick = state.tick + 1;
-    tick <= Math.min(TOTAL_TICKS, state.tick + 6);
+    tick <= Math.min(drillTicks(id), state.tick + 6);
     tick++
   ) {
     const fallback: Prayer =

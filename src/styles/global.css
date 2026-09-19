@@ -3605,16 +3605,19 @@ select:focus-visible {
   min-height: 40px;
 }
 
-.movement-scoring {
+.movement-scoring,
+.mechanic-scoring {
   padding: 12px 22px;
   font-size: 12px;
   color: var(--muted);
   border-bottom: 1px solid var(--border);
 }
-.movement-scoring strong {
+.movement-scoring strong,
+.mechanic-scoring strong {
   color: var(--text);
 }
-.movement-scoring span {
+.movement-scoring span,
+.mechanic-scoring span {
   display: block;
   margin-top: 6px;
 }
@@ -3700,4 +3703,123 @@ select:focus-visible {
   padding: 6px;
   min-height: 44px;
   font-size: 10px;
+}
+
+.series-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin: 0 0 28px;
+}
+.series-cards a {
+  padding: 22px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  border-radius: 8px;
+  text-decoration: none;
+  color: inherit;
+}
+.series-cards a:hover {
+  border-color: var(--orange);
+}
+.series-cards h2 {
+  margin: 8px 0;
+  font-size: 22px;
+}
+.series-cards p,
+.series-intro > p {
+  line-height: 1.65;
+}
+.series-intro {
+  max-width: 900px;
+}
+.series-route {
+  list-style: none;
+  padding: 0;
+  margin: 24px 0;
+}
+.series-route li {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  border-bottom: 1px solid var(--border);
+  padding: 14px 0;
+}
+.series-route li > span {
+  color: var(--orange);
+  width: 20px;
+}
+.series-route small {
+  margin-left: auto;
+}
+.series-score {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px;
+  margin-top: 12px;
+}
+.series-score-numbers {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+.series-score-numbers span {
+  display: grid;
+  gap: 5px;
+}
+.series-score-numbers strong {
+  font-size: 24px;
+}
+.series-score-numbers small {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+.series-score p {
+  font-size: 12px;
+  line-height: 1.55;
+  margin: 10px 0;
+}
+.series-feedback {
+  font-weight: 700;
+}
+.series-score .button {
+  width: 100%;
+}
+@media (max-width: 600px) {
+  .series-cards {
+    grid-template-columns: 1fr;
+  }
+  .series-route small {
+    max-width: 90px;
+    text-align: right;
+  }
+}
+.previous-score {
+  display: block;
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+/* Reserve the encounter cue and arena space across automatic stage changes. */
+.series-trainer .page-heading p {
+  min-height: 3.3em;
+}
+.series-cues {
+  height: 150px;
+  overflow: auto;
+  border-bottom: 1px solid var(--border);
+}
+.series-stage-guide {
+  padding: 18px 22px;
+}
+.series-stage-guide strong {
+  font-size: 15px;
+}
+.series-stage-guide p {
+  font-size: 12px;
+  margin: 8px 0 0;
+}
+.series-trainer .practice-main .training-arena {
+  height: 300px;
+  min-height: 300px;
 }

@@ -36,7 +36,24 @@ Twenty timed drills include the original mager, blob, stack, movement and supply
 
 Each field lesson has a decision question and timestamped source link. Knowledge checks persist separately from timed-drill mastery. Spatial assignments and drill companion links open prepared LoS scenes with relevant enemies, positions and attack state; full Jad and Zuk practice links to the combat simulator.
 
-Both modes use real 600 ms game ticks. Guided mode adds hints and a six-tick prayer table above the controls; challenges hide them. The table shows prayer icons, holds, off–on clicks, blob reads and supply/movement reminders. It advances with the run and uses actual pending blob reads. Jad drills teach cue reactions instead of a fixed cycle. Two uninterrupted challenges at 90% or higher earn lesson mastery. All lessons remain open for practice. Completed runs show check-by-check feedback, accuracy, and best streak. Progress survives reloads and can be reset with confirmation.
+Both modes use real 600 ms game ticks. Guided mode adds hints and a six-tick prayer table above the controls; challenges hide them. The table shows prayer icons, holds, off–on clicks, blob reads and supply/movement reminders. It advances with the run and uses actual pending blob reads. Jad drills teach cue reactions instead of a fixed cycle. Two uninterrupted challenges meeting the displayed pass target earn lesson mastery. All lessons remain open for practice. Completed runs show check-by-check feedback, accuracy, and best streak. Progress survives reloads and can be reset with confirmation.
+
+Sequence drills award a point only when the whole mechanic is completed:
+
+| Drill                              | Pass target | A point requires                                                                 |
+| ---------------------------------- | ----------- | -------------------------------------------------------------------------------- |
+| Mager / bat lazy flicking          | 8/9 · 11/12 | Protect the attack and switch off for the quiet ticks                            |
+| Blob reads                         | 5/6         | Control the read with Magic/Ranged and protect its attack                        |
+| Flick & Move / blob–mager movement | 8/9         | Protect every attack and actually move to the marked tile                        |
+| Food / potions                     | 8/9 · 7/8   | Correct item with prayer off in the gap, with both surrounding attacks protected |
+| One-tick flick                     | 32/35       | One off–on pair, finishing on Magic at the next boundary                         |
+| Blowpipe movement                  | 17/18       | Shoot and run two tiles during cooldown; lost attack ticks count as misses       |
+
+Food finishes on tick 37 and potions on tick 33 so the last supply action is tested against the following attack. Other drills last 36 ticks. Revised scoring starts new bests and pass counts; earlier scores remain visible on Your progress, and attempt counts are retained.
+
+**Hard circuit** (`#hard`) and **Endless gauntlet** (`#endless`) are available from Practice drills. Both use three lives, hidden hints, 600 ms ticks and a three-tick count-in between stages. Hard has five stages: two-tick stack, Flick & Move, blob–mager movement, double blobs and triple Jad. Endless starts with mager flicking, follows that progression, then repeats the final three encounters indefinitely. Complexity and the points multiplier cap after the opening progression; tick speed never increases.
+
+Correct scored beats/sequences earn 10–60 points depending on the stage. Multiple failures on one tick cost only one life, with no partial points on that tick. Finish manually, lose all three lives, or clear Hard to save a personal best. Each mode has its own browser-local high score. Pausing, hiding the tab or a long timing stall turns the entire run into practice without a high score. Circuit runs do not award individual drill passes. Retry remains beside the prayer controls, and stage changes keep their position stable.
 
 Click a prayer to activate it; click the active prayer again to turn it off. Click tiles to move. Tab keys default to `Esc` for Inventory and `F1` for Prayers. Open **Settings** in the site navigation to choose Esc or F1–F12, a default practice mode, tick sound and volume. These preferences apply across drills and persist locally; existing keybinds carry over. Assigning an already-used key swaps the two bindings. They never activate prayers or items. After guided practice, **Start challenge** begins the same drill without prayer hints in one click. Use the Pause button to pause. Hidden tabs and long browser stalls pause the exercise; interrupted challenges count as practice.
 

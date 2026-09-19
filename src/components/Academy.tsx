@@ -1,6 +1,26 @@
+import {
+  newSeries,
+  updateSeries,
+  stageLesson,
+  stageValue,
+  seriesTitle,
+  parseHighScores,
+  saveHighScore,
+  SERIES_KEY,
+  type SeriesMode,
+  type SeriesState,
+  type SeriesAction,
+  type HighScores,
+} from '../lib/series';
 import { BlowpipeScene } from './BlowpipeScene';
 import { nextBlowpipeTile, type BlowpipeCommand } from '../lib/blowpipe';
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 import { LearningPath, KNOWLEDGE_KEY } from './LearningPath';
 import { chapters, fieldLessons } from '../lib/curriculum';
 import { Overview } from './Overview';
@@ -23,11 +43,10 @@ import {
 import {
   lessons,
   passScore,
-  MOVEMENT_ROUNDS,
-  MOVEMENT_PASS_ROUNDS,
   sourceLinks,
   lessonSource,
-  TOTAL_TICKS,
+  drillTicks,
+  mechanicGoals,
   type Lesson,
   type LessonId,
   type Mode,
@@ -113,7 +132,14 @@ const learningOrder = chapters
   .map((id) => lessons.find((l) => l.id === id)!);
 
 type Page =
-  'overview' | 'course' | 'drills' | 'progress' | 'resources' | 'settings';
+  | 'overview'
+  | 'course'
+  | 'drills'
+  | 'progress'
+  | 'resources'
+  | 'settings'
+  | 'hard'
+  | 'endless';
 
 export default function Academy() {
   const [page, setPage] = useState<Page>('overview');
@@ -162,6 +188,8 @@ export default function Academy() {
           'progress',
           'resources',
           'settings',
+          'hard',
+          'endless',
         ].includes(route)
       ) {
         setPage(route as Page);
@@ -271,8 +299,13 @@ export default function Academy() {
           ).map(([id, icon, label]) => (
             <button
               key={id}
-              className={`nav-item ${page === id && !active ? 'active' : ''}`}
-              aria-current={page === id && !active ? 'page' : undefined}
+              className={`nav-item ${(page === id && !active) || (id === 'drills' && ['hard', 'endless'].includes(page)) ? 'active' : ''}`}
+              aria-current={
+                (page === id && !active) ||
+                (id === 'drills' && ['hard', 'endless'].includes(page))
+                  ? 'page'
+                  : undefined
+              }
               onClick={() => navigate(id)}
             >
               <Icon name={icon} />
@@ -327,6 +360,8 @@ export default function Academy() {
                     progress: 'Your progress',
                     resources: 'Guides & resources',
                     settings: 'Settings',
+                    hard: 'Hard circuit',
+                    endless: 'Endless gauntlet',
                   }[page]}
             </b>
           </div>
@@ -395,6 +430,14 @@ export default function Academy() {
               {page === 'drills' && (
                 <DrillLibrary launch={launch} progress={progress} />
               )}
+              {(page === 'hard' || page === 'endless') && (
+                <SeriesTrainer
+                  key={page}
+                  mode={page}
+                  settings={settings}
+                  onExit={() => navigate('drills')}
+                />
+              )}
               {page === 'progress' && (
                 <>
                   <div className="page-heading">
@@ -434,6 +477,15 @@ export default function Academy() {
                       <span>Best challenge score</span>
                     </div>
                   </div>
+                  {Object.values(progress).some(
+                    (entry) => entry?.previousScoring,
+                  ) && (
+                    <p className="fine-print">
+                      Several drills now score complete sequences. Their new
+                      scores and passes start fresh; earlier scores are kept
+                      below for reference. Attempt counts are unchanged.
+                    </p>
+                  )}
                   <div className="progress-table">
                     {lessons.map((l) => (
                       <div key={l.id}>
@@ -443,6 +495,15 @@ export default function Academy() {
                           {progress[l.id]?.attempts
                             ? `${progress[l.id]?.best || 0}% challenge · ${progress[l.id]?.practiceBest || 0}% practice`
                             : 'Ready when you are'}
+                          {progress[l.id]?.previousScoring && (
+                            <small className="previous-score">
+                              Earlier scoring:{' '}
+                              {progress[l.id]!.previousScoring!.best}% challenge
+                              · {progress[l.id]!.previousScoring!.practiceBest}%
+                              practice ·{' '}
+                              {progress[l.id]!.previousScoring!.passes}/2 passes
+                            </small>
+                          )}
                         </span>
                         <b>{progress[l.id]?.passes || 0}/2 passes</b>
                         <button
@@ -479,6 +540,7 @@ export default function Academy() {
                             try {
                               localStorage.removeItem(STORAGE_KEY);
                               localStorage.removeItem(KNOWLEDGE_KEY);
+                              localStorage.removeItem(SERIES_KEY);
                               setProgress({});
                               setResetConfirm(false);
                             } catch {
@@ -602,9 +664,27 @@ function DrillLibrary({
           <h1>Practice drills</h1>
           <p>
             Every drill is open. Filter by skill, pick a weak spot and start a
-            36-tick run. Both modes use the real 0.6-second beat.
+            short run. Both modes use the real 0.6-second beat.
           </p>
         </div>
+      </div>
+      <div className="series-cards">
+        <a href="#hard">
+          <span className="eyebrow">FIVE STAGES · THREE LIVES</span>
+          <h2>Hard circuit →</h2>
+          <p>
+            Stacks, movement, blobs and triple Jad. Carry your score and
+            mistakes through every stage.
+          </p>
+        </a>
+        <a href="#endless">
+          <span className="eyebrow">SURVIVAL · PERSONAL BEST</span>
+          <h2>Endless gauntlet →</h2>
+          <p>
+            Start with the mager and work up to the toughest combinations. How
+            long can you keep going?
+          </p>
+        </a>
       </div>
       <div className="drill-filters">
         <label>
@@ -811,6 +891,189 @@ function Resources() {
   );
 }
 
+interface TrainerSession {
+  run: SeriesState;
+  panel: ReactNode;
+  dispatch: (action: SeriesAction) => void;
+  restart: () => void;
+}
+function SeriesTrainer({
+  mode,
+  settings,
+  onExit,
+}: {
+  mode: SeriesMode;
+  settings: Settings;
+  onExit: () => void;
+}) {
+  const [run, setRun] = useState(() => newSeries(mode));
+  const [started, setStarted] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+  const [best, setBest] = useState<HighScores>({});
+  const [storageError, setStorageError] = useState(false);
+  useEffect(() => {
+    try {
+      setBest(parseHighScores(localStorage.getItem(SERIES_KEY)));
+    } catch {
+      setStorageError(true);
+    }
+  }, []);
+  useEffect(() => {
+    if (!run.ended) return;
+    const updated = saveHighScore(best, run);
+    if (updated === best) return;
+    setBest(updated);
+    try {
+      localStorage.setItem(SERIES_KEY, JSON.stringify(updated));
+    } catch {
+      setStorageError(true);
+    }
+  }, [run, best]);
+  const dispatch = (action: SeriesAction) =>
+    setRun((previous) => updateSeries(previous, action));
+  const restart = () => {
+    setRun(newSeries(mode));
+    setAttempt((value) => value + 1);
+    setStarted(true);
+  };
+  const lesson = lessons.find(
+    (lesson) => lesson.id === stageLesson(mode, run.stage),
+  )!;
+  const panel = (
+    <div className="series-score" aria-label="Survival score">
+      <div className="series-score-numbers">
+        <span>
+          <small>SCORE</small>
+          <strong>{run.points}</strong>
+        </span>
+        <span>
+          <small>LIVES</small>
+          <strong>{run.lives} / 3</strong>
+        </span>
+        <span>
+          <small>BEST</small>
+          <strong>{best[mode]?.points ?? '—'}</strong>
+        </span>
+      </div>
+      <p className="series-feedback" role="status">
+        {run.ended
+          ? run.cleared
+            ? 'Circuit cleared!'
+            : 'Run complete'
+          : `Stage ${run.stage + 1}${mode === 'hard' ? ' / 5' : ''} · ${stageValue(mode, run.stage)} points per clean check`}
+      </p>
+      <p>{run.feedback}</p>
+      {run.practice && (
+        <p className="storage-notice">
+          Practice run — pausing disables high scores for this run.
+        </p>
+      )}
+      {run.ended && (
+        <>
+          <p>
+            {run.points} points · reached stage {run.stage + 1}.{' '}
+            {run.practice
+              ? 'Practice score only.'
+              : run.points > 0 && best[mode]?.points === run.points
+                ? 'Personal best in this browser.'
+                : best[mode]
+                  ? 'Your best is saved in this browser.'
+                  : 'Complete a clean check to set a personal best.'}
+          </p>
+          <button className="button primary" onClick={restart}>
+            Retry run
+          </button>
+        </>
+      )}
+      {storageError && (
+        <p role="status">
+          Scores cannot be saved in this browser. Your best lasts for this
+          visit.
+        </p>
+      )}
+    </div>
+  );
+  if (!started)
+    return (
+      <div className="series-intro">
+        <button className="text-button back-button" onClick={onExit}>
+          ← Back to practice drills
+        </button>
+        <div className="page-heading">
+          <div>
+            <span className="eyebrow">THREE LIVES · 0.6 SECOND TICKS</span>
+            <h1>{seriesTitle(mode)}</h1>
+            <p>
+              {mode === 'hard'
+                ? 'Clear five encounters without running out of lives.'
+                : 'Survive increasingly demanding encounters and build your high score.'}
+            </p>
+          </div>
+        </div>
+        <ol className="series-route">
+          {Array.from({ length: mode === 'hard' ? 5 : 6 }, (_, stage) => (
+            <li key={stage}>
+              <span>{stage + 1}</span>
+              <strong>
+                {
+                  lessons.find(
+                    (lesson) => lesson.id === stageLesson(mode, stage),
+                  )!.title
+                }
+              </strong>
+              <small>{stageValue(mode, stage)} points / clean check</small>
+            </li>
+          ))}
+        </ol>
+        <p>
+          Each stage lasts 36 ticks, with a three-tick count-in before the next
+          encounter. Prayer hints are hidden. A failed scored check or sequence
+          costs one life; multiple misses on the same tick cost only one.
+          Correct checks on that tick earn no points if another check fails.
+        </p>
+        {mode === 'endless' && (
+          <p>
+            After stage six, mager–blob movement, two blobs and triple Jad
+            repeat. Difficulty and points per check cap there; the clock always
+            stays at 0.6 seconds.
+          </p>
+        )}
+        <p>
+          Finish a run whenever you like to save your score. Pausing or leaving
+          the tab turns it into practice. Personal bests are separate for each
+          mode and saved in this browser; these runs do not award drill passes.
+        </p>
+        <p>
+          <strong>
+            Personal best:{' '}
+            {best[mode]
+              ? `${best[mode]!.points} points · stage ${best[mode]!.stage}`
+              : 'No scored runs yet'}
+          </strong>
+        </p>
+        {storageError && (
+          <p>Browser storage is unavailable. Scores last for this visit.</p>
+        )}
+        <button className="button primary" onClick={restart}>
+          Start {seriesTitle(mode).toLowerCase()}
+        </button>
+      </div>
+    );
+  return (
+    <Trainer
+      key={`${attempt}-${run.stage}`}
+      settings={settings}
+      lesson={lesson}
+      progress={undefined}
+      exitLabel="Back to practice drills"
+      onExit={onExit}
+      onComplete={() => {}}
+      onNext={() => {}}
+      session={{ run, panel, dispatch, restart }}
+    />
+  );
+}
+
 function Trainer({
   settings,
   lesson,
@@ -819,6 +1082,7 @@ function Trainer({
   exitLabel,
   onComplete,
   onNext,
+  session,
 }: {
   settings: Settings;
   lesson: Lesson;
@@ -833,8 +1097,11 @@ function Trainer({
     interrupted: boolean,
   ) => void;
   onNext: () => void;
+  session?: TrainerSession;
 }) {
-  const [mode, setMode] = useState<Mode>(settings.defaultMode);
+  const [mode, setMode] = useState<Mode>(
+    session ? 'challenge' : settings.defaultMode,
+  );
   const [status, setStatus] = useState<
     'ready' | 'countdown' | 'running' | 'paused' | 'done'
   >('ready');
@@ -865,6 +1132,9 @@ function Trainer({
   const soundRef = useRef(sound);
   const completeRef = useRef(onComplete);
   const savedRef = useRef(false);
+  const sessionRef = useRef(session);
+  sessionRef.current = session;
+  const autoStarted = useRef(false);
   const trainingRef = useRef<HTMLElement>(null);
   const startFocus = useRef<'stay' | 'return' | null>(null);
   const ms = 600;
@@ -878,7 +1148,9 @@ function Trainer({
           : hasBlob(lesson.id)
             ? 6
             : 4;
-  const nextTick = Math.min(TOTAL_TICKS, state.tick + 1);
+  const totalTicks = drillTicks(lesson.id);
+  const goal = mechanicGoals[lesson.id];
+  const nextTick = Math.min(totalTicks, state.tick + 1);
   const expected = expectedPrayer(
     lesson.id,
     nextTick,
@@ -892,10 +1164,9 @@ function Trainer({
   const prayerChecks = state.checks.filter((check) => check.kind === 'prayer');
   const prayerHits = prayerChecks.filter((check) => check.correct).length;
   const requiredScore = passScore(lesson.id);
-  const passTarget =
-    lesson.id === 'movement'
-      ? `${MOVEMENT_PASS_ROUNDS} of ${MOVEMENT_ROUNDS} complete rounds`
-      : `${requiredScore}%`;
+  const passTarget = goal
+    ? `${goal.pass} of ${goal.total} complete rounds`
+    : `${requiredScore}%`;
   const supplyTarget = supplyGoal(lesson.id, nextTick);
   const nextMagicAttack = nextTick + ((1 - (nextTick % 4) + 4) % 4);
   const magerLesson = lesson.id === 'rhythm' || hasSupplies(lesson.id);
@@ -976,6 +1247,15 @@ function Trainer({
     savedRef.current = false;
     setStatus('countdown');
   }
+  useEffect(() => {
+    if (sessionRef.current && !autoStarted.current) {
+      autoStarted.current = true;
+      begin();
+    }
+  }, []);
+  useEffect(() => {
+    if (session?.run.ended) setStatus('done');
+  }, [session?.run.ended]);
   function beginChallenge(fromResults = false) {
     setMode('challenge');
     begin(fromResults);
@@ -994,6 +1274,7 @@ function Trainer({
       });
   }, [status]);
   function pause() {
+    sessionRef.current?.dispatch({ type: 'pause' });
     tickDeadlineRef.current = null;
     setInterrupted(true);
     setStatus('paused');
@@ -1105,7 +1386,21 @@ function Trainer({
     return () => window.clearTimeout(timer);
   }, [status, state.tick, ms, lesson.id]);
   useEffect(() => {
-    if (state.tick === TOTAL_TICKS && !savedRef.current) {
+    const current = sessionRef.current;
+    if (current) {
+      current.dispatch({
+        type: 'checks',
+        stage: current.run.stage,
+        tick: state.tick,
+        checks: state.checks,
+      });
+      if (state.tick === totalTicks && !savedRef.current) {
+        savedRef.current = true;
+        current.dispatch({ type: 'next', stage: current.run.stage });
+      }
+      return;
+    }
+    if (state.tick === totalTicks && !savedRef.current) {
       savedRef.current = true;
       setStatus('done');
       completeRef.current(
@@ -1183,7 +1478,7 @@ function Trainer({
         ? 'Melee'
         : 'Magic';
   return (
-    <div className="trainer-page">
+    <div className={`trainer-page ${session ? 'series-trainer' : ''}`}>
       <button className="text-button back-button" onClick={onExit}>
         ← {exitLabel}
       </button>
@@ -1193,8 +1488,12 @@ function Trainer({
             DRILL {String(lessons.indexOf(lesson) + 1).padStart(2, '0')} /{' '}
             {lesson.level.toUpperCase()}
           </span>
-          <h1>{lesson.title}</h1>
-          <p>{lesson.objective}</p>
+          <h1>
+            {session
+              ? `${seriesTitle(session.run.mode)} · stage ${session.run.stage + 1}`
+              : lesson.title}
+          </h1>
+          <p>{session ? lesson.title : lesson.objective}</p>
         </div>
         <GameIcon name={lesson.icon} className="lesson-heading-icon" />
       </div>
@@ -1207,48 +1506,55 @@ function Trainer({
           tabIndex={-1}
         >
           <div className="training-toolbar">
-            <div
-              className="mode-switch"
-              role="group"
-              aria-label="Training mode"
-            >
-              <button
-                disabled={busy}
-                aria-pressed={mode === 'guided'}
-                className={mode === 'guided' ? 'selected' : ''}
-                onClick={() => {
-                  setMode('guided');
-                  setStatus('ready');
-                  setState(initialState());
-                }}
+            {!session && (
+              <div
+                className="mode-switch"
+                role="group"
+                aria-label="Training mode"
               >
-                Guided practice
-              </button>
-              <button
-                disabled={busy}
-                aria-pressed={mode === 'challenge'}
-                className={mode === 'challenge' ? 'selected' : ''}
-                onClick={() => {
-                  setMode('challenge');
-                  setStatus('ready');
-                  setState(initialState());
-                }}
-              >
-                Challenge
-              </button>
-            </div>
+                <button
+                  disabled={busy}
+                  aria-pressed={mode === 'guided'}
+                  className={mode === 'guided' ? 'selected' : ''}
+                  onClick={() => {
+                    setMode('guided');
+                    setStatus('ready');
+                    setState(initialState());
+                  }}
+                >
+                  Guided practice
+                </button>
+                <button
+                  disabled={busy}
+                  aria-pressed={mode === 'challenge'}
+                  className={mode === 'challenge' ? 'selected' : ''}
+                  onClick={() => {
+                    setMode('challenge');
+                    setStatus('ready');
+                    setState(initialState());
+                  }}
+                >
+                  Challenge
+                </button>
+              </div>
+            )}
             <div className="training-actions">
               {status === 'ready' || status === 'done' ? (
                 <>
-                  <button className="button primary" onClick={() => begin()}>
+                  <button
+                    className="button primary"
+                    onClick={() => (session ? session.restart() : begin())}
+                  >
                     <Icon name="play" size={15} />
-                    {status === 'done'
-                      ? mode === 'guided'
-                        ? 'Restart practice'
-                        : 'Try challenge again'
-                      : mode === 'guided'
-                        ? 'Start guided practice'
-                        : 'Start challenge'}
+                    {session
+                      ? 'Retry run'
+                      : status === 'done'
+                        ? mode === 'guided'
+                          ? 'Restart practice'
+                          : 'Try challenge again'
+                        : mode === 'guided'
+                          ? 'Start guided practice'
+                          : 'Start challenge'}
                   </button>
                   {status === 'done' && mode === 'guided' && (
                     <button
@@ -1277,11 +1583,15 @@ function Trainer({
                   <button
                     className="text-button"
                     onClick={() => {
+                      if (session) {
+                        session.dispatch({ type: 'finish' });
+                        return;
+                      }
                       setState(initialState());
                       setStatus('ready');
                     }}
                   >
-                    End run
+                    {session ? 'Finish run' : 'End run'}
                   </button>
                 </>
               )}
@@ -1307,14 +1617,16 @@ function Trainer({
               <small>TICK</small>
               <strong>
                 {state.tick}
-                <span> / {TOTAL_TICKS}</span>
+                <span> / {totalTicks}</span>
               </strong>
             </div>
             <div>
-              <small>{lesson.id === 'movement' ? 'POINTS' : 'ACCURACY'}</small>
+              <small>
+                {session ? 'STAGE SCORE' : goal ? 'POINTS' : 'ACCURACY'}
+              </small>
               <strong>
-                {lesson.id === 'movement'
-                  ? `${roundPoints} / ${MOVEMENT_ROUNDS}`
+                {goal
+                  ? `${roundPoints} / ${goal.total}`
                   : scoring.length
                     ? `${score}%`
                     : '—'}
@@ -1324,91 +1636,117 @@ function Trainer({
               <small>STREAK</small>
               <strong>
                 {state.streak}
-                <span>{lesson.id === 'movement' ? ' rounds' : ' checks'}</span>
+                <span>{goal ? ' rounds' : ' checks'}</span>
               </strong>
             </div>
           </div>
-          {lesson.id === 'movement' && (
-            <p className="movement-scoring">
-              <strong>
-                {MOVEMENT_PASS_ROUNDS} of {MOVEMENT_ROUNDS} points to pass.
-              </strong>{' '}
-              Each point needs both prayers correct and the marked tile reached
-              by the fourth tick.
-              <span>
-                Prayer accuracy:{' '}
-                {prayerChecks.length
-                  ? `${Math.round((100 * prayerHits) / prayerChecks.length)}% (${prayerHits}/${prayerChecks.length})`
-                  : '—'}{' '}
-                · {scoring.length}/{MOVEMENT_ROUNDS} rounds checked
-              </span>
-            </p>
-          )}
-          {isJad(lesson.id) && (
-            <div
-              className="jad-cue"
-              data-style={
-                ['running', 'paused'].includes(status)
-                  ? jadStyle(lesson.id, state.tick + 3, state.seed)
-                  : ''
+          {goal && !session && (
+            <p
+              className={
+                lesson.id === 'movement'
+                  ? 'movement-scoring'
+                  : 'mechanic-scoring'
               }
             >
               <strong>
-                {!['running', 'paused'].includes(status)
-                  ? status === 'done'
-                    ? 'Reaction block complete'
-                    : 'Watch for the first attack cue'
-                  : `${lesson.id === 'triples' ? `Jad ${(Math.floor(state.tick / 3) % 3) + 1}: ` : ''}${jadStyle(lesson.id, state.tick + 3, state.seed) === 'magic' ? 'Front legs raised — MAGIC' : 'Stomp — RANGED'}`}
-              </strong>
+                {goal.pass} of {goal.total} points to pass.
+              </strong>{' '}
+              {goal.rule}
               <span>
-                {status === 'running' && state.tick % jadPeriod(lesson.id) < 3
-                  ? 'React now · prayer check three ticks after the cue'
-                  : 'Wait for the next cue · repeated styles are possible'}
-              </span>
-            </div>
-          )}
-          {lesson.id === 'flick' && (
-            <p className="technique-banner">
-              Magic stays on at each beat. Between beats: click off → on.
-              Holding alone does not pass.
-            </p>
-          )}
-          {(lesson.id === 'reverse' || lesson.id === 'melee-blob') && (
-            <p className="technique-banner">
-              Mitigation exercise: 100% means correct priorities, not every
-              attack protected.
-            </p>
-          )}
-          {magerLesson && (
-            <div
-              className="attack-cycle"
-              role="group"
-              aria-label="Mager attack cycle"
-            >
-              <div className="attack-countdown">
-                <GameIcon name="protect-magic" />
-                <strong>
-                  {status === 'done'
-                    ? 'Cycle complete'
-                    : `Magic attack in ${nextMagicAttack - state.tick} tick${nextMagicAttack - state.tick === 1 ? '' : 's'}`}
-                </strong>
-                <span>Attacks every 4 ticks</span>
-              </div>
-              <div className="cycle-phases">
-                {['Protect', 'Toggle off', 'Quiet', 'Prepare'].map(
-                  (label, i) => (
-                    <span
-                      key={label}
-                      className={`${i === 0 ? 'attack-phase' : ''} ${state.tick > 0 && (state.tick - 1) % 4 === i ? 'current' : ''}`}
-                    >
-                      <b>{i + 1}</b>
-                      {mode === 'guided' ? label : i === 0 ? 'Attack' : 'Quiet'}
-                    </span>
-                  ),
+                {lesson.id === 'blowpipe' ? (
+                  <>
+                    {roundPoints}/{goal.total} shot–move pairs ·{' '}
+                    {state.blowpipe.lostTicks} attack ticks lost
+                  </>
+                ) : (
+                  <>
+                    Prayer accuracy:{' '}
+                    {prayerChecks.length
+                      ? `${Math.round((100 * prayerHits) / prayerChecks.length)}% (${prayerHits}/${prayerChecks.length})`
+                      : '—'}{' '}
+                    · {scoring.length}/{goal.total} rounds checked
+                  </>
                 )}
-              </div>
-            </div>
+              </span>
+            </p>
           )}
+          <div className={session ? 'series-cues' : undefined}>
+            {session && !isJad(lesson.id) && !magerLesson && (
+              <div className="series-stage-guide">
+                <strong>{lesson.title}</strong>
+                <p>{goal?.rule ?? lesson.objective}</p>
+              </div>
+            )}
+            {isJad(lesson.id) && (
+              <div
+                className="jad-cue"
+                data-style={
+                  ['running', 'paused'].includes(status)
+                    ? jadStyle(lesson.id, state.tick + 3, state.seed)
+                    : ''
+                }
+              >
+                <strong>
+                  {!['running', 'paused'].includes(status)
+                    ? status === 'done'
+                      ? 'Reaction block complete'
+                      : 'Watch for the first attack cue'
+                    : `${lesson.id === 'triples' ? `Jad ${(Math.floor(state.tick / 3) % 3) + 1}: ` : ''}${jadStyle(lesson.id, state.tick + 3, state.seed) === 'magic' ? 'Front legs raised — MAGIC' : 'Stomp — RANGED'}`}
+                </strong>
+                <span>
+                  {status === 'running' && state.tick % jadPeriod(lesson.id) < 3
+                    ? 'React now · prayer check three ticks after the cue'
+                    : 'Wait for the next cue · repeated styles are possible'}
+                </span>
+              </div>
+            )}
+            {lesson.id === 'flick' && (
+              <p className="technique-banner">
+                Magic stays on at each beat. Between beats: click off → on.
+                Holding alone does not pass.
+              </p>
+            )}
+            {(lesson.id === 'reverse' || lesson.id === 'melee-blob') && (
+              <p className="technique-banner">
+                Mitigation exercise: 100% means correct priorities, not every
+                attack protected.
+              </p>
+            )}
+            {magerLesson && (
+              <div
+                className="attack-cycle"
+                role="group"
+                aria-label="Mager attack cycle"
+              >
+                <div className="attack-countdown">
+                  <GameIcon name="protect-magic" />
+                  <strong>
+                    {status === 'done'
+                      ? 'Cycle complete'
+                      : `Magic attack in ${nextMagicAttack - state.tick} tick${nextMagicAttack - state.tick === 1 ? '' : 's'}`}
+                  </strong>
+                  <span>Attacks every 4 ticks</span>
+                </div>
+                <div className="cycle-phases">
+                  {['Protect', 'Toggle off', 'Quiet', 'Prepare'].map(
+                    (label, i) => (
+                      <span
+                        key={label}
+                        className={`${i === 0 ? 'attack-phase' : ''} ${state.tick > 0 && (state.tick - 1) % 4 === i ? 'current' : ''}`}
+                      >
+                        <b>{i + 1}</b>
+                        {mode === 'guided'
+                          ? label
+                          : i === 0
+                            ? 'Attack'
+                            : 'Quiet'}
+                      </span>
+                    ),
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
           <div
             className={`practice-workspace ${lesson.id === 'blowpipe' ? 'blowpipe-workspace' : ''}`}
           >
@@ -1647,7 +1985,9 @@ function Trainer({
                     ? 'Start on Magic. Hold through the first mager attack (tick 1), then switch to Ranged.'
                     : undefined
                 }
-                onRetry={status === 'done' ? () => begin() : undefined}
+                onRetry={
+                  status === 'done' && !session ? () => begin() : undefined
+                }
                 retryLabel={mode === 'guided' ? 'Restart practice' : 'Retry'}
                 score={score}
                 activePrayer={displayedOverhead}
@@ -1670,19 +2010,22 @@ function Trainer({
                   setQueuedSupply(item);
                 }}
               >
-                {lesson.id === 'movement' && mode === 'challenge' && (
-                  <MovementChallenge
-                    checks={state.checks}
-                    done={status === 'done'}
-                    practice={interrupted && status !== 'ready'}
-                    canRetry={status === 'running' || status === 'paused'}
-                    onRetry={() => begin()}
-                    onFinishPractice={() => {
-                      setFinishingAsPractice(true);
-                      setInterrupted(true);
-                    }}
-                  />
-                )}
+                {session?.panel}
+                {!session &&
+                  lesson.id === 'movement' &&
+                  mode === 'challenge' && (
+                    <MovementChallenge
+                      checks={state.checks}
+                      done={status === 'done'}
+                      practice={interrupted && status !== 'ready'}
+                      canRetry={status === 'running' || status === 'paused'}
+                      onRetry={() => begin()}
+                      onFinishPractice={() => {
+                        setFinishingAsPractice(true);
+                        setInterrupted(true);
+                      }}
+                    />
+                  )}
               </GamePanels>
             )}
           </div>
@@ -1799,25 +2142,27 @@ function Trainer({
               ↗
             </a>
           </div>
-          <div className="mastery-note">
-            <span className="eyebrow">CHALLENGE PASSES</span>
-            <h3>Two passes at {passTarget}</h3>
-            <p>
-              Meet the target in two uninterrupted challenges. Guided runs help
-              you get there.
-            </p>
-            <div className="mastery-stamps">
-              {[1, 2].map((n) => (
-                <span
-                  key={n}
-                  className={(progress?.passes || 0) >= n ? 'earned' : ''}
-                >
-                  <Icon name="check" size={18} />
-                  Pass {n}
-                </span>
-              ))}
+          {!session && (
+            <div className="mastery-note">
+              <span className="eyebrow">CHALLENGE PASSES</span>
+              <h3>Two passes at {passTarget}</h3>
+              <p>
+                Meet the target in two uninterrupted challenges. Guided runs
+                help you get there.
+              </p>
+              <div className="mastery-stamps">
+                {[1, 2].map((n) => (
+                  <span
+                    key={n}
+                    className={(progress?.passes || 0) >= n ? 'earned' : ''}
+                  >
+                    <Icon name="check" size={18} />
+                    Pass {n}
+                  </span>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
           <a
             className="text-button"
             href={sourceLinks.wiki}
@@ -1829,7 +2174,7 @@ function Trainer({
           </a>
         </aside>
       </div>
-      {status === 'done' && (
+      {status === 'done' && !session && (
         <section className="results" aria-label="Run results">
           <div className="result-header">
             <div>
@@ -1882,7 +2227,11 @@ function Trainer({
           <div className="result-details">
             <span>
               {roundPoints} / {scoring.length}{' '}
-              {lesson.id === 'movement' ? 'rounds complete' : 'checks correct'}
+              {lesson.id === 'blowpipe'
+                ? 'scored attempts complete'
+                : goal
+                  ? 'rounds complete'
+                  : 'checks correct'}
             </span>
             <span>Best streak: {state.bestStreak}</span>
             <span>
@@ -1939,10 +2288,10 @@ function Trainer({
         </section>
       )}
       <p className="fine-print">
-        A local timing model: 36 ticks per run, no damage rolls, network
-        latency, or prayer-point calculation. Hidden tabs and long browser
-        stalls pause the drill. Scores reflect these exercises, not readiness to
-        complete the Inferno.
+        A local timing model: {totalTicks} ticks per {session ? 'stage' : 'run'}
+        , no damage rolls, network latency, or prayer-point calculation. Hidden
+        tabs and long browser stalls pause the drill. Scores reflect these
+        exercises, not readiness to complete the Inferno.
       </p>
     </div>
   );

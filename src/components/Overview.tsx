@@ -2,6 +2,7 @@ import { chapters, fieldLessons, fieldSource } from '../lib/curriculum';
 import { losSetups } from '../lib/los';
 import {
   lessons,
+  drillTicks,
   sourceLinks,
   type Lesson,
   type LessonId,
@@ -107,7 +108,7 @@ export function Overview({
           <button className="text-button" onClick={openDrills}>
             Browse all {lessons.length} drills
           </button>
-          <small>36 ticks · 0.6 seconds per tick</small>
+          <small>{drillTicks(next.id)} ticks · 0.6 seconds per tick</small>
         </div>
       </section>
       <div className="home-columns">

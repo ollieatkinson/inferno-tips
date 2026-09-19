@@ -5,7 +5,7 @@ import {
   type BlowpipeCommand,
 } from './blowpipe';
 import { resolveAttacks, type AttackResult } from './combatEffects';
-import { TOTAL_TICKS, type LessonId, type Prayer } from './course';
+import { drillTicks, type LessonId, type Prayer } from './course';
 import {
   monsterEvents,
   jadStyleForTick,
@@ -64,7 +64,7 @@ export const initialState = (seed = 0): DrillState => ({
 });
 export const hasSupplies = (id: LessonId) => id === 'food' || id === 'potions';
 export const supplyGoal = (id: LessonId, tick: number): Supply | null =>
-  id === 'food'
+  id === 'food' && tick <= 36
     ? 'shark'
     : id === 'potions' && tick <= 32
       ? Math.floor((tick - 1) / 4) % 4 === 3
@@ -145,7 +145,7 @@ export function advance(
   supply: Supply | null = null,
   input: TickInput = {},
 ): DrillState {
-  if (state.tick >= TOTAL_TICKS) return state;
+  if (state.tick >= drillTicks(id)) return state;
   const tick = state.tick + 1;
   const movedThisRound =
     (tick % movementPeriod(id) === 1 ? false : state.movedThisRound) ||
@@ -191,10 +191,10 @@ export function advance(
         kind: 'read',
         expected: 'magic or range',
         actual: prayer,
-        correct: prayer !== 'off',
+        correct: prayer === 'magic' || prayer === 'range',
         message:
-          prayer === 'off'
-            ? 'Give the blob a protection prayer to read. With prayer off, its style is not controlled.'
+          prayer !== 'magic' && prayer !== 'range'
+            ? 'Give the blob Magic or Ranged to read. Off or Melee does not control its ranged/magic style.'
             : `The blob read ${prayer}. Prepare ${pending} by tick ${tick + 3}.`,
       });
   }
@@ -268,7 +268,7 @@ export function advance(
   }
   if (hasMovement(id) && tick % movementPeriod(id) === 0) {
     const target = targetAt(tick, id);
-    const reached = tile === target && (id !== 'movement' || movedThisRound);
+    const reached = tile === target && movedThisRound;
     added.push({
       tick,
       kind: 'movement',
@@ -297,33 +297,65 @@ export function advance(
             : `This gap needed ${goal === 'shark' ? 'a shark' : `a ${goal} dose`}; ${gapSupply ? `you used ${gapSupply}` : 'no item registered on a quiet tick'}. Switch to Inventory after the attack, click the item, then return to Prayers.`,
       });
   }
-  if (id === 'movement') {
-    // Attack and tile checks stay available for feedback; only complete rounds
-    // earn points. A correct prayer alone must never award movement credit.
+  const aggregate = (checks: Check[], message: string) => {
+    added.push({
+      tick,
+      kind: 'round',
+      correct: checks.length > 0 && checks.every((check) => check.correct),
+      expected: 'Complete the whole sequence',
+      actual: `${checks.filter((check) => check.correct).length}/${checks.length} requirements met`,
+      message:
+        checks.length > 0 && checks.every((check) => check.correct)
+          ? `${message} +1 point.`
+          : `No point: ${checks
+              .filter((check) => !check.correct)
+              .map((check) => check.message)
+              .join(' ')}`,
+    });
+  };
+  const raw = [...state.checks, ...added].filter(
+    (check) => check.kind !== 'round',
+  );
+  const last = (length: number) =>
+    raw.filter((check) => check.tick > tick - length);
+  if (
+    [
+      'rhythm',
+      'bat',
+      'food',
+      'potions',
+      'movement',
+      'gauntlet',
+      'blob',
+      'flick',
+      'blowpipe',
+    ].includes(id)
+  ) {
     for (const check of added) check.scored = false;
-    if (tick % movementPeriod(id) === 0) {
-      const round = [...state.checks, ...added].filter(
-        (check) =>
-          check.tick > tick - movementPeriod(id) && check.kind !== 'round',
+    if (
+      (id === 'rhythm' && tick % 4 === 0) ||
+      (id === 'bat' && tick % 3 === 0)
+    ) {
+      aggregate(
+        last(id === 'bat' ? 3 : 4),
+        'Attack protected and prayer off through the gap.',
       );
-      const movement = added.find((check) => check.kind === 'movement')!;
-      const tileCorrect = movement.correct;
-      const prayers = round.filter((check) => check.kind === 'prayer');
-      const prayersCorrect =
-        prayers.length === 2 && prayers.every((check) => check.correct);
-      added.push({
-        tick,
-        kind: 'round',
-        correct: tileCorrect && prayersCorrect,
-        expected: 'Both attacks protected and marked tile reached',
-        actual: `${prayers.filter((check) => check.correct).length}/2 protected; ${tileCorrect ? 'tile reached' : 'tile missed'}`,
-        message:
-          tileCorrect && prayersCorrect
-            ? 'Round complete: both attacks protected and the marked tile reached. +1 point.'
-            : !tileCorrect
-              ? `${movement.message} No point for this round.`
-              : 'No point: reached the tile, but missed a prayer check in this round.',
-      });
+    } else if (hasSupplies(id) && tick > 1 && tick % 4 === 1) {
+      aggregate(last(5), 'Correct supply in the gap, both attacks protected.');
+    } else if (hasMovement(id) && tick % 4 === 0) {
+      aggregate(last(4), 'Every attack protected and the marked tile reached.');
+    } else if (id === 'blob' && isBlobAttack(id, tick)) {
+      aggregate(last(4), 'Blob read controlled and attack protected.');
+    } else if (id === 'flick' && tick > 1) {
+      aggregate(
+        added.slice(),
+        'Off–on pair completed with Magic active at the boundary.',
+      );
+    } else if (id === 'blowpipe') {
+      const check = added[0];
+      if (check.kind === 'movement')
+        aggregate([check], 'Shot followed by a two-tile run during cooldown.');
+      else if (!check.correct) aggregate([check], '');
     }
   }
   let streak = state.streak;
@@ -368,7 +400,7 @@ export function accuracy(checks: Check[]) {
     : 0;
 }
 export function coaching(checks: Check[], id?: LessonId) {
-  const missed = checks.filter((c) => !c.correct);
+  const missed = checks.filter((c) => !c.correct && c.kind !== 'round');
   if (id === 'movement' && missed.length) {
     return missed.some((check) => check.kind === 'movement')
       ? 'Your next focus: movement. Each point needs the marked tile reached by the fourth tick, with both attacks protected.'
@@ -402,7 +434,7 @@ export function coaching(checks: Check[], id?: LessonId) {
       return 'Your prayers alternated, but the cycle was mostly one tick out of phase. Start on Magic and hold it through the first mager attack (tick 1), then switch to Ranged. After that, click the prayer whose circle just cleared.';
   }
   if (missed.some((c) => c.kind === 'flick'))
-    return 'Your next focus: a single off–on pair between beats. Protection at the boundary and conservation clicks are separate checks.';
+    return 'Your next focus: a single off–on pair between beats. The off–on pair and protection at the boundary are both required for a point.';
   if (missed.some((c) => c.kind === 'attack'))
     return 'Your next focus: click the target as soon as the blowpipe is ready. After each shot, run two tiles, then click the target again. Recover from a miss using the weapon cooldown, not odd/even tick numbers.';
   if (missed.length && checks.some((c) => c.kind === 'attack'))

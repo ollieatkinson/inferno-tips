@@ -131,7 +131,7 @@ export const lessons: Lesson[] = [
     steps: [
       'Protect Magic for ticks 1, 5, 9… Click the active prayer again to switch it off after the attack.',
       'Open Inventory, click a shark during the quiet ticks, then return to Prayers before the next attack.',
-      'Tab keybinds only switch panels. You still click every prayer and item. Each shark has a three-tick eating cooldown.',
+      'Tab keybinds only switch panels. You still click every prayer and item. Each shark has a three-tick eating cooldown. After the ninth shark, protect the final attack on tick 37.',
     ],
     takeaway:
       'This is supply-click practice with a metronome. Food can delay your own attacks in OSRS; player attack timing and HP are not simulated here.',
@@ -147,7 +147,7 @@ export const lessons: Lesson[] = [
       'Flick the mager while practising two sequences of three brew doses and one restore.',
     steps: [
       'Keep Magic on for ticks 1, 5, 9… and off on quiet ticks. Use a quiet tick to open Inventory and drink.',
-      'Take one dose per four-tick gap: brew, brew, brew, restore. Repeat, then finish the last attack cycle.',
+      'Take one dose per four-tick gap: brew, brew, brew, restore. Repeat, then protect the final attack on tick 33.',
       'A dose registers on the next beat. Potions share a three-tick drink cooldown. Return to Prayers before each attack.',
     ],
     takeaway:
@@ -403,10 +403,63 @@ export const TOTAL_TICKS = 36;
 export const PASS_SCORE = 90;
 export const MOVEMENT_ROUNDS = TOTAL_TICKS / 4;
 export const MOVEMENT_PASS_ROUNDS = 8;
-export const passScore = (id: LessonId) =>
-  id === 'movement'
-    ? Math.round((100 * MOVEMENT_PASS_ROUNDS) / MOVEMENT_ROUNDS)
-    : PASS_SCORE;
+export const drillTicks = (id: LessonId) =>
+  id === 'food' ? 37 : id === 'potions' ? 33 : TOTAL_TICKS;
+export const mechanicGoals: Partial<
+  Record<LessonId, { total: number; pass: number; rule: string }>
+> = {
+  rhythm: {
+    total: 9,
+    pass: 8,
+    rule: 'Protect the attack and turn prayer off for all three quiet ticks. One point per complete cycle.',
+  },
+  bat: {
+    total: 12,
+    pass: 11,
+    rule: 'Protect the attack and turn prayer off for both quiet ticks. One point per complete cycle.',
+  },
+  movement: {
+    total: 9,
+    pass: 8,
+    rule: 'Each point needs both prayers correct and the marked tile reached by the fourth tick.',
+  },
+  gauntlet: {
+    total: 9,
+    pass: 8,
+    rule: 'Move to the target and protect every attack in the four-tick round. Both are required for a point.',
+  },
+  food: {
+    total: 9,
+    pass: 8,
+    rule: 'Protect, turn prayer off and eat in the quiet gap, then protect the next attack. The point settles on that next attack.',
+  },
+  potions: {
+    total: 8,
+    pass: 7,
+    rule: 'Drink the required dose with prayer off in the quiet gap and protect both surrounding attacks. The brew–brew–brew–restore order matters.',
+  },
+  blob: {
+    total: 6,
+    pass: 5,
+    rule: 'Give the blob Magic or Ranged to read, then protect its attack. The read alone earns no point.',
+  },
+  flick: {
+    total: 35,
+    pass: 32,
+    rule: 'Complete an off–on pair and keep Magic active at the tick. Holding Magic alone earns no point.',
+  },
+  blowpipe: {
+    total: 18,
+    pass: 17,
+    rule: 'Fire, then run two tiles during cooldown. A shot alone earns no point; lost attack ticks are misses.',
+  },
+};
+export const passScore = (id: LessonId) => {
+  const goal = mechanicGoals[id];
+  return goal ? Math.round((100 * goal.pass) / goal.total) : PASS_SCORE;
+};
+export const revisedScoring = (id: LessonId) =>
+  id !== 'movement' && !!mechanicGoals[id];
 export const sourceLinks = {
   wiki: 'https://oldschool.runescape.wiki/w/Inferno/Strategies',
   gnomonkey: 'https://www.youtube.com/watch?v=2xviK0wGI-o',

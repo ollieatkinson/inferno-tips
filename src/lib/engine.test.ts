@@ -10,7 +10,13 @@ import {
   supplyGoal,
   jadStyle,
 } from './engine';
-import { lessons, TOTAL_TICKS, type LessonId, type Prayer } from './course';
+import {
+  lessons,
+  drillTicks,
+  TOTAL_TICKS,
+  type LessonId,
+  type Prayer,
+} from './course';
 import { parseProgress, recordRun } from './progress';
 
 function perfectPrayer(id: LessonId, tick: number): Prayer {
@@ -47,7 +53,7 @@ describe('drill mechanics', () => {
     '$id accepts its intended technique for a complete run',
     ({ id }) => {
       let state = initialState();
-      for (let tick = 1; tick <= TOTAL_TICKS; tick++)
+      for (let tick = 1; tick <= drillTicks(id); tick++)
         state = advance(
           state,
           id,
@@ -62,20 +68,20 @@ describe('drill mechanics', () => {
                 : { type: 'move', tile: nextBlowpipeTile(state.blowpipe) },
           },
         );
-      expect(state.tick).toBe(36);
+      expect(state.tick).toBe(drillTicks(id));
       expect(accuracy(state.checks)).toBe(100);
       expect(state.checks.length).toBe(
         {
-          rhythm: 36,
-          blob: 12,
+          rhythm: 45,
+          blob: 18,
           alternate: 42,
           stack: 18,
           movement: 36,
-          food: 45,
-          potions: 44,
-          gauntlet: 24,
-          bat: 36,
-          flick: 71,
+          food: 55,
+          potions: 49,
+          gauntlet: 33,
+          bat: 48,
+          flick: 106,
           'two-tick': 42,
           'two-tick-repair': 42,
           'anchor-range': 42,
@@ -85,7 +91,7 @@ describe('drill mechanics', () => {
           'melee-blob': 36,
           jad: 5,
           triples: 12,
-          blowpipe: 36,
+          blowpipe: 54,
         }[id],
       );
       expect(advance(state, id, 'off', 0)).toBe(state);
@@ -112,7 +118,7 @@ describe('drill mechanics', () => {
     let state = initialState();
     for (let tick = 1; tick <= 36; tick++)
       state = advance(state, 'blob', 'magic', 12);
-    expect(accuracy(state.checks)).toBe(50);
+    expect(accuracy(state.checks)).toBe(0);
     expect(
       state.checks.filter((c) => c.kind === 'prayer').every((c) => !c.correct),
     ).toBe(true);
@@ -251,7 +257,9 @@ describe('drill mechanics', () => {
     });
     state = advance(state, 'food', 'off', 12, 'shark');
     expect(state.consumed.shark).toBe(2);
-    expect(state.checks.at(-1)).toMatchObject({
+    expect(
+      state.checks.filter((c) => c.kind === 'prayer').at(-1),
+    ).toMatchObject({
       kind: 'prayer',
       expected: 'magic',
       correct: false,
@@ -298,12 +306,13 @@ describe('drill mechanics', () => {
   });
 });
 describe('progress and mastery', () => {
-  it('requires two complete challenges at 90% and caps earned passes at two', () => {
+  it('requires two passing complete challenges and caps earned passes at two', () => {
     let progress = recordRun({}, 'blob', 90, 'challenge', 36, false);
     expect(progress.blob?.passes).toBe(1);
     progress = recordRun(progress, 'blob', 100, 'challenge', 36, false);
     progress = recordRun(progress, 'blob', 100, 'challenge', 36, false);
     expect(progress.blob).toEqual({
+      scoringVersion: 2,
       attempts: 3,
       best: 100,
       passes: 2,
@@ -314,10 +323,11 @@ describe('progress and mastery', () => {
     let progress = recordRun({}, 'blob', 100, 'guided', 36, false);
     progress = recordRun(progress, 'blob', 100, 'challenge', 36, true);
     progress = recordRun(progress, 'blob', 100, 'challenge', 35, false);
-    progress = recordRun(progress, 'blob', 89, 'challenge', 36, false);
+    progress = recordRun(progress, 'blob', 82, 'challenge', 36, false);
     expect(progress.blob).toEqual({
+      scoringVersion: 2,
       attempts: 3,
-      best: 89,
+      best: 82,
       passes: 0,
       practiceBest: 100,
     });

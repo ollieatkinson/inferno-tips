@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { lessons } from './course';
+import { lessons, drillTicks } from './course';
 import { advance, initialState, supplyGoal, targetAt } from './engine';
 import { prayerPreview } from './prayerPreview';
 
@@ -9,11 +9,11 @@ describe('guided prayer preview', () => {
   )('$id preview leads to a correct full run', ({ id }) => {
     let state = initialState();
     let selected: import('./course').Prayer = 'off';
-    while (state.tick < 36) {
+    while (state.tick < drillTicks(id)) {
       const before = structuredClone(state);
       const beats = prayerPreview(id, state, selected);
       expect(state).toEqual(before);
-      expect(beats.length).toBe(Math.min(6, 36 - state.tick));
+      expect(beats.length).toBe(Math.min(6, drillTicks(id) - state.tick));
       const beat = beats[0];
       expect(beat.tick).toBe(state.tick + 1);
       selected = beat.prayer;

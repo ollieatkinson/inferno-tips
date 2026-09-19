@@ -107,14 +107,13 @@ The OSRS Wiki NPC pages and the original trainer image directory supplied static
 
 Enemy events follow the drill attack schedules: four-tick mager/ranger/melee, three-tick bat, blob reads and attacks three ticks apart, independent second-blob phase, and separate Jad wind-up cues/checks. The prayer alternation pattern is not used as an attack schedule. Visuals use the actual recorded blob reads, including mistakes. Movement remains a coordination grid, not a pathfinding/LoS simulation.
 
-
 ## Blowpipe walking redesign
 
 The old drill rewarded an abstract odd-tick Attack button and instant placement on unrelated tiles. The replacement puts a clickable practice target above an unobstructed seven-tile running lane. Target clicks stop movement and resume automatic attacks; ground clicks interrupt attacking and persist until the destination is reached or another order replaces them. The last click in a tick wins. A long run can therefore cost attack ticks, and recovery follows the actual last shot rather than a fixed global tick parity.
 
 The rapid two-tick cooldown and five-tile range were checked against the [Wiki weapon reference](https://oldschool.runescape.wiki/w/Toxic_blowpipe) and [OldSchoolSDK's Blowpipe implementation](https://github.com/OldSchoolSDK/osrs-sdk/blob/04fdaee3d155238e54cf16c1ac259f6c2b210078/src/content/weapons/Blowpipe.ts). The target remains in range throughout this lane. This is a focused timing model, not a full OSRS pathfinder, and the target does not attack or die. A simple dart streak indicates each successful shot; no damage rolls or player attack animation are claimed.
 
-The intended 36-tick run has 18 shots and six lane lengths. Each weapon-ready tick checks whether a shot fired; each cooldown tick checks a two-tile step towards the current endpoint. Holding the target automatically fires, but fails the movement half. Running throughout fails the ready-shot checks. Guided mode marks the next step; challenge hides that marker. Both retain actual weapon state and feedback. The transfer task is blowpipe walking on targets such as Zuk's healers, not attacking Zuk with a blowpipe. Revisited Gnomonkey's 1:38:55 shot-then-move explanation for the general cooldown principle; the existing dearlola1 healer demonstration remains the drill's source link.
+The intended 36-tick run has 18 shots and six lane lengths. Each weapon-ready tick checks whether a shot fired; each cooldown tick checks a two-tile step towards the current endpoint. A point is awarded only for the completed shot–move pair; missed ready ticks count against the score. Holding the target automatically fires, but earns no points without the movement. Running throughout fails the ready-shot checks. Guided mode marks the next step; challenge hides that marker. Both retain actual weapon state and feedback. The transfer task is blowpipe walking on targets such as Zuk's healers, not attacking Zuk with a blowpipe. Revisited Gnomonkey's 1:38:55 shot-then-move explanation for the general cooldown principle; the existing dearlola1 healer demonstration remains the drill's source link.
 
 ## Prayer circles and rapid switches
 

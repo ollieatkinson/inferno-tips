@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import { drillTicks, type LessonId } from '../src/lib/course';
 import losSetups from '../src/lib/losSetups.json' with { type: 'json' };
 
 async function open(page: Page) {
@@ -31,7 +32,7 @@ async function start(page: Page, challenge = true) {
 }
 const targets = [8, 6, 16, 18, 12, 2, 22, 10, 14];
 async function perfectRun(page: Page, id: string, ms = 600) {
-  for (let tick = 1; tick <= 36; tick++) {
+  for (let tick = 1; tick <= drillTicks(id as LessonId); tick++) {
     const key = ['rhythm', 'food', 'potions'].includes(id)
       ? tick % 4 === 1
         ? '1'
@@ -237,16 +238,16 @@ test('guided runs and paused challenges never award mastery', async ({
 test('missed prayers receive specific feedback and no passing score', async ({
   page,
 }) => {
+  await page.clock.install({ time: 0 });
+  await page.clock.pauseAt(1000);
   await open(page);
   await lesson(page, 'Read the blob');
-  await page.clock.install();
-  await page.clock.pauseAt(new Date());
   await start(page);
   for (let i = 0; i < 36; i++) await page.clock.runFor(600);
   await expect(page.locator('.result-score')).toHaveText('0%');
   await expect(page.getByText(/Your next focus: blob reads/)).toBeVisible();
-  await page.getByText('Review all 12 checks').click();
-  await expect(page.locator('.review-list .incorrect')).toHaveCount(12);
+  await page.getByText('Review all 18 checks').click();
+  await expect(page.locator('.review-list .incorrect')).toHaveCount(18);
 });
 
 test('mobile has usable navigation, movement, and no horizontal overflow', async ({
@@ -587,10 +588,10 @@ for (const [id, name] of [
   test(`${id}: expanded drill works through its visible controls`, async ({
     page,
   }) => {
+    await page.clock.install({ time: 0 });
+    await page.clock.pauseAt(1000);
     await open(page);
     await lesson(page, name);
-    await page.clock.install();
-    await page.clock.pauseAt(new Date());
     await start(page);
     for (let tick = 1; tick <= 36; tick++) {
       let prayer: string | null = null;
@@ -651,14 +652,14 @@ for (const [id, name] of [
 test('conservation drill rejects a held prayer and course fits a narrow viewport', async ({
   page,
 }) => {
+  await page.clock.install({ time: 0 });
+  await page.clock.pauseAt(1000);
   await open(page);
   await lesson(page, 'One-tick prayer flick');
-  await page.clock.install();
-  await page.clock.pauseAt(new Date());
   await start(page);
   await page.getByRole('button', { name: 'Magic', exact: true }).click();
   for (let tick = 0; tick < 36; tick++) await page.clock.runFor(600);
-  await expect(page.locator('.result-score')).toHaveText('51%');
+  await expect(page.locator('.result-score')).toHaveText('0%');
   await expect(page.getByText('✓ Mastery pass earned')).toHaveCount(0);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.getByRole('button', { name: /^Learning path/ }).click();
@@ -860,7 +861,13 @@ test('site settings migrate tab keys and apply across drills without clearing pr
     localStorage.setItem(
       'inferno-tips-progress-v1',
       JSON.stringify({
-        rhythm: { attempts: 1, best: 95, passes: 1, practiceBest: 0 },
+        rhythm: {
+          attempts: 1,
+          best: 95,
+          passes: 1,
+          practiceBest: 0,
+          scoringVersion: 2,
+        },
       }),
     );
   });
