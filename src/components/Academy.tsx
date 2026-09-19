@@ -10,6 +10,7 @@ import { PrayerPreview } from './PrayerPreview';
 import { CombatEffects } from './CombatEffects';
 import { EnemyScene } from './EnemyScene';
 import { GamePanels } from './GamePanels';
+import { MovementChallenge } from './MovementChallenge';
 import { TickMeter } from './TickMeter';
 import { usePrayerSounds } from './usePrayerSounds';
 import { useSupplySounds } from './useSupplySounds';
@@ -845,6 +846,7 @@ function Trainer({
   const [tile, setTile] = useState(12);
   const [countdown, setCountdown] = useState(3);
   const [interrupted, setInterrupted] = useState(false);
+  const [finishingAsPractice, setFinishingAsPractice] = useState(false);
   const sound = settings.tickSound;
   const [soundError, setSoundError] = useState(false);
   const [panel, setPanel] = useState<'prayers' | 'inventory'>('prayers');
@@ -970,6 +972,7 @@ function Trainer({
     setQueuedSupply(null);
     setCountdown(3);
     setInterrupted(false);
+    setFinishingAsPractice(false);
     savedRef.current = false;
     setStatus('countdown');
   }
@@ -1666,7 +1669,21 @@ function Trainer({
                   supplyRef.current = item;
                   setQueuedSupply(item);
                 }}
-              />
+              >
+                {lesson.id === 'movement' && mode === 'challenge' && (
+                  <MovementChallenge
+                    checks={state.checks}
+                    done={status === 'done'}
+                    practice={interrupted && status !== 'ready'}
+                    canRetry={status === 'running' || status === 'paused'}
+                    onRetry={() => begin()}
+                    onFinishPractice={() => {
+                      setFinishingAsPractice(true);
+                      setInterrupted(true);
+                    }}
+                  />
+                )}
+              </GamePanels>
             )}
           </div>
           {hasSupplies(lesson.id) && (
@@ -1822,11 +1839,13 @@ function Trainer({
                   : 'PRACTICE COMPLETE'}
               </span>
               <h2>
-                {mode === 'guided'
-                  ? 'Guided practice complete'
-                  : !interrupted && score >= requiredScore
-                    ? 'Challenge passed'
-                    : 'Challenge complete'}
+                {finishingAsPractice
+                  ? 'Practice complete'
+                  : mode === 'guided'
+                    ? 'Guided practice complete'
+                    : !interrupted && score >= requiredScore
+                      ? 'Challenge passed'
+                      : 'Challenge complete'}
               </h2>
               <p>{coaching(state.checks, lesson.id)}</p>
             </div>
@@ -1869,11 +1888,13 @@ function Trainer({
             <span>
               {mode === 'challenge' && !interrupted && score >= requiredScore
                 ? '✓ Mastery pass earned'
-                : interrupted
-                  ? 'Paused run · practice credit'
-                  : mode === 'guided'
-                    ? 'Guided run · practice credit'
-                    : `${passTarget} earns a mastery pass`}
+                : finishingAsPractice
+                  ? 'Finished as practice · practice credit'
+                  : interrupted
+                    ? 'Paused run · practice credit'
+                    : mode === 'guided'
+                      ? 'Guided run · practice credit'
+                      : `${passTarget} earns a mastery pass`}
             </span>
           </div>
           {state.exposures.length > 0 && (

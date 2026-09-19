@@ -3618,3 +3618,86 @@ select:focus-visible {
   display: block;
   margin-top: 6px;
 }
+
+.movement-challenge {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid #46513b;
+  border-radius: 5px;
+  background: #22271e;
+}
+.round-score {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+.round-score strong {
+  color: #ebdfbb;
+  font-size: 14px;
+}
+.round-score > span {
+  color: #abb59f;
+  font-size: 10px;
+  white-space: nowrap;
+}
+.round-markers {
+  display: grid;
+  grid-template-columns: repeat(9, minmax(0, 1fr));
+  gap: 3px;
+  padding: 0;
+  margin: 12px 0;
+  list-style: none;
+}
+.round-markers li {
+  display: grid;
+  place-items: center;
+  height: 27px;
+  border: 1px solid #4b5341;
+  border-radius: 3px;
+  color: #a8b198;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.round-markers [data-result='current'] {
+  border-color: #e4b877;
+  color: #f5dbab;
+}
+.round-markers [data-result='complete'] {
+  background: #3c5232;
+  border-color: #86a16d;
+  color: #def2be;
+}
+.round-markers [data-result='missed'] {
+  background: #553c31;
+  border-color: #d58d69;
+  color: #ffcfb6;
+}
+.round-update p {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.5;
+}
+.round-requirement {
+  min-height: 33px;
+  color: #dfdac8;
+}
+.round-update .round-feedback {
+  min-height: 49.5px;
+  margin-top: 6px;
+  color: #aeb89f;
+}
+.round-feedback > span {
+  color: #dbd4bd;
+}
+.round-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-top: 10px;
+}
+.round-actions .button {
+  padding: 6px;
+  min-height: 44px;
+  font-size: 10px;
+}

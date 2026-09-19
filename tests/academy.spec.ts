@@ -78,7 +78,21 @@ async function perfectRun(page: Page, id: string, ms = 600) {
       await page.keyboard.press('F1');
     }
     await page.clock.runFor(ms);
+    if (id === 'movement' && tick === 4) {
+      await expect(page.locator('.round-feedback')).toContainText(
+        'Both protected · tile reached · +1',
+      );
+      await expect(
+        page.locator('.round-markers [data-result="complete"]'),
+      ).toHaveCount(1);
+    }
+    if (id === 'movement' && tick === 32)
+      await expect(page.locator('.round-requirement')).toHaveText(
+        'Pass secured. Go for a perfect run.',
+      );
   }
+  if (id === 'movement')
+    await expect(page.locator('.round-score')).toContainText('Perfect: 9/9');
   await expect(page.getByRole('region', { name: 'Run results' })).toBeVisible();
   await expect(page.locator('.result-score')).toHaveText('100%');
 }
@@ -2471,7 +2485,24 @@ for (const scenario of [
         await page.getByRole('button', { name: /^Tile .*target/ }).click();
       await page.clock.runFor(600);
       if (tick <= 4) await expect(points).toContainText('0 / 9');
+      if (tick === 4) {
+        await expect(page.locator('.round-requirement')).toHaveText(
+          'Complete every remaining round to pass.',
+        );
+        await expect(page.locator('.round-feedback')).toContainText(
+          'Tile missed · no point',
+        );
+      }
     }
+    await expect(page.locator('.round-markers li')).toHaveCount(9);
+    await expect(
+      page.locator('.round-markers [data-result="complete"]'),
+    ).toHaveCount(scenario.points);
+    await expect(
+      page.locator('.round-markers [data-result="missed"]'),
+    ).toHaveCount(9 - scenario.points);
+    if (scenario.passes)
+      await expect(page.locator('.round-score')).toContainText('Passed: 8/9');
     await expect(points).toContainText(`${scenario.points} / 9`);
     await expect(page.locator('.result-details')).toContainText(
       `${scenario.points} / 9 rounds complete`,
@@ -2497,3 +2528,101 @@ for (const scenario of [
     );
   });
 }
+
+test('a failed movement challenge can finish as practice without restarting or awarding a pass', async ({
+  page,
+}) => {
+  await page.clock.install({ time: 0 });
+  await page.clock.pauseAt(1000);
+  await open(page);
+  await lesson(page, 'Flick and move');
+  await expect(
+    page.getByRole('region', { name: 'Challenge rounds' }),
+  ).toHaveCount(0);
+  await start(page);
+  const rounds = page.getByRole('region', { name: 'Challenge rounds' });
+  await page.clock.runFor(8 * 600);
+  await expect(rounds.locator('[data-result="missed"]')).toHaveCount(2);
+  await expect(rounds).toContainText('This run can no longer pass');
+  await rounds.getByRole('button', { name: 'Finish as practice' }).click();
+  await expect(page.locator('.run-stats')).toContainText('8 / 36');
+  await expect(rounds).toContainText('Practice · 0/9');
+  await expect(
+    rounds.getByRole('button', { name: 'Finish as practice' }),
+  ).toHaveCount(0);
+  for (let tick = 9; tick <= 36; tick++) {
+    const button = page.getByRole('button', {
+      name: (tick - 1) % 4 < 2 ? 'Magic' : 'Ranged',
+      exact: true,
+    });
+    if ((await button.getAttribute('aria-pressed')) !== 'true')
+      await button.click();
+    if (tick % 4 === 0)
+      await page.getByRole('button', { name: /^Tile .*target/ }).click();
+    await page.clock.runFor(600);
+  }
+  await expect(rounds).toContainText('Practice · 7/9');
+  await expect(rounds).toContainText(
+    'Practice complete. No challenge pass awarded.',
+  );
+  await expect(
+    page.getByRole('heading', { name: 'Practice complete', exact: true }),
+  ).toBeVisible();
+  await expect(page.locator('.result-details')).toContainText(
+    'Finished as practice · practice credit',
+  );
+  const saved = await page.evaluate(() =>
+    JSON.parse(localStorage.getItem('inferno-tips-progress-v1')!),
+  );
+  expect(saved.movement).toMatchObject({
+    attempts: 1,
+    passes: 0,
+    best: 0,
+    practiceBest: 78,
+  });
+  await page.getByRole('button', { name: 'Retry', exact: true }).click();
+  await expect(rounds).toContainText('0/9 complete');
+  await expect(rounds.locator('[data-result="missed"]')).toHaveCount(0);
+});
+
+test('mobile challenge offers a nearby fresh retry after two misses without scrolling', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.clock.install({ time: 0 });
+  await page.clock.pauseAt(1000);
+  await open(page);
+  await lesson(page, 'Flick and move');
+  await start(page);
+  await page
+    .locator('.game-side-panel')
+    .evaluate((el) => el.scrollIntoView({ block: 'center' }));
+  const positions = () =>
+    page.evaluate(() => ({
+      scroll: scrollY,
+      prayers: document.querySelector('.native-panel')!.getBoundingClientRect()
+        .top,
+    }));
+  const before = await positions();
+  await page.clock.runFor(8 * 600);
+  expect(await positions()).toEqual(before);
+  const rounds = page.getByRole('region', { name: 'Challenge rounds' });
+  const retry = rounds.getByRole('button', { name: 'Retry challenge' });
+  await retry.scrollIntoViewIfNeeded();
+  const atRetry = await positions();
+  await retry.click();
+  expect(await positions()).toEqual(atRetry);
+  await expect(page.locator('.arena-overlay strong')).toHaveText('3');
+  await expect(rounds).toContainText('8 more needed · 9 rounds left');
+  await expect(
+    rounds.locator('[data-result="complete"], [data-result="missed"]'),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole('button', { name: 'Challenge', exact: true }),
+  ).toHaveAttribute('aria-pressed', 'true');
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+});

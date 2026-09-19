@@ -1,4 +1,10 @@
-import { useEffect, useRef, useState, type RefObject } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+  type RefObject,
+} from 'react';
 import { TickMeter } from './TickMeter';
 import type { LessonId, Prayer } from '../lib/course';
 import { stock, type Supply } from '../lib/engine';
@@ -75,6 +81,7 @@ export function GamePanels({
   activePrayer,
   onRetry,
   retryLabel = 'Retry',
+  children,
   score,
   tickDeadline,
   paused,
@@ -94,6 +101,7 @@ export function GamePanels({
   activePrayer: Prayer;
   onRetry?: () => void;
   retryLabel?: string;
+  children?: ReactNode;
   score: number;
   tickDeadline: RefObject<number | null>;
   paused: boolean;
@@ -278,6 +286,7 @@ export function GamePanels({
         </span>
         <TickMeter deadline={tickDeadline} paused={paused} />
       </div>
+      {children}
       <div className="game-panel-status">
         <div className="game-panel-active">
           <span>
