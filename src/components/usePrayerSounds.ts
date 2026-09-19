@@ -2,12 +2,12 @@ import { useEffect, useRef } from 'react';
 import type { Prayer } from '../lib/course';
 
 const files = [
-  'mage-on',
   'mage-off',
-  'range-on',
+  'mage-on',
   'range-off',
-  'melee-on',
+  'range-on',
   'melee-off',
+  'melee-on',
 ];
 
 export function usePrayerSounds(
@@ -21,9 +21,12 @@ export function usePrayerSounds(
     decoded?: Promise<Map<string, AudioBuffer>>;
     disposed: boolean;
   } | null>(null);
+  const pending = useRef(new Set<string>());
+  const generation = useRef(0);
   const error = useRef(onError);
   error.current = onError;
   useEffect(() => {
+    pending.current.clear();
     if (!enabled) return;
     const abort = new AbortController();
     const instance = {
@@ -50,32 +53,46 @@ export function usePrayerSounds(
     };
   }, [enabled]);
 
-  return (previous: Prayer, next: Prayer) => {
-    if (!enabled || volume === 0 || previous === next || !audio.current) return;
+  async function prepare() {
     const instance = audio.current;
-    const clicked = performance.now();
-    const prayer = next === 'off' ? previous : next;
-    if (prayer === 'off') return;
-    const key = `${prayer === 'magic' ? 'mage' : prayer}-${next === 'off' ? 'off' : 'on'}`;
-    void (async () => {
-      try {
-        // Create/resume on the actual user gesture, including before a run.
-        const context = (instance.context ||= new AudioContext());
-        const resumed = context.resume();
-        instance.decoded ||= instance.bytes.then(
-          async (bytes) =>
-            new Map(
-              await Promise.all(
-                bytes.map(
-                  async (data, i) =>
-                    [files[i], await context.decodeAudioData(data)] as const,
-                ),
+    if (!instance) return;
+    try {
+      // Unlock/decode on the press; playback waits for the game tick.
+      const context = (instance.context ||= new AudioContext());
+      const resumed = context.resume();
+      instance.decoded ||= instance.bytes.then(
+        async (bytes) =>
+          new Map(
+            await Promise.all(
+              bytes.map(
+                async (data, i) =>
+                  [files[i], await context.decodeAudioData(data)] as const,
               ),
             ),
-        );
-        const [buffers] = await Promise.all([instance.decoded, resumed]);
-        // Never replay stale clicks after slow loading or after leaving a drill.
-        if (instance.disposed || performance.now() - clicked > 200) return;
+          ),
+      );
+      await Promise.all([instance.decoded, resumed]);
+    } catch {
+      if (!instance.disposed) error.current();
+    }
+  }
+  function play(key: string) {
+    if (!enabled || volume === 0 || !audio.current?.context) return;
+    const instance = audio.current;
+    const ticked = performance.now();
+    const run = generation.current;
+    void (async () => {
+      try {
+        const context = instance.context!;
+        const buffers = await instance.decoded;
+        // Do not replay a tick after slow loading or after leaving a drill.
+        if (
+          !buffers ||
+          instance.disposed ||
+          run !== generation.current ||
+          performance.now() - ticked > 200
+        )
+          return;
         const source = context.createBufferSource();
         const gain = context.createGain();
         source.buffer = buffers.get(key)!;
@@ -91,5 +108,24 @@ export function usePrayerSounds(
         if (!instance.disposed) error.current();
       }
     })();
+  }
+  return {
+    queue(prayer: Exclude<Prayer, 'off'>, on: boolean) {
+      if (!enabled || volume === 0) return;
+      pending.current.add(
+        `${prayer === 'magic' ? 'mage' : prayer}-${on ? 'on' : 'off'}`,
+      );
+      void prepare();
+    },
+    flush() {
+      // The SDK retains one on/off flag per prayer and emits off before on.
+      const sounds = files.filter((key) => pending.current.has(key));
+      pending.current.clear();
+      sounds.forEach(play);
+    },
+    reset() {
+      pending.current.clear();
+      generation.current++;
+    },
   };
 }

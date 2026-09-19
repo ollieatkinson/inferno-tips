@@ -1234,6 +1234,8 @@ test('game panels sit beside the encounter and preserve clicked inventory slots'
 test('authentic prayer audio follows toggles and respects saved sound preferences', async ({
   page,
 }) => {
+  await page.clock.install();
+  await page.clock.pauseAt(new Date());
   await page.addInitScript(() => {
     const logs: { duration: number; gain: number }[] = [];
     Object.assign(window, { prayerAudioStarts: logs });
@@ -1283,11 +1285,19 @@ test('authentic prayer audio follows toggles and respects saved sound preference
   expect(await starts()).toHaveLength(0);
   const magic = page.getByRole('button', { name: 'Magic', exact: true });
   await magic.click();
+  expect(await starts()).toHaveLength(0);
+  await page.clock.runFor(599);
+  expect(await starts()).toHaveLength(0);
+  await page.clock.runFor(1);
   await expect.poll(async () => (await starts()).length).toBe(1);
   await magic.click();
+  expect(await starts()).toHaveLength(1);
+  await page.clock.runFor(600);
   await expect.poll(async () => (await starts()).length).toBe(2);
   await page.getByRole('button', { name: 'Ranged', exact: true }).click();
   await magic.click();
+  expect(await starts()).toHaveLength(2);
+  await page.clock.runFor(600);
   await expect.poll(async () => (await starts()).length).toBe(4);
   const played = await starts();
   expect(played.every((p) => p.duration > 0 && p.gain === 0.25)).toBe(true);
@@ -1295,6 +1305,27 @@ test('authentic prayer audio follows toggles and respects saved sound preference
   await page.keyboard.press('Escape');
   await page.keyboard.press('F1');
   expect(await starts()).toHaveLength(4);
+  // SDK-style sound flags coalesce repeated off/on pairs within one tick.
+  for (let i = 0; i < 4; i++) await magic.click();
+  expect(await starts()).toHaveLength(4);
+  await page.clock.runFor(600);
+  await expect.poll(async () => (await starts()).length).toBe(6);
+  const flickSounds = (await starts()).slice(4);
+  expect(flickSounds[0].duration).toBe(played[1].duration);
+  expect(flickSounds[1].duration).toBe(played[0].duration);
+  await page.getByRole('button', { name: 'Ranged', exact: true }).click();
+  await page
+    .getByRole('button', { name: 'Start guided practice', exact: true })
+    .click();
+  await page.clock.runFor(600);
+  expect(await starts()).toHaveLength(6); // Reset discarded the queued sound.
+  await magic.click();
+  await page.getByRole('button', { name: 'Pause', exact: true }).click();
+  await page.clock.runFor(1200);
+  expect(await starts()).toHaveLength(6);
+  await page.getByRole('button', { name: 'Resume', exact: true }).click();
+  await page.clock.runFor(600);
+  await expect.poll(async () => (await starts()).length).toBe(7);
   await page.getByRole('button', { name: 'Settings', exact: true }).click();
   await page.getByLabel('Enable prayer sounds').uncheck();
   await page.reload();
@@ -1307,6 +1338,7 @@ test('authentic prayer audio follows toggles and respects saved sound preference
   await lesson(page, 'Flick the mager');
   await magic.click();
   await magic.click();
+  await page.clock.runFor(600);
   expect(await starts()).toHaveLength(0);
 });
 
@@ -1386,9 +1418,9 @@ test('prayer circles keep the previous highlight until the shared tick boundary'
   await expect(magic).toHaveAttribute('data-lit', 'false');
   await expect(ranged).toHaveAttribute('data-lit', 'true');
   await expect(page.locator('.run-stats')).toContainText('100%');
-  // An off/on pair is recorded without blanking this tick's protection.
+  // Explicit off/on toggles the local circle; protection stays on the tick.
   await ranged.click();
-  await expect(ranged).toHaveAttribute('data-lit', 'true');
+  await expect(ranged).toHaveAttribute('data-lit', 'false');
   await ranged.click();
   await expect(ranged).toHaveAttribute('data-lit', 'true');
   await magic.click();
@@ -1421,8 +1453,7 @@ for (const challenge of [false, true]) {
     const melee = page.getByRole('button', { name: 'Melee', exact: true });
     const lit = page.locator('.prayer-button[data-lit="true"]');
     const overhead = page.locator('[data-player] .overhead');
-    // Even a prayer clicked just before the boundary stays lit for the full
-    // tick in which it applies, rather than for only the input's remainder.
+    // A late press is still captured by the next game tick.
     await page.clock.runFor(599);
     await magic.click();
     await page.clock.runFor(1);
@@ -1434,16 +1465,16 @@ for (const challenge of [false, true]) {
       page.locator('.prayer-button[aria-pressed="true"]'),
     ).toHaveCount(3);
     await expect(overhead).toHaveAttribute('data-prayer', 'magic');
-    // Local toggles remain independent, but committed Magic stays visible.
+    // Local toggles are independent from committed overhead protection.
     await magic.click();
-    await expect(magic).toHaveAttribute('data-lit', 'true');
+    await expect(magic).toHaveAttribute('data-lit', 'false');
     await expect(ranged).toHaveAttribute('data-lit', 'true');
     await expect(melee).toHaveAttribute('data-lit', 'true');
     await ranged.click();
     await melee.click();
-    await expect(lit).toHaveCount(1);
+    await expect(lit).toHaveCount(0);
     await page.clock.runFor(499);
-    await expect(lit).toHaveCount(1);
+    await expect(lit).toHaveCount(0);
     await expect(overhead).toHaveAttribute('data-prayer', 'magic');
     await page.clock.runFor(1);
     await expect(lit).toHaveCount(1);
@@ -1454,7 +1485,7 @@ for (const challenge of [false, true]) {
     await expect(page.locator('.run-stats')).toContainText('50%');
     await melee.click();
     await page.clock.runFor(599);
-    await expect(melee).toHaveAttribute('data-lit', 'true');
+    await expect(melee).toHaveAttribute('data-lit', 'false');
     await expect(overhead).toHaveAttribute('data-prayer', 'melee');
     await page.clock.runFor(1);
     await expect(lit).toHaveCount(0);
@@ -1967,3 +1998,95 @@ for (const timing of ['fixed rhythm', 'clearing circles'] as const) {
     expect(Math.abs(elapsed - 35 * 600)).toBeLessThan(100);
   });
 }
+
+test('prayer presses register before release, once per gesture, with keyboard support', async ({
+  page,
+}) => {
+  await page.clock.install();
+  await page.clock.pauseAt(new Date());
+  await open(page);
+  await lesson(page, 'One-tick alternating');
+  await start(page, false);
+  const magic = page.getByRole('button', { name: 'Magic', exact: true });
+  const ranged = page.getByRole('button', { name: 'Ranged', exact: true });
+  const overhead = page.locator('[data-player] .overhead');
+  await magic.hover();
+  await page.clock.runFor(550);
+  await page.mouse.down();
+  await expect(magic).toHaveAttribute('data-lit', 'true');
+  await page.clock.runFor(50);
+  await expect(overhead).toHaveAttribute('data-prayer', 'magic');
+  await expect(page.locator('.run-stats')).toContainText('100%');
+  await page.mouse.up();
+  await expect(magic).toHaveAttribute('data-lit', 'true');
+  await ranged.hover();
+  await page.clock.runFor(100);
+  await page.mouse.down();
+  await expect(magic).toHaveAttribute('data-lit', 'true');
+  await expect(ranged).toHaveAttribute('data-lit', 'true');
+  await page.clock.runFor(500);
+  await expect(overhead).toHaveAttribute('data-prayer', 'range');
+  await page.mouse.up();
+  await expect(ranged).toHaveAttribute('data-lit', 'true');
+  await expect(page.locator('.run-stats')).toContainText('100%');
+  // Right-button presses do not alter the prayer.
+  await magic.hover();
+  await page.mouse.down({ button: 'right' });
+  await expect(magic).toHaveAttribute('data-lit', 'false');
+  await page.mouse.up({ button: 'right' });
+  await page.keyboard.press('Escape');
+  await page.keyboard.press('F1');
+  await magic.focus();
+  await page.keyboard.press('Enter');
+  await expect(magic).toHaveAttribute('data-lit', 'true');
+  await page.clock.runFor(600);
+  await expect(overhead).toHaveAttribute('data-prayer', 'magic');
+  await page.keyboard.press('Space');
+  await expect(magic).toHaveAttribute('data-lit', 'false');
+  await expect(overhead).toHaveAttribute('data-prayer', 'magic');
+});
+
+test('touch prayer presses apply before touch release without a second toggle', async ({
+  browser,
+  baseURL,
+}) => {
+  const context = await browser.newContext({
+    baseURL,
+    hasTouch: true,
+    isMobile: true,
+    viewport: { width: 390, height: 844 },
+  });
+  try {
+    const page = await context.newPage();
+    await page.clock.install();
+    await page.clock.pauseAt(new Date());
+    await open(page);
+    await lesson(page, 'One-tick alternating');
+    await start(page, false);
+    const magic = page.getByRole('button', { name: 'Magic', exact: true });
+    await magic.scrollIntoViewIfNeeded();
+    const rect = (await magic.boundingBox())!;
+    const cdp = await context.newCDPSession(page);
+    await page.clock.runFor(550);
+    await cdp.send('Input.dispatchTouchEvent', {
+      type: 'touchStart',
+      touchPoints: [
+        { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 },
+      ],
+    });
+    await expect(magic).toHaveAttribute('data-lit', 'true');
+    await page.clock.runFor(50);
+    await expect(page.locator('[data-player] .overhead')).toHaveAttribute(
+      'data-prayer',
+      'magic',
+    );
+    await expect(page.locator('.run-stats')).toContainText('100%');
+    await cdp.send('Input.dispatchTouchEvent', {
+      type: 'touchEnd',
+      touchPoints: [],
+    });
+    await expect(magic).toHaveAttribute('data-lit', 'true');
+  } finally {
+    await context.close();
+  }
+});

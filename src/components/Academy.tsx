@@ -832,6 +832,7 @@ function Trainer({
   const [prayer, setPrayer] = useState<Prayer>('off');
   const [overheadPrayer, setOverheadPrayer] = useState<Prayer>('off');
   const [litPrayers, setLitPrayers] = useState<Prayer[]>([]);
+  const litPrayersRef = useRef<Prayer[]>([]);
   const [tile, setTile] = useState(12);
   const [countdown, setCountdown] = useState(3);
   const [interrupted, setInterrupted] = useState(false);
@@ -883,14 +884,9 @@ function Trainer({
   const busy =
     status === 'running' || status === 'countdown' || status === 'paused';
   const displayedOverhead = overheadPrayer;
-  // Keep the protection that applies to this whole tick visibly lit, even
-  // during an off–on flick. Newly clicked prayers light independently.
-  const displayedLitPrayers = [
-    ...new Set([...litPrayers, overheadPrayer]),
-  ].filter((p) => p !== 'off');
   completeRef.current = onComplete;
   soundRef.current = sound;
-  const playPrayerSound = usePrayerSounds(
+  const prayerSounds = usePrayerSounds(
     settings.prayerSound && lesson.id !== 'blowpipe',
     settings.prayerVolume,
     () => setSoundError(true),
@@ -907,21 +903,27 @@ function Trainer({
     // server's mutually exclusive protection. Reconcile on the shared tick.
     // In particular, clicking a still-lit previous prayer clears its circle
     // even though that order will switch protection back at the next tick.
-    setLitPrayers((lit) =>
-      clicked
-        ? lit.includes(clicked)
-          ? lit.filter((active) => active !== clicked)
-          : [...lit, clicked]
-        : p === 'off'
-          ? []
-          : [p],
-    );
-    if (clicked && p !== prayerRef.current)
-      playPrayerSound(prayerRef.current, p);
+    const lit = litPrayersRef.current;
+    litPrayersRef.current = clicked
+      ? lit.includes(clicked)
+        ? lit.filter((active) => active !== clicked)
+        : [...lit, clicked]
+      : p === 'off'
+        ? []
+        : [p];
+    setLitPrayers(litPrayersRef.current);
+    if (clicked) prayerSounds.queue(clicked, !lit.includes(clicked));
+    else prayerSounds.reset();
     if (status === 'running' && p !== prayerRef.current)
       transitionsRef.current.push(p);
     prayerRef.current = p;
     setPrayer(p);
+  }
+  function commitPrayerFeedback(p: Prayer) {
+    litPrayersRef.current = p === 'off' ? [] : [p];
+    setLitPrayers(litPrayersRef.current);
+    setOverheadPrayer(p);
+    prayerSounds.flush();
   }
   function move(t: number) {
     tileRef.current = t;
@@ -1008,8 +1010,7 @@ function Trainer({
     // The prayer book still has a game clock before/after a run. This is only
     // display reconciliation: no encounter ticks, scoring or metronome audio.
     const timer = window.setInterval(() => {
-      setLitPrayers(prayerRef.current === 'off' ? [] : [prayerRef.current]);
-      setOverheadPrayer(prayerRef.current);
+      commitPrayerFeedback(prayerRef.current);
     }, ms);
     return () => window.clearInterval(timer);
   }, [status, lesson.id, ms]);
@@ -1025,8 +1026,7 @@ function Trainer({
         }
         tickDeadlineRef.current = deadline + ms;
         beep();
-        setLitPrayers(prayerRef.current === 'off' ? [] : [prayerRef.current]);
-        setOverheadPrayer(prayerRef.current);
+        commitPrayerFeedback(prayerRef.current);
         if (countdown === 1) {
           transitionsRef.current = [];
           setStatus('running');
@@ -1067,8 +1067,7 @@ function Trainer({
         attackRef.current = null;
         setAttackQueued(null);
         beep();
-        setLitPrayers(prayerAtTick === 'off' ? [] : [prayerAtTick]);
-        setOverheadPrayer(prayerAtTick);
+        commitPrayerFeedback(prayerAtTick);
         setState((prev) =>
           advance(prev, lesson.id, prayerAtTick, tileAtTick, supply, input),
         );
@@ -1601,7 +1600,7 @@ function Trainer({
                     : undefined
                 }
                 activePrayer={displayedOverhead}
-                litPrayers={displayedLitPrayers}
+                litPrayers={litPrayers}
                 panel={panel}
                 tabKeys={tabKeys}
                 running={status === 'running'}

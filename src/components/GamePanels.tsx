@@ -171,7 +171,15 @@ export function GamePanels({
                     aria-label={prayerLabel(protection)}
                     title={name}
                     aria-pressed={litPrayers.includes(protection)}
-                    onClick={() => onPrayer(protection)}
+                    onPointerDown={(event) => {
+                      if (event.button === 0 && event.isPrimary)
+                        onPrayer(protection);
+                    }}
+                    onClick={(event) => {
+                      // Keyboard and assistive activation still work. A real
+                      // pointer click was handled on press, not on release.
+                      if (event.detail === 0) onPrayer(protection);
+                    }}
                   >
                     <img
                       className="native-prayer-icon"
