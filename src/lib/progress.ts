@@ -1,6 +1,6 @@
 import {
   lessons,
-  PASS_SCORE,
+  passScore,
   TOTAL_TICKS,
   type LessonId,
   type Mode,
@@ -65,7 +65,7 @@ export function recordRun(
         : Math.max(prev.practiceBest, score),
       passes: Math.min(
         2,
-        prev.passes + (challenge && score >= PASS_SCORE ? 1 : 0),
+        prev.passes + (challenge && score >= passScore(id) ? 1 : 0),
       ),
     },
   };

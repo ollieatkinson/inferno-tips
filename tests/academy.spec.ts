@@ -134,10 +134,10 @@ for (const [id, name] of [
   test(`${id}: complete a perfect challenge through real controls`, async ({
     page,
   }) => {
+    await page.clock.install({ time: 0 });
+    await page.clock.pauseAt(1000);
     await open(page);
     await lesson(page, name);
-    await page.clock.install();
-    await page.clock.pauseAt(new Date());
     await start(page);
     await perfectRun(page, id);
     await expect(page.getByText('✓ Mastery pass earned')).toBeVisible();
@@ -2405,4 +2405,78 @@ for (const width of [1440, 390]) {
       expect(await positions()).toEqual(before);
     });
   }
+}
+
+for (const scenario of [
+  {
+    name: 'one missed tile still passes at eight points',
+    moves: true,
+    missedPrayer: false,
+    points: 8,
+    passes: 1,
+  },
+  {
+    name: 'a missed tile and prayer fail at seven points',
+    moves: true,
+    missedPrayer: true,
+    points: 7,
+    passes: 0,
+  },
+  {
+    name: 'perfect prayers without movement score zero',
+    moves: false,
+    missedPrayer: false,
+    points: 0,
+    passes: 0,
+  },
+]) {
+  test(`Flick and Move: ${scenario.name}`, async ({ page }) => {
+    await page.clock.install({ time: 0 });
+    await page.clock.pauseAt(1000);
+    await open(page);
+    await lesson(page, 'Flick and move');
+    await expect(page.locator('.movement-scoring')).toContainText(
+      '8 of 9 points to pass',
+    );
+    await start(page);
+    const points = page.locator('.run-stats > div').nth(1);
+    for (let tick = 1; tick <= 36; tick++) {
+      const name =
+        tick % 4 === 1 ||
+        tick % 4 === 2 ||
+        (scenario.missedPrayer && tick === 7)
+          ? 'Magic'
+          : 'Ranged';
+      const button = page.getByRole('button', { name, exact: true });
+      if ((await button.getAttribute('aria-pressed')) !== 'true')
+        await button.click();
+      if (scenario.moves && tick > 4 && tick % 4 === 0)
+        await page.getByRole('button', { name: /^Tile .*target/ }).click();
+      await page.clock.runFor(600);
+      if (tick <= 4) await expect(points).toContainText('0 / 9');
+    }
+    await expect(points).toContainText(`${scenario.points} / 9`);
+    await expect(page.locator('.result-details')).toContainText(
+      `${scenario.points} / 9 rounds complete`,
+    );
+    await expect(page.locator('.movement-scoring')).toContainText(
+      scenario.missedPrayer ? '94% (17/18)' : '100% (18/18)',
+    );
+    if (scenario.passes)
+      await expect(page.getByText('✓ Mastery pass earned')).toBeVisible();
+    else
+      await expect(page.locator('.result-details')).toContainText(
+        '8 of 9 complete rounds earns a mastery pass',
+      );
+    const saved = await page.evaluate(() =>
+      JSON.parse(localStorage.getItem('inferno-tips-progress-v1')!),
+    );
+    expect(saved.movement.passes).toBe(scenario.passes);
+    expect(saved.movement.best).toBe(Math.round((100 * scenario.points) / 9));
+    await page.getByRole('button', { name: 'Retry', exact: true }).click();
+    await expect(points).toContainText('0 / 9');
+    await expect(page.locator('.movement-scoring')).toContainText(
+      'Prayer accuracy: —',
+    );
+  });
 }

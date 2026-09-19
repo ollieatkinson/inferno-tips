@@ -2,6 +2,7 @@ import { nextBlowpipeTile } from './blowpipe';
 import { describe, expect, it } from 'vitest';
 import {
   accuracy,
+  scoredChecks,
   advance,
   coaching,
   initialState,
@@ -69,7 +70,7 @@ describe('drill mechanics', () => {
           blob: 12,
           alternate: 42,
           stack: 18,
-          movement: 27,
+          movement: 36,
           food: 45,
           potions: 44,
           gauntlet: 24,
@@ -136,18 +137,93 @@ describe('drill mechanics', () => {
       [11, 'range'],
     ]);
   });
-  it('movement is checked independently of correct prayers', () => {
+  it('correct prayers earn no movement points when the tile is missed', () => {
     let state = initialState();
     for (let tick = 1; tick <= 36; tick++)
       state = advance(state, 'movement', perfectPrayer('movement', tick), 0);
-    expect(accuracy(state.checks)).toBe(67);
+    expect(accuracy(state.checks)).toBe(0);
     expect(state.checks.filter((c) => c.kind === 'movement')).toHaveLength(9);
     expect(
       state.checks
         .filter((c) => c.kind === 'movement')
         .every((c) => !c.correct),
     ).toBe(true);
-    expect(coaching(state.checks)).toContain('movement');
+    expect(coaching(state.checks, 'movement')).toContain('movement');
+  });
+  it('does not award a point before the movement deadline', () => {
+    let state = initialState();
+    for (let tick = 1; tick <= 3; tick++)
+      state = advance(
+        state,
+        'movement',
+        perfectPrayer('movement', tick),
+        targetAt(tick),
+      );
+    expect(scoredChecks(state.checks)).toEqual([]);
+    expect(state.streak).toBe(0);
+    state = advance(state, 'movement', 'range', targetAt(4));
+    expect(scoredChecks(state.checks)).toHaveLength(1);
+    expect(accuracy(state.checks)).toBe(100);
+    expect(state.streak).toBe(1);
+  });
+  it('a missed prayer or a late move loses the whole round', () => {
+    for (const mistake of ['prayer', 'movement']) {
+      let state = initialState();
+      for (let tick = 1; tick <= 8; tick++) {
+        const prayer =
+          mistake === 'prayer' && tick === 3
+            ? 'magic'
+            : perfectPrayer('movement', tick);
+        const tile = mistake === 'movement' && tick <= 4 ? 12 : targetAt(tick);
+        state = advance(state, 'movement', prayer, tile);
+      }
+      expect(scoredChecks(state.checks).map((check) => check.correct)).toEqual([
+        false,
+        true,
+      ]);
+      expect(accuracy(state.checks)).toBe(50);
+      expect(state.streak).toBe(1);
+    }
+  });
+  it('standing still never scores, even when a later target is the starting tile', () => {
+    let state = initialState();
+    for (let tick = 1; tick <= 36; tick++)
+      state = advance(state, 'movement', perfectPrayer('movement', tick), 12);
+    expect(accuracy(state.checks)).toBe(0);
+    expect(scoredChecks(state.checks)).toHaveLength(9);
+  });
+  it('reaching every tile without protecting the attacks scores zero', () => {
+    let state = initialState();
+    for (let tick = 1; tick <= 36; tick++)
+      state = advance(state, 'movement', 'off', targetAt(tick));
+    expect(accuracy(state.checks)).toBe(0);
+  });
+  it('awards a movement pass at eight complete rounds, but not seven or paused practice', () => {
+    for (const successes of [7, 8]) {
+      let state = initialState();
+      for (let tick = 1; tick <= 36; tick++)
+        state = advance(
+          state,
+          'movement',
+          tick <= successes * 4 ? perfectPrayer('movement', tick) : 'off',
+          targetAt(tick),
+        );
+      const score = accuracy(state.checks);
+      expect(
+        scoredChecks(state.checks).filter((check) => check.correct),
+      ).toHaveLength(successes);
+      expect(
+        recordRun({}, 'movement', score, 'challenge', 36, false).movement
+          ?.passes,
+      ).toBe(successes === 8 ? 1 : 0);
+      expect(
+        recordRun({}, 'movement', score, 'guided', 36, false).movement?.passes,
+      ).toBe(0);
+      expect(
+        recordRun({}, 'movement', score, 'challenge', 36, true).movement
+          ?.passes,
+      ).toBe(0);
+    }
   });
   it('target stays available for a full four ticks and changes afterwards', () => {
     expect([1, 2, 3, 4].map((t) => targetAt(t))).toEqual([8, 8, 8, 8]);

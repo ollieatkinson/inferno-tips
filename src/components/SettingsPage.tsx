@@ -95,7 +95,8 @@ export function SettingsPage({
             </label>
             <p className="setting-help">
               Guided practice shows prayer hints. Challenge hides them and
-              awards passes at 90% or more. Both use 0.6-second ticks.
+              awards passes when you meet the drill’s target. Both use
+              0.6-second ticks.
             </p>
           </div>
         </section>

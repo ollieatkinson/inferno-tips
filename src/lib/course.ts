@@ -110,11 +110,11 @@ export const lessons: Lesson[] = [
     icon: 'player',
     level: 'Advanced',
     objective:
-      'Protect against alternating attacks and reach the marked tile every four ticks.',
+      'Earn 8 of 9 points: protect both attacks and reach the marked tile in each four-tick round.',
     steps: [
       'Magic attacks on tick 1; Ranged on tick 3. The pattern repeats every four ticks.',
       'Click the marked tile before tick 4, then follow the next target before tick 8.',
-      'Use your mouse for both actions: click the prayer, then click the tile. Keep the same beat as you move.',
+      'One point requires both prayers correct and the marked tile reached by the deadline. Missing either earns no point. Complete 8 of 9 rounds to pass the challenge.',
     ],
     takeaway:
       'Marked tiles are a coordination exercise, not an Inferno floor attack. Click movement is simplified; there is no pathfinding.',
@@ -401,6 +401,12 @@ lessons.push({
 });
 export const TOTAL_TICKS = 36;
 export const PASS_SCORE = 90;
+export const MOVEMENT_ROUNDS = TOTAL_TICKS / 4;
+export const MOVEMENT_PASS_ROUNDS = 8;
+export const passScore = (id: LessonId) =>
+  id === 'movement'
+    ? Math.round((100 * MOVEMENT_PASS_ROUNDS) / MOVEMENT_ROUNDS)
+    : PASS_SCORE;
 export const sourceLinks = {
   wiki: 'https://oldschool.runescape.wiki/w/Inferno/Strategies',
   gnomonkey: 'https://www.youtube.com/watch?v=2xviK0wGI-o',

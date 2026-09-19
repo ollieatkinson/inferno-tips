@@ -14,7 +14,9 @@ import {
 export type Supply = 'shark' | 'brew' | 'restore';
 export interface Check {
   tick: number;
-  kind: 'prayer' | 'movement' | 'read' | 'supply' | 'flick' | 'attack';
+  kind:
+    'prayer' | 'movement' | 'read' | 'supply' | 'flick' | 'attack' | 'round';
+  scored?: boolean;
   expected: string;
   actual: string;
   correct: boolean;
@@ -22,6 +24,8 @@ export interface Check {
 }
 export interface DrillState {
   tick: number;
+  tile: number;
+  movedThisRound: boolean;
   blowpipe: BlowpipeState;
   pending: Prayer;
   pendingB: Prayer;
@@ -40,6 +44,8 @@ export interface DrillState {
 }
 export const initialState = (seed = 0): DrillState => ({
   tick: 0,
+  tile: 12,
+  movedThisRound: false,
   blowpipe: initialBlowpipe(),
   pending: 'off',
   pendingB: 'off',
@@ -141,6 +147,9 @@ export function advance(
 ): DrillState {
   if (state.tick >= TOTAL_TICKS) return state;
   const tick = state.tick + 1;
+  const movedThisRound =
+    (tick % movementPeriod(id) === 1 ? false : state.movedThisRound) ||
+    tile !== state.tile;
   const added: Check[] = [];
   let pending = state.pending;
   let pendingB = state.pendingB;
@@ -259,15 +268,17 @@ export function advance(
   }
   if (hasMovement(id) && tick % movementPeriod(id) === 0) {
     const target = targetAt(tick, id);
+    const reached = tile === target && (id !== 'movement' || movedThisRound);
     added.push({
       tick,
       kind: 'movement',
       expected: String(target),
       actual: String(tile),
-      correct: tile === target,
-      message:
-        tile === target
-          ? 'Reached the marked tile on time.'
+      correct: reached,
+      message: reached
+        ? 'Reached the marked tile on time.'
+        : tile === target
+          ? 'Move to the target during its round. Waiting on a future target does not score.'
           : 'Missed the marked tile. Queue your prayer first, then use the quiet tick to move.',
     });
   }
@@ -286,15 +297,46 @@ export function advance(
             : `This gap needed ${goal === 'shark' ? 'a shark' : `a ${goal} dose`}; ${gapSupply ? `you used ${gapSupply}` : 'no item registered on a quiet tick'}. Switch to Inventory after the attack, click the item, then return to Prayers.`,
       });
   }
+  if (id === 'movement') {
+    // Attack and tile checks stay available for feedback; only complete rounds
+    // earn points. A correct prayer alone must never award movement credit.
+    for (const check of added) check.scored = false;
+    if (tick % movementPeriod(id) === 0) {
+      const round = [...state.checks, ...added].filter(
+        (check) =>
+          check.tick > tick - movementPeriod(id) && check.kind !== 'round',
+      );
+      const movement = added.find((check) => check.kind === 'movement')!;
+      const tileCorrect = movement.correct;
+      const prayers = round.filter((check) => check.kind === 'prayer');
+      const prayersCorrect =
+        prayers.length === 2 && prayers.every((check) => check.correct);
+      added.push({
+        tick,
+        kind: 'round',
+        correct: tileCorrect && prayersCorrect,
+        expected: 'Both attacks protected and marked tile reached',
+        actual: `${prayers.filter((check) => check.correct).length}/2 protected; ${tileCorrect ? 'tile reached' : 'tile missed'}`,
+        message:
+          tileCorrect && prayersCorrect
+            ? 'Round complete: both attacks protected and the marked tile reached. +1 point.'
+            : !tileCorrect
+              ? `${movement.message} No point for this round.`
+              : 'No point: reached the tile, but missed a prayer check in this round.',
+      });
+    }
+  }
   let streak = state.streak;
   let bestStreak = state.bestStreak;
-  for (const check of added) {
+  for (const check of scoredChecks(added)) {
     streak = check.correct ? streak + 1 : 0;
     bestStreak = Math.max(bestStreak, streak);
   }
   const events = monsterEvents(id, tick, pending, pendingB, state.seed);
   return {
     tick,
+    tile,
+    movedThisRound,
     blowpipe,
     monsterEvents: [...state.monsterEvents, ...events],
     attackResults: [
@@ -317,13 +359,21 @@ export function advance(
     supplyMessage,
   };
 }
+export const scoredChecks = (checks: Check[]) =>
+  checks.filter((check) => check.scored !== false);
 export function accuracy(checks: Check[]) {
-  return checks.length
-    ? Math.round((checks.filter((c) => c.correct).length / checks.length) * 100)
+  const scored = scoredChecks(checks);
+  return scored.length
+    ? Math.round((scored.filter((c) => c.correct).length / scored.length) * 100)
     : 0;
 }
 export function coaching(checks: Check[], id?: LessonId) {
   const missed = checks.filter((c) => !c.correct);
+  if (id === 'movement' && missed.length) {
+    return missed.some((check) => check.kind === 'movement')
+      ? 'Your next focus: movement. Each point needs the marked tile reached by the fourth tick, with both attacks protected.'
+      : 'Your tiles are on time. Protect Magic on tick 1 and Ranged on tick 3 as well to earn the round’s point.';
+  }
   if (id === 'alternate') {
     // Each tick's first check is the prescribed pattern; later checks can
     // describe the blob. Do not count those twice when assessing the rhythm.

@@ -3604,3 +3604,17 @@ select:focus-visible {
 .blowpipe-workspace .tick-label {
   min-height: 40px;
 }
+
+.movement-scoring {
+  padding: 12px 22px;
+  font-size: 12px;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+}
+.movement-scoring strong {
+  color: var(--text);
+}
+.movement-scoring span {
+  display: block;
+  margin-top: 6px;
+}

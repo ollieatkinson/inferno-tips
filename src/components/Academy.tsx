@@ -21,7 +21,9 @@ import {
 } from '../lib/settings';
 import {
   lessons,
-  PASS_SCORE,
+  passScore,
+  MOVEMENT_ROUNDS,
+  MOVEMENT_PASS_ROUNDS,
   sourceLinks,
   lessonSource,
   TOTAL_TICKS,
@@ -32,6 +34,7 @@ import {
 } from '../lib/course';
 import {
   accuracy,
+  scoredChecks,
   advance,
   coaching,
   expectedPrayer,
@@ -452,8 +455,9 @@ export default function Academy() {
                     ))}
                   </div>
                   <p className="fine-print">
-                    Mastery requires two completed, uninterrupted challenges at
-                    90% or above. Guided and paused runs count as practice.
+                    Mastery requires meeting the drill’s pass target in two
+                    completed, uninterrupted challenges. Guided and paused runs
+                    count as practice.
                   </p>
                   <div className="reset-area">
                     {resetConfirm ? (
@@ -881,6 +885,15 @@ function Trainer({
   );
   const target = targetAt(nextTick, lesson.id);
   const score = accuracy(state.checks);
+  const scoring = scoredChecks(state.checks);
+  const roundPoints = scoring.filter((check) => check.correct).length;
+  const prayerChecks = state.checks.filter((check) => check.kind === 'prayer');
+  const prayerHits = prayerChecks.filter((check) => check.correct).length;
+  const requiredScore = passScore(lesson.id);
+  const passTarget =
+    lesson.id === 'movement'
+      ? `${MOVEMENT_PASS_ROUNDS} of ${MOVEMENT_ROUNDS} complete rounds`
+      : `${requiredScore}%`;
   const supplyTarget = supplyGoal(lesson.id, nextTick);
   const nextMagicAttack = nextTick + ((1 - (nextTick % 4) + 4) % 4);
   const magerLesson = lesson.id === 'rhythm' || hasSupplies(lesson.id);
@@ -1302,17 +1315,39 @@ function Trainer({
               </strong>
             </div>
             <div>
-              <small>ACCURACY</small>
-              <strong>{state.checks.length ? `${score}%` : '—'}</strong>
+              <small>{lesson.id === 'movement' ? 'POINTS' : 'ACCURACY'}</small>
+              <strong>
+                {lesson.id === 'movement'
+                  ? `${roundPoints} / ${MOVEMENT_ROUNDS}`
+                  : scoring.length
+                    ? `${score}%`
+                    : '—'}
+              </strong>
             </div>
             <div>
               <small>STREAK</small>
               <strong>
                 {state.streak}
-                <span> checks</span>
+                <span>{lesson.id === 'movement' ? ' rounds' : ' checks'}</span>
               </strong>
             </div>
           </div>
+          {lesson.id === 'movement' && (
+            <p className="movement-scoring">
+              <strong>
+                {MOVEMENT_PASS_ROUNDS} of {MOVEMENT_ROUNDS} points to pass.
+              </strong>{' '}
+              Each point needs both prayers correct and the marked tile reached
+              by the fourth tick.
+              <span>
+                Prayer accuracy:{' '}
+                {prayerChecks.length
+                  ? `${Math.round((100 * prayerHits) / prayerChecks.length)}% (${prayerHits}/${prayerChecks.length})`
+                  : '—'}{' '}
+                · {scoring.length}/{MOVEMENT_ROUNDS} rounds checked
+              </span>
+            </p>
+          )}
           {isJad(lesson.id) && (
             <div
               className="jad-cue"
@@ -1755,10 +1790,10 @@ function Trainer({
           </div>
           <div className="mastery-note">
             <span className="eyebrow">CHALLENGE PASSES</span>
-            <h3>Two passes at 90%</h3>
+            <h3>Two passes at {passTarget}</h3>
             <p>
-              Finish two uninterrupted challenges at 90% or above. Guided runs
-              help you get there.
+              Meet the target in two uninterrupted challenges. Guided runs help
+              you get there.
             </p>
             <div className="mastery-stamps">
               {[1, 2].map((n) => (
@@ -1795,7 +1830,7 @@ function Trainer({
               <h2>
                 {mode === 'guided'
                   ? 'Guided practice complete'
-                  : !interrupted && score >= PASS_SCORE
+                  : !interrupted && score >= requiredScore
                     ? 'Challenge passed'
                     : 'Challenge complete'}
               </h2>
@@ -1810,8 +1845,8 @@ function Trainer({
             <p className="challenge-next-step">
               Next: try the challenge with{' '}
               {lesson.id === 'blowpipe' ? 'step' : 'prayer'} hints hidden. Same
-              drill, same timing. Score {PASS_SCORE}% or more without pausing to
-              earn a challenge pass.
+              drill, same timing. Reach {passTarget} without pausing to earn a
+              challenge pass.
             </p>
           )}
           <div className="result-actions">
@@ -1838,18 +1873,18 @@ function Trainer({
           </div>
           <div className="result-details">
             <span>
-              {state.checks.filter((c) => c.correct).length} /{' '}
-              {state.checks.length} checks correct
+              {roundPoints} / {scoring.length}{' '}
+              {lesson.id === 'movement' ? 'rounds complete' : 'checks correct'}
             </span>
             <span>Best streak: {state.bestStreak}</span>
             <span>
-              {mode === 'challenge' && !interrupted && score >= PASS_SCORE
+              {mode === 'challenge' && !interrupted && score >= requiredScore
                 ? '✓ Mastery pass earned'
                 : interrupted
                   ? 'Paused run · practice credit'
                   : mode === 'guided'
                     ? 'Guided run · practice credit'
-                    : `${PASS_SCORE}% earns a mastery pass`}
+                    : `${passTarget} earns a mastery pass`}
             </span>
           </div>
           {state.exposures.length > 0 && (
@@ -1872,17 +1907,19 @@ function Trainer({
                     {c.correct ? '✓' : '×'} Tick {c.tick}
                   </b>
                   <span>
-                    {c.kind === 'read'
-                      ? 'Blob read'
-                      : c.kind === 'movement'
-                        ? 'Movement'
-                        : c.kind === 'supply'
-                          ? 'Supply'
-                          : c.kind === 'flick'
-                            ? 'Off–on pair'
-                            : c.kind === 'attack'
-                              ? 'Weapon timing'
-                              : 'Prayer'}
+                    {c.kind === 'round'
+                      ? 'Round score'
+                      : c.kind === 'read'
+                        ? 'Blob read'
+                        : c.kind === 'movement'
+                          ? 'Movement'
+                          : c.kind === 'supply'
+                            ? 'Supply'
+                            : c.kind === 'flick'
+                              ? 'Off–on pair'
+                              : c.kind === 'attack'
+                                ? 'Weapon timing'
+                                : 'Prayer'}
                   </span>
                   <p>{c.message}</p>
                 </div>
