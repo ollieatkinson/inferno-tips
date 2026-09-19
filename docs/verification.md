@@ -168,3 +168,13 @@ Screenshots and raw DevTools output are temporary verification artifacts, not sh
 - Added a browser regression that switches before Start at two different offsets within a tick. The new prayer lights immediately, both circles remain until the existing boundary, and only the new circle remains afterwards. The encounter stays at tick zero with unchanged statistics. Existing tab-key coverage now checks pre-start overlap too.
 - All 94 unit tests and nine relevant production browser tests passed. Astro check/build passed without diagnostics.
 - Chrome DevTools real-clock pre-start check: Magic lit immediately with Active still None, switching showed Magic + Ranged with Active Magic, then the next tick showed only Ranged with Active Ranged. Statistics were unchanged and Start remained available; no console warnings/errors.
+
+## Alternating accuracy and a stable game clock
+
+- Reproduced a real timing defect before the fix: a fixed 600 ms click rhythm scored 38%, while tick 1 → tick 36 accumulated 237 ms of extra scheduling/render time. Each timer had been started after the previous render. This reproduces an unfair low score, not the user's unavailable 31% click trace; the user reported following circles.
+- Countdown/run timers now use absolute 600 ms deadlines. The bar fills to the same deadline; prayer/tile inputs are captured once per tick for both the display and scoring. Long stalls still pause, and resume establishes a fresh interval.
+- Two full real-clock production regressions passed: fixed-cadence clicking and selecting whichever prayer circle just cleared, both 100%. Both assert tick 1 → tick 36 remains within 100 ms of the intended 21 seconds, which fails the observed old clock.
+- Independent Chrome DevTools circle-following run: 36 ticks, 100%, tick 1 → tick 36 measured 20,998.8 ms, with no console warnings/errors.
+- Clarified the first switch beside the prayer book and in the lesson: hold Magic through tick 1's mager attack, then Ranged. Added specific feedback for a consistently alternating but reversed phase; the unit regression confirms that this still scores 14%, rather than silently accepting the wrong protection.
+- All 95 unit tests passed. Astro check/build passed without errors, warnings or hints.
+- Fifteen further production browser checks passed: complete alternating, movement, food, conservation, triple-Jad and blowpipe runs; paused-run credit; hidden-tab/stall handling; results-to-challenge reset; prayer/overhead timing; and stable starts on desktop/mobile. Together with the two real-clock regressions, 17 browser checks passed.

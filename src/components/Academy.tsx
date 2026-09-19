@@ -847,6 +847,8 @@ function Trainer({
     null,
   );
   const prayerRef = useRef<Prayer>('off');
+  const tickDeadlineRef = useRef<number | null>(null);
+  const tickBarRef = useRef<HTMLElement>(null);
   const tileRef = useRef(12);
   const audioRef = useRef<AudioContext | null>(null);
   const soundRef = useRef(sound);
@@ -936,6 +938,7 @@ function Trainer({
     }
   }
   function begin(fromResults = false) {
+    tickDeadlineRef.current = performance.now() + ms;
     startFocus.current = fromResults ? 'return' : 'stay';
     void prepareAudio();
     setState(initialState(Math.floor(Math.random() * 100000)));
@@ -970,6 +973,7 @@ function Trainer({
       });
   }, [status]);
   function pause() {
+    tickDeadlineRef.current = null;
     setInterrupted(true);
     setStatus('paused');
   }
@@ -1011,49 +1015,66 @@ function Trainer({
   }, [status, lesson.id, ms]);
   useEffect(() => {
     if (status !== 'countdown') return;
-    const timer = window.setTimeout(() => {
-      beep();
-      setLitPrayers(prayerRef.current === 'off' ? [] : [prayerRef.current]);
-      setOverheadPrayer(prayerRef.current);
-      if (countdown === 1) {
-        transitionsRef.current = [];
-        setStatus('running');
-      } else setCountdown((c) => c - 1);
-    }, ms);
+    const deadline = tickDeadlineRef.current ?? performance.now() + ms;
+    tickDeadlineRef.current = deadline;
+    const timer = window.setTimeout(
+      () => {
+        if (performance.now() - deadline > 250) {
+          pause();
+          return;
+        }
+        tickDeadlineRef.current = deadline + ms;
+        beep();
+        setLitPrayers(prayerRef.current === 'off' ? [] : [prayerRef.current]);
+        setOverheadPrayer(prayerRef.current);
+        if (countdown === 1) {
+          transitionsRef.current = [];
+          setStatus('running');
+        } else setCountdown((c) => c - 1);
+      },
+      Math.max(0, deadline - performance.now()),
+    );
     return () => window.clearTimeout(timer);
   }, [status, countdown, ms]);
+  useLayoutEffect(() => {
+    if (status === 'running' && tickBarRef.current)
+      tickBarRef.current.style.animationDuration = `${Math.max(
+        1,
+        (tickDeadlineRef.current ?? performance.now() + ms) - performance.now(),
+      )}ms`;
+  }, [status, state.tick, ms]);
   useEffect(() => {
     if (status !== 'running') return;
-    const started = performance.now();
-    const timer = window.setTimeout(() => {
-      if (performance.now() - started > ms + 250) {
-        pause();
-        return;
-      }
-      const supply = supplyRef.current;
-      supplyRef.current = null;
-      setQueuedSupply(null);
-      const input = {
-        transitions: transitionsRef.current,
-        blowpipe: attackRef.current,
-      };
-      transitionsRef.current = [];
-      attackRef.current = null;
-      setAttackQueued(null);
-      beep();
-      setLitPrayers(prayerRef.current === 'off' ? [] : [prayerRef.current]);
-      setOverheadPrayer(prayerRef.current);
-      setState((prev) =>
-        advance(
-          prev,
-          lesson.id,
-          prayerRef.current,
-          tileRef.current,
-          supply,
-          input,
-        ),
-      );
-    }, ms);
+    const deadline = tickDeadlineRef.current ?? performance.now() + ms;
+    tickDeadlineRef.current = deadline;
+    const timer = window.setTimeout(
+      () => {
+        if (performance.now() - deadline > 250) {
+          pause();
+          return;
+        }
+        tickDeadlineRef.current = deadline + ms;
+        const prayerAtTick = prayerRef.current;
+        const tileAtTick = tileRef.current;
+        const supply = supplyRef.current;
+        supplyRef.current = null;
+        setQueuedSupply(null);
+        const input = {
+          transitions: transitionsRef.current,
+          blowpipe: attackRef.current,
+        };
+        transitionsRef.current = [];
+        attackRef.current = null;
+        setAttackQueued(null);
+        beep();
+        setLitPrayers(prayerAtTick === 'off' ? [] : [prayerAtTick]);
+        setOverheadPrayer(prayerAtTick);
+        setState((prev) =>
+          advance(prev, lesson.id, prayerAtTick, tileAtTick, supply, input),
+        );
+      },
+      Math.max(0, deadline - performance.now()),
+    );
     return () => window.clearTimeout(timer);
   }, [status, state.tick, ms, lesson.id]);
   useEffect(() => {
@@ -1506,6 +1527,7 @@ function Trainer({
                 </div>
                 <div className="tick-meter">
                   <i
+                    ref={tickBarRef}
                     key={`${state.tick}-${status}`}
                     className={status === 'running' ? 'ticking' : ''}
                     style={{ animationDuration: `${ms}ms` }}
@@ -1573,6 +1595,11 @@ function Trainer({
             {lesson.id !== 'blowpipe' && (
               <GamePanels
                 id={lesson.id}
+                prayerInstruction={
+                  lesson.id === 'alternate' && state.tick === 0
+                    ? 'Start on Magic. Hold through the first mager attack (tick 1), then switch to Ranged.'
+                    : undefined
+                }
                 activePrayer={displayedOverhead}
                 litPrayers={displayedLitPrayers}
                 panel={panel}
@@ -1752,7 +1779,7 @@ function Trainer({
                     ? 'Challenge passed'
                     : 'Challenge complete'}
               </h2>
-              <p>{coaching(state.checks)}</p>
+              <p>{coaching(state.checks, lesson.id)}</p>
             </div>
             <strong className="result-score">
               {score}

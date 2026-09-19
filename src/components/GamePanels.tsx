@@ -70,6 +70,7 @@ const itemAction = (item: Supply) =>
 
 export function GamePanels({
   id,
+  prayerInstruction,
   activePrayer,
   litPrayers,
   panel,
@@ -83,6 +84,7 @@ export function GamePanels({
   onSupply,
 }: {
   id: LessonId;
+  prayerInstruction?: string;
   activePrayer: Prayer;
   litPrayers: Prayer[];
   panel: 'prayers' | 'inventory';
@@ -261,7 +263,7 @@ export function GamePanels({
         )}
         <p>
           {panel === 'prayers'
-            ? 'Click a protection prayer to toggle it.'
+            ? prayerInstruction || 'Click a protection prayer to toggle it.'
             : id === 'food' || id === 'potions'
               ? queuedSupply
                 ? `${itemAction(queuedSupply)} queued for the next tick.`

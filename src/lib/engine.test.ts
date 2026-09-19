@@ -32,6 +32,16 @@ function perfectPrayer(id: LessonId, tick: number): Prayer {
   return tick % 2 === 1 ? 'magic' : 'range';
 }
 describe('drill mechanics', () => {
+  it('explains an alternating rhythm that starts on the wrong phase', () => {
+    let state = initialState();
+    for (let tick = 1; tick <= TOTAL_TICKS; tick++)
+      state = advance(state, 'alternate', tick % 2 ? 'range' : 'magic', 12);
+    expect(accuracy(state.checks)).toBe(14);
+    expect(coaching(state.checks, 'alternate')).toContain(
+      'one tick out of phase',
+    );
+    expect(coaching(state.checks, 'alternate')).toContain('first mager attack');
+  });
   it.each(lessons)(
     '$id accepts its intended technique for a complete run',
     ({ id }) => {

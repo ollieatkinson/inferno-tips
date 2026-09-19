@@ -322,8 +322,35 @@ export function accuracy(checks: Check[]) {
     ? Math.round((checks.filter((c) => c.correct).length / checks.length) * 100)
     : 0;
 }
-export function coaching(checks: Check[]) {
+export function coaching(checks: Check[], id?: LessonId) {
   const missed = checks.filter((c) => !c.correct);
+  if (id === 'alternate') {
+    // Each tick's first check is the prescribed pattern; later checks can
+    // describe the blob. Do not count those twice when assessing the rhythm.
+    const pattern = checks.filter(
+      (c, i) =>
+        c.kind === 'prayer' && (i === 0 || checks[i - 1].tick !== c.tick),
+    );
+    const swapped = pattern.filter(
+      (c) =>
+        (c.expected === 'magic' && c.actual === 'range') ||
+        (c.expected === 'range' && c.actual === 'magic'),
+    ).length;
+    const switches = pattern
+      .slice(1)
+      .filter(
+        (c, i) =>
+          ['magic', 'range'].includes(c.actual) &&
+          ['magic', 'range'].includes(pattern[i].actual) &&
+          c.actual !== pattern[i].actual,
+      ).length;
+    if (
+      pattern.length >= 4 &&
+      swapped > pattern.length / 2 &&
+      switches >= (pattern.length - 1) * 0.8
+    )
+      return 'Your prayers alternated, but the cycle was mostly one tick out of phase. Start on Magic and hold it through the first mager attack (tick 1), then switch to Ranged. After that, click the prayer whose circle just cleared.';
+  }
   if (missed.some((c) => c.kind === 'flick'))
     return 'Your next focus: a single off–on pair between beats. Protection at the boundary and conservation clicks are separate checks.';
   if (missed.some((c) => c.kind === 'attack'))

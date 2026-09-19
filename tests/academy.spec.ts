@@ -1899,3 +1899,71 @@ test('blowpipe orders move on ticks, cancel attacks and recover after a lost sho
   ).toBe(true);
   expect((await tile(3).boundingBox())!.width).toBeGreaterThanOrEqual(40);
 });
+
+for (const timing of ['fixed rhythm', 'clearing circles'] as const) {
+  test(`one-tick alternating accepts real-clock ${timing} without cumulative drift`, async ({
+    page,
+  }) => {
+    await open(page);
+    await lesson(page, 'One-tick alternating');
+    const elapsed = await page.evaluate(async (timing) => {
+      const stats = document.querySelector('.run-stats')!;
+      const button = (name: string) =>
+        document.querySelector<HTMLButtonElement>(
+          `.prayer-button[aria-label="${name}"]`,
+        )!;
+      return new Promise<number>((resolve, reject) => {
+        let first = 0,
+          lastTick = 0,
+          switches = 0;
+        let fixedTimer: number | undefined;
+        const guard = window.setTimeout(() => {
+          observer.disconnect();
+          window.clearInterval(fixedTimer);
+          reject(new Error('Alternating run did not finish on time'));
+        }, 28000);
+        const observer = new MutationObserver(() => {
+          const tick = Number(stats.textContent?.match(/^TICK(\d+)/)?.[1]);
+          if (!tick || tick === lastTick) return;
+          lastTick = tick;
+          if (tick === 1) first = performance.now();
+          if (tick === 36) {
+            observer.disconnect();
+            window.clearInterval(fixedTimer);
+            window.clearTimeout(guard);
+            resolve(performance.now() - first);
+            return;
+          }
+          if (timing === 'fixed rhythm' && tick === 1) {
+            window.setTimeout(() => {
+              button('Ranged').click();
+              fixedTimer = window.setInterval(
+                () => button(++switches % 2 ? 'Magic' : 'Ranged').click(),
+                600,
+              );
+            }, 60);
+          } else if (timing === 'clearing circles') {
+            window.setTimeout(() => {
+              const next = ['Magic', 'Ranged']
+                .map(button)
+                .find((b) => b.dataset.lit === 'false');
+              next?.click();
+            }, 60);
+          }
+        });
+        observer.observe(stats, {
+          subtree: true,
+          childList: true,
+          characterData: true,
+        });
+        [...document.querySelectorAll('button')]
+          .find((b) => b.textContent?.trim() === 'Start guided practice')!
+          .click();
+        // Prepare the first prayer during count-in; start switching after tick 1.
+        window.setTimeout(() => button('Magic').click(), 50);
+      });
+    }, timing);
+    await expect(page.locator('.result-score')).toHaveText('100%');
+    expect(Math.abs(elapsed - 35 * 600)).toBeLessThan(100);
+  });
+}
