@@ -37,3 +37,29 @@ export function TickMeter({
     </div>
   );
 }
+
+export function CycleTick({
+  tick,
+  length,
+  paused,
+}: {
+  tick: number;
+  length: number;
+  paused: boolean;
+}) {
+  const beat = tick > 0 ? ((tick - 1) % length) + 1 : null;
+  const label = beat
+    ? `Cycle tick ${beat} of ${length}${paused ? ', paused' : ''}`
+    : 'Cycle not started';
+  return (
+    <span
+      className="compact-cycle-tick"
+      role="timer"
+      aria-live="off"
+      aria-label={label}
+      title={label}
+    >
+      <span aria-hidden="true">{beat ?? '—'}</span>
+    </span>
+  );
+}

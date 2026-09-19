@@ -213,7 +213,7 @@ export function advance(
             : `Protected ${expected}.`
           : expected === 'off'
             ? 'That was a quiet tick. Turn prayer off between attacks.'
-            : `You needed ${expected} at tick ${tick}; ${prayer === 'off' ? 'your prayer was off' : `${prayer} was active`}. Select it before the tick bar fills.`,
+            : `You needed ${expected} at tick ${tick}; ${prayer === 'off' ? 'your prayer was off' : `${prayer} was active`}. Select it before the next beat.`,
     });
   if (id === 'double-blob' && tick % 6 === 2) pendingB = opposite(prayer);
   const blobAttacks: { name: string; style: Prayer }[] = [];

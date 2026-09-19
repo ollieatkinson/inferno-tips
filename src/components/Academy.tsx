@@ -32,7 +32,7 @@ import { CombatEffects } from './CombatEffects';
 import { EnemyScene } from './EnemyScene';
 import { GamePanels } from './GamePanels';
 import { MovementChallenge } from './MovementChallenge';
-import { TickMeter } from './TickMeter';
+import { TickMeter, CycleTick } from './TickMeter';
 import { usePrayerSounds } from './usePrayerSounds';
 import { useSupplySounds } from './useSupplySounds';
 import {
@@ -1186,6 +1186,13 @@ function Trainer({
   const busy =
     status === 'running' || status === 'countdown' || status === 'paused';
   const displayedOverhead = overheadPrayer;
+  const compactTick = (
+    <CycleTick
+      tick={state.tick}
+      length={hasMovement(lesson.id) ? movementPeriod(lesson.id) : cycleLength}
+      paused={status === 'paused'}
+    />
+  );
   completeRef.current = onComplete;
   soundRef.current = sound;
   const prayerSounds = usePrayerSounds(
@@ -1514,6 +1521,8 @@ function Trainer({
         <section
           className="training-panel"
           data-busy={busy}
+          data-tick={state.tick}
+          data-status={status}
           aria-label="Interactive practice"
           ref={trainingRef}
           tabIndex={-1}
@@ -1618,21 +1627,25 @@ function Trainer({
                 : 'Guided practice shows prayer hints. Try the challenge after a run.'
               : lesson.id === 'blowpipe'
                 ? 'Keep firing while running the route. The next-step hints are hidden.'
-                : 'Challenge hides prayer hints. The timing stays at 0.6 seconds per tick.'}
+                : 'Challenge hides prayer hints and the tick bar. The small number tracks the current cycle beat.'}
           </p>
           <p className="sr-only" role="status">
             {status === 'done'
               ? `Run complete. ${score}% accuracy. Retry beside the controls, or review the results below.`
               : ''}
           </p>
-          <div className="run-stats">
-            <div>
-              <small>TICK</small>
-              <strong>
-                {state.tick}
-                <span> / {totalTicks}</span>
-              </strong>
-            </div>
+          <div
+            className={`run-stats ${mode === 'challenge' ? 'challenge-stats' : ''}`}
+          >
+            {mode === 'guided' && (
+              <div>
+                <small>TICK</small>
+                <strong>
+                  {state.tick}
+                  <span> / {totalTicks}</span>
+                </strong>
+              </div>
+            )}
             <div>
               <small>
                 {session ? 'STAGE SCORE' : goal ? 'POINTS' : 'ACCURACY'}
@@ -1684,7 +1697,7 @@ function Trainer({
             </p>
           )}
           <div className={session ? 'series-cues' : undefined}>
-            {session && !isJad(lesson.id) && !magerLesson && (
+            {session && !isJad(lesson.id) && (
               <div className="series-stage-guide">
                 <strong>{lesson.title}</strong>
                 <p>{goal?.rule ?? lesson.objective}</p>
@@ -1725,7 +1738,7 @@ function Trainer({
                 attack protected.
               </p>
             )}
-            {magerLesson && (
+            {magerLesson && mode === 'guided' && (
               <div
                 className="attack-cycle"
                 role="group"
@@ -1822,9 +1835,10 @@ function Trainer({
                           ))}
                         </div>
                         <p className="arena-caption">
-                          ◇ Reach the marked tile by tick{' '}
-                          {Math.ceil(nextTick / movementPeriod(lesson.id)) *
-                            movementPeriod(lesson.id)}{' '}
+                          ◇{' '}
+                          {mode === 'guided'
+                            ? `Reach the marked tile by tick ${Math.ceil(nextTick / movementPeriod(lesson.id)) * movementPeriod(lesson.id)}`
+                            : 'Reach the marked tile by beat 4'}{' '}
                           · coordination drill
                         </p>
                       </>
@@ -1898,56 +1912,68 @@ function Trainer({
                   </span>
                 </p>
               )}
-              <div className="tick-track">
-                <div className="tick-label">
-                  <span>
-                    {status === 'running'
-                      ? `Preparing tick ${nextTick}`
-                      : status === 'done'
-                        ? 'Run complete'
-                        : status === 'countdown'
-                          ? 'Count in…'
+              {(mode === 'guided' || lesson.id === 'blowpipe') && (
+                <div className="tick-track">
+                  <div className="tick-label">
+                    <span>
+                      {mode === 'challenge'
+                        ? status === 'done'
+                          ? 'Run complete'
                           : status === 'paused'
                             ? 'Paused'
-                            : lesson.id === 'blowpipe'
-                              ? 'Click the target to fire, then run two tiles'
-                              : 'Choose your prayer before each beat'}
-                  </span>
-                  {lesson.id === 'blowpipe' &&
-                    (status === 'done' ? (
-                      <button
-                        className="button secondary nearby-retry"
-                        onClick={() => begin()}
-                      >
-                        {mode === 'guided' ? 'Restart practice' : 'Retry'}
-                      </button>
-                    ) : (
-                      <span>GAME SPEED · 0.6s</span>
-                    ))}
-                </div>
-                {lesson.id === 'blowpipe' && (
-                  <TickMeter
-                    deadline={tickDeadlineRef}
-                    paused={status === 'paused'}
-                  />
-                )}
-                {lesson.id !== 'blowpipe' && (
-                  <div className="beat-dots">
-                    {Array.from({ length: cycleLength }, (_, i) => (
-                      <span
-                        key={i}
-                        className={
-                          state.tick > 0 && (state.tick - 1) % cycleLength === i
-                            ? 'current'
                             : ''
-                        }
-                      >
-                        {i + 1}
-                      </span>
-                    ))}
+                        : status === 'running'
+                          ? `Preparing tick ${nextTick}`
+                          : status === 'done'
+                            ? 'Run complete'
+                            : status === 'countdown'
+                              ? 'Count in…'
+                              : status === 'paused'
+                                ? 'Paused'
+                                : lesson.id === 'blowpipe'
+                                  ? 'Click the target to fire, then run two tiles'
+                                  : 'Choose your prayer before each beat'}
+                    </span>
+                    {lesson.id === 'blowpipe' &&
+                      mode === 'challenge' &&
+                      compactTick}
+                    {lesson.id === 'blowpipe' &&
+                      (status === 'done' ? (
+                        <button
+                          className="button secondary nearby-retry"
+                          onClick={() => begin()}
+                        >
+                          {mode === 'guided' ? 'Restart practice' : 'Retry'}
+                        </button>
+                      ) : mode === 'guided' ? (
+                        <span>GAME SPEED · 0.6s</span>
+                      ) : null)}
                   </div>
-                )}
-              </div>
+                  {lesson.id === 'blowpipe' && mode === 'guided' && (
+                    <TickMeter
+                      deadline={tickDeadlineRef}
+                      paused={status === 'paused'}
+                    />
+                  )}
+                  {lesson.id !== 'blowpipe' && (
+                    <div className="beat-dots">
+                      {Array.from({ length: cycleLength }, (_, i) => (
+                        <span
+                          key={i}
+                          className={
+                            state.tick > 0 &&
+                            (state.tick - 1) % cycleLength === i
+                              ? 'current'
+                              : ''
+                          }
+                        >
+                          {i + 1}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
               {lesson.id === 'blowpipe' && (
                 <div
                   className="blowpipe-status"
@@ -2005,6 +2031,7 @@ function Trainer({
                 score={score}
                 activePrayer={displayedOverhead}
                 tickDeadline={tickDeadlineRef}
+                timingIndicator={mode === 'challenge' ? compactTick : undefined}
                 paused={status === 'paused'}
                 litPrayers={litPrayers}
                 panel={panel}
@@ -2085,8 +2112,7 @@ function Trainer({
           </div>
           {soundError && (
             <p className="fine-print" role="status">
-              Audio is unavailable in this browser. The visual tick bar still
-              works.
+              Audio is unavailable in this browser. The visual cues still work.
             </p>
           )}
           <p className="control-note">

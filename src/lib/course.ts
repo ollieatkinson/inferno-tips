@@ -45,9 +45,9 @@ export const lessons: Lesson[] = [
     objective:
       'Protect the magic attack, then toggle the same prayer off during the three quiet ticks.',
     steps: [
-      'Watch the attack countdown. The mager attacks on tick 1, then 5, 9, and so on. Each tick lasts 0.6 seconds.',
+      'In guided practice, watch the attack countdown. The mager attacks on tick 1, then 5, 9, and so on. Each tick lasts 0.6 seconds.',
       'Click Magic before the attack beat. When the mager pulses, the prayer check has happened: click Magic again to turn it off.',
-      'Leave prayer off for the quiet ticks. After the third quiet beat, activate Magic before the next attack. The filling bar shows when each tick will register.',
+      'Leave prayer off for the quiet ticks. After the third quiet beat, activate Magic before the next attack. In guided practice, the filling bar shows when each tick will register.',
     ],
     takeaway:
       'This is lazy flicking: protect the attack, then toggle off. The attack pulse marks the prayer check, not a projectile landing. It scores the exercise pattern, not prayer-point drain.',
@@ -79,7 +79,7 @@ export const lessons: Lesson[] = [
     objective: 'Alternate Magic and Ranged on every tick, starting with Magic.',
     steps: [
       'Select Magic during the countdown and hold it through the first mager attack (tick 1). Then switch to Ranged for tick 2 and repeat. The countdown is not part of the alternating cycle.',
-      'The old circle clears at the next tick. A switch just before that boundary gives only a short overlap. Click the cleared prayer just after each tick to keep the rhythm; the meter beside the prayer book shows that same clock.',
+      'The old circle clears at the next tick. A switch just before that boundary gives only a short overlap. Click the cleared prayer just after each tick to keep the rhythm; in guided practice, the meter beside the prayer book shows that same clock.',
       'The three-tick gap between a blob’s read and attack means the opposite prayer is active at its attack check. The projectile lands later.',
       'Keep the rhythm steady. This drill scores every tick of the pattern, even when no attack occurs.',
     ],

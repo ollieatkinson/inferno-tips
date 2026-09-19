@@ -84,6 +84,7 @@ export function GamePanels({
   children,
   score,
   tickDeadline,
+  timingIndicator,
   paused,
   litPrayers,
   panel,
@@ -104,6 +105,7 @@ export function GamePanels({
   children?: ReactNode;
   score: number;
   tickDeadline: RefObject<number | null>;
+  timingIndicator?: ReactNode;
   paused: boolean;
   litPrayers: Prayer[];
   panel: 'prayers' | 'inventory';
@@ -280,12 +282,14 @@ export function GamePanels({
           </div>
         )}
       </div>
-      <div className="panel-tick-clock">
-        <span>
-          {paused ? 'Tick paused' : 'Next tick'} <span>0.6s cycle</span>
-        </span>
-        <TickMeter deadline={tickDeadline} paused={paused} />
-      </div>
+      {timingIndicator ?? (
+        <div className="panel-tick-clock">
+          <span>
+            {paused ? 'Tick paused' : 'Next tick'} <span>0.6s cycle</span>
+          </span>
+          <TickMeter deadline={tickDeadline} paused={paused} />
+        </div>
+      )}
       {children}
       <div className="game-panel-status">
         <div className="game-panel-active">

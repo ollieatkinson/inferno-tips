@@ -26,9 +26,10 @@ async function start(page: Page, challenge = true) {
     .click();
   const ms = 600;
   for (let i = 0; i < 3; i++) await page.clock.runFor(ms);
-  await expect(
-    page.getByText('Preparing tick 1', { exact: true }),
-  ).toBeVisible();
+  await expect(page.locator('.training-panel')).toHaveAttribute(
+    'data-status',
+    'running',
+  );
 }
 const targets = [8, 6, 16, 18, 12, 2, 22, 10, 14];
 async function perfectRun(page: Page, id: string, ms = 600) {
@@ -217,7 +218,10 @@ test('guided runs and paused challenges never award mastery', async ({
     page.getByRole('heading', { name: 'Practice paused' }),
   ).toBeVisible();
   await page.clock.runFor(5000);
-  await expect(page.locator('.run-stats').getByText('0 / 36')).toBeVisible();
+  await expect(page.locator('.training-panel')).toHaveAttribute(
+    'data-tick',
+    '0',
+  );
   await page
     .getByRole('button', { name: 'Resume practice', exact: true })
     .click();
@@ -438,7 +442,10 @@ test('mager attack cues follow four real ticks in guided mode', async ({
   ).toBeVisible();
   await page.getByRole('button', { name: 'Magic', exact: true }).click();
   await page.clock.runFor(599);
-  await expect(page.locator('.run-stats').getByText('0 / 36')).toBeVisible();
+  await expect(page.locator('.training-panel')).toHaveAttribute(
+    'data-tick',
+    '0',
+  );
   await page.clock.runFor(1);
   await expect(
     page
@@ -453,7 +460,7 @@ test('mager attack cues follow four real ticks in guided mode', async ({
   await expect(
     page.getByText('Magic attack in 3 ticks', { exact: true }),
   ).toBeVisible();
-  await expect(page.locator('.run-stats').getByText('100%')).toBeVisible();
+  await expect(page.locator('.run-stats').getByText('0 / 9')).toBeVisible();
   await page.evaluate(() => window.scrollTo(0, 0));
   await page.screenshot({
     path: 'test-results/mager-guided-desktop.png',
@@ -499,7 +506,10 @@ test('hidden tabs and timer stalls pause rather than running through missed beat
     page.getByRole('heading', { name: 'Practice paused' }),
   ).toBeVisible();
   await page.clock.runFor(5000);
-  await expect(page.locator('.run-stats').getByText('0 / 36')).toBeVisible();
+  await expect(page.locator('.training-panel')).toHaveAttribute(
+    'data-tick',
+    '0',
+  );
   await page.evaluate(() =>
     Object.defineProperty(document, 'hidden', {
       configurable: true,
@@ -514,7 +524,10 @@ test('hidden tabs and timer stalls pause rather than running through missed beat
   await expect(
     page.getByRole('heading', { name: 'Practice paused' }),
   ).toBeVisible();
-  await expect(page.locator('.run-stats').getByText('0 / 36')).toBeVisible();
+  await expect(page.locator('.training-panel')).toHaveAttribute(
+    'data-tick',
+    '0',
+  );
 });
 
 test('course teaches decisions, retains knowledge, and has a working phase lab', async ({
@@ -834,9 +847,10 @@ test('guided results start a fresh challenge with one click', async ({
   ).toBeFocused();
   await expect(page.locator('.arena-overlay strong')).toHaveText('3');
   for (let i = 0; i < 3; i++) await page.clock.runFor(600);
-  await expect(
-    page.getByText('Preparing tick 1', { exact: true }),
-  ).toBeVisible();
+  await expect(page.locator('.training-panel')).toHaveAttribute(
+    'data-status',
+    'running',
+  );
   await expect(page.locator('.live-coach')).toContainText(
     'Prayer hints are hidden',
   );
@@ -1038,7 +1052,7 @@ test('guided prayer preview shows upcoming beats, advances, pauses and hides in 
   await page.clock.runFor(600);
   await expect(preview.locator('[aria-current="step"]')).toHaveText('2Next');
   await page.getByRole('button', { name: 'Pause', exact: true }).click();
-  await page.clock.runFor(1800);
+  for (let beat = 0; beat < 3; beat++) await page.clock.runFor(600);
   await expect(preview.locator('[aria-current="step"]')).toHaveText('2Next');
   await lesson(page, 'One-tick prayer flick');
   await expect(
@@ -1172,7 +1186,7 @@ test('triple Jad has three independently cued animated monsters', async ({
   await expect(
     page.locator('[data-enemy="jad-1"] .monster-sprite'),
   ).toHaveAttribute('data-animation', 'idle');
-  await page.clock.runFor(1800);
+  for (let beat = 0; beat < 3; beat++) await page.clock.runFor(600);
   await expect(page.locator('[data-enemy="jad-0"]')).toHaveAttribute(
     'data-event',
     'attack',
@@ -1476,7 +1490,7 @@ test('prayer circles keep the previous highlight until the shared tick boundary'
   await page.getByRole('button', { name: 'Pause', exact: true }).click();
   const meter = page.locator('.panel-tick-clock i');
   const pausedMeter = await meter.getAttribute('style');
-  await page.clock.runFor(1800);
+  for (let beat = 0; beat < 3; beat++) await page.clock.runFor(600);
   await expect(meter).toHaveAttribute('style', pausedMeter!);
   await expect(ranged).toHaveAttribute('data-lit', 'true');
   await expect(magic).toHaveAttribute('data-lit', 'true');
@@ -1594,7 +1608,7 @@ test('overheads commit on ticks and incoming attacks retain their resolved hitsp
   // The missed tick-5 attack stays red even if corrected during its flight.
   await page.clock.runFor(1100);
   await magic.click();
-  await page.clock.runFor(1800);
+  for (let beat = 0; beat < 3; beat++) await page.clock.runFor(600);
   const missed = page.locator('[data-hit="5-mager"] .player-hitsplat');
   await expect(missed).toBeVisible();
   await expect(missed).toHaveClass(/damage/);
@@ -1689,7 +1703,7 @@ test('mobile run keeps pause, enemy cues and prayer clicks in the viewport', asy
     page.getByRole('heading', { name: 'Practice paused' }),
   ).toBeVisible();
   const tick = await page.locator('.run-stats').textContent();
-  await page.clock.runFor(1800);
+  for (let beat = 0; beat < 3; beat++) await page.clock.runFor(600);
   await expect(page.locator('.run-stats')).toHaveText(tick!);
 });
 
@@ -1794,7 +1808,7 @@ test('supplies play accepted sounds, change dose sprites, leave vials and obey m
   );
   expect(await starts()).toHaveLength(1);
   await page.getByRole('button', { name: 'Pause', exact: true }).click();
-  await page.clock.runFor(1800);
+  for (let beat = 0; beat < 3; beat++) await page.clock.runFor(600);
   expect(await starts()).toHaveLength(1);
   await page.getByRole('button', { name: 'Resume', exact: true }).click();
   await page.clock.runFor(600);
@@ -1924,9 +1938,10 @@ for (const width of [1440, 390]) {
       ).toBeFocused();
       for (let tick = 0; tick < 3; tick++) await page.clock.runFor(600);
       expect(await positions()).toEqual(before);
-      await expect(
-        page.getByText('Preparing tick 1', { exact: true }),
-      ).toBeVisible();
+      await expect(page.locator('.training-panel')).toHaveAttribute(
+        'data-status',
+        'running',
+      );
     });
   }
 }
@@ -2262,7 +2277,10 @@ test('idle alternating can follow only visible circles with sustained overlap', 
     if (current.lit.every(Boolean) && current !== overlaps[0])
       expect(trace[i + 1].time - current.time).toBeGreaterThan(400);
   }
-  await expect(page.locator('.run-stats')).toContainText('0 / 36');
+  await expect(page.locator('.training-panel')).toHaveAttribute(
+    'data-tick',
+    '0',
+  );
 });
 
 test('mobile alternating accepts overlapping fingers for a complete challenge', async ({
@@ -2323,7 +2341,8 @@ test('mobile alternating accepts overlapping fingers for a complete challenge', 
       touchPoints: [],
     });
     await expect(page.locator('.result-score')).toHaveText('100%');
-    await expect(page.locator('.tick-meter')).toHaveCount(1);
+    await expect(page.locator('.tick-meter')).toHaveCount(0);
+    await expect(page.locator('.compact-cycle-tick')).toHaveCount(1);
   } finally {
     await context.close();
   }
@@ -2399,7 +2418,7 @@ for (const width of [1440, 390]) {
       await open(page);
       await lesson(page, 'Flick the mager');
       await start(page, mode === 'challenge');
-      await page.clock.runFor(35 * 600);
+      for (let tick = 0; tick < 35; tick++) await page.clock.runFor(600);
       await page
         .locator('.game-side-panel')
         .evaluate((el) => el.scrollIntoView({ block: 'center' }));
@@ -2434,12 +2453,16 @@ for (const width of [1440, 390]) {
           exact: true,
         }),
       ).toHaveAttribute('aria-pressed', 'true');
-      await expect(page.locator('.run-stats')).toContainText('0 / 36');
+      await expect(page.locator('.training-panel')).toHaveAttribute(
+        'data-tick',
+        '0',
+      );
       await expect(page.locator('.arena-overlay strong')).toHaveText('3');
-      await page.clock.runFor(1800);
-      await expect(
-        page.getByText('Preparing tick 1', { exact: true }),
-      ).toBeVisible();
+      for (let beat = 0; beat < 3; beat++) await page.clock.runFor(600);
+      await expect(page.locator('.training-panel')).toHaveAttribute(
+        'data-status',
+        'running',
+      );
       expect(await positions()).toEqual(before);
     });
   }
@@ -2477,7 +2500,9 @@ for (const scenario of [
       '8 of 9 points to pass',
     );
     await start(page);
-    const points = page.locator('.run-stats > div').nth(1);
+    const points = page
+      .locator('.run-stats > div')
+      .filter({ has: page.getByText('POINTS', { exact: true }) });
     for (let tick = 1; tick <= 36; tick++) {
       const name =
         tick % 4 === 1 ||
@@ -2548,11 +2573,14 @@ test('a failed movement challenge can finish as practice without restarting or a
   ).toHaveCount(0);
   await start(page);
   const rounds = page.getByRole('region', { name: 'Challenge rounds' });
-  await page.clock.runFor(8 * 600);
+  for (let beat = 0; beat < 8; beat++) await page.clock.runFor(600);
   await expect(rounds.locator('[data-result="missed"]')).toHaveCount(2);
   await expect(rounds).toContainText('This run can no longer pass');
   await rounds.getByRole('button', { name: 'Finish as practice' }).click();
-  await expect(page.locator('.run-stats')).toContainText('8 / 36');
+  await expect(page.locator('.training-panel')).toHaveAttribute(
+    'data-tick',
+    '8',
+  );
   await expect(rounds).toContainText('Practice · 0/9');
   await expect(
     rounds.getByRole('button', { name: 'Finish as practice' }),
@@ -2611,7 +2639,7 @@ test('mobile challenge offers a nearby fresh retry after two misses without scro
         .top,
     }));
   const before = await positions();
-  await page.clock.runFor(8 * 600);
+  for (let beat = 0; beat < 8; beat++) await page.clock.runFor(600);
   expect(await positions()).toEqual(before);
   const rounds = page.getByRole('region', { name: 'Challenge rounds' });
   const retry = rounds.getByRole('button', { name: 'Retry challenge' });
