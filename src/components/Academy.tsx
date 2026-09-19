@@ -58,8 +58,6 @@ import {
 
 function Icon({ name, size = 20 }: { name: string; size?: number }) {
   const paths: Record<string, string> = {
-    flame:
-      'M13 2c2 6-4 6-2 10 2-1 3-3 3-5 7 7 4 13-2 13S3 14 7 8c0 4 2 3 3 2 2-3 1-5 3-8Z',
     grid: 'M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z',
     book: 'M3 4h6c2 0 3 1 3 2 0-1 1-2 3-2h6v15h-6c-2 0-3 1-3 2 0-1-1-2-3-2H3zM12 6v15',
     play: 'm8 4 12 8-12 8z',
@@ -242,12 +240,18 @@ export default function Academy() {
       </a>
       <aside className="sidebar">
         <button className="brand" onClick={() => navigate('overview')}>
-          <span className="brand-mark">
-            <Icon name="flame" size={27} />
-          </span>
-          <span>
-            inferno<span className="muted">.tips</span>
-            <small>OSRS INFERNO GUIDE</small>
+          <img
+            className="brand-mark"
+            src="/brand-mark.svg"
+            width="44"
+            height="44"
+            alt=""
+          />
+          <span className="brand-wordmark">
+            <span className="brand-name">
+              inferno<span>.tips</span>
+            </span>
+            <small>OSRS guides &amp; practice</small>
           </span>
           <span className="sr-only">Home</span>
         </button>
@@ -504,7 +508,7 @@ export default function Academy() {
           )}
           <footer>
             <span className="footer-brand">
-              <Icon name="flame" size={18} />
+              <img src="/brand-mark.svg" width="22" height="22" alt="" />
               inferno.tips
             </span>
             <p>

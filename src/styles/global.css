@@ -96,30 +96,43 @@ svg {
 .brand {
   display: flex;
   align-items: center;
-  gap: 11px;
+  gap: 9px;
   border: 0;
   background: none;
   text-align: left;
-  padding: 0 7px;
-  font-family: var(--heading);
-  font-size: 23px;
-  letter-spacing: -1px;
-  font-weight: 800;
+  padding: 0 2px;
 }
 .brand-mark {
-  background: var(--orange);
-  color: #282219;
-  width: 38px;
-  height: 42px;
-  display: grid;
-  place-items: center;
-  border-radius: 11px;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
+}
+.brand-wordmark {
+  white-space: nowrap;
+}
+.brand-name {
+  display: block;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: #eee0c7;
+  line-height: 1.1;
+}
+.brand-name > span {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 450;
+  letter-spacing: -0.4px;
+  text-transform: none;
+  color: #bba58c;
 }
 .brand small {
   display: block;
   font-family: 'DM Sans', sans-serif;
-  letter-spacing: 1.45px;
-  font-size: 8px;
+  letter-spacing: 0.4px;
+  font-size: 9px;
   font-weight: 500;
   color: #b1b3a9;
   margin-top: 5px;
@@ -629,9 +642,6 @@ footer {
   gap: 7px;
   font-size: 11px;
   color: #b9c0ae;
-}
-.footer-brand svg {
-  color: #9d9e80;
 }
 .footer-brand > span {
   font-size: 9px;
@@ -1229,15 +1239,20 @@ kbd {
     padding: 25px 10px;
   }
   .brand {
-    font-size: 20px;
-    gap: 8px;
+    gap: 6px;
+  }
+  .brand-name {
+    font-size: 18px;
+  }
+  .brand-name > span {
+    font-size: 12px;
   }
   .brand-mark {
     width: 32px;
-    height: 36px;
+    height: 32px;
   }
   .brand small {
-    font-size: 6px;
+    font-size: 8px;
   }
   .nav-item {
     font-size: 11px;
@@ -1354,10 +1369,20 @@ kbd {
     display: block;
   }
   .brand {
-    font-size: 22px;
+    gap: 8px;
+  }
+  .brand-mark {
+    width: 38px;
+    height: 38px;
+  }
+  .brand-name {
+    font-size: 21px;
+  }
+  .brand-name > span {
+    font-size: 14px;
   }
   .brand small {
-    font-size: 7px;
+    font-size: 9px;
   }
   .sidebar nav {
     display: flex;
