@@ -1,3 +1,4 @@
+import { DeathOverlay } from './DeathOverlay';
 import {
   newSeries,
   updateSeries,
@@ -1060,17 +1061,29 @@ function SeriesTrainer({
       </div>
     );
   return (
-    <Trainer
-      key={`${attempt}-${run.stage}`}
-      settings={settings}
-      lesson={lesson}
-      progress={undefined}
-      exitLabel="Back to practice drills"
-      onExit={onExit}
-      onComplete={() => {}}
-      onNext={() => {}}
-      session={{ run, panel, dispatch, restart }}
-    />
+    <>
+      <Trainer
+        key={`${attempt}-${run.stage}`}
+        settings={settings}
+        lesson={lesson}
+        progress={undefined}
+        exitLabel="Back to practice drills"
+        onExit={onExit}
+        onComplete={() => {}}
+        onNext={() => {}}
+        session={{ run, panel, dispatch, restart }}
+      />
+      {run.ended && run.lives === 0 && (
+        <DeathOverlay
+          run={run}
+          best={best[mode]}
+          encounter={lesson.title}
+          storageError={storageError}
+          onRetry={restart}
+          onExit={onExit}
+        />
+      )}
+    </>
   );
 }
 

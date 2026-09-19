@@ -28,7 +28,7 @@ async function tick(page: Page, name: 'Magic' | 'Ranged' | 'off') {
   await page.clock.runFor(600);
 }
 
-test('hard circuit is discoverable, ends after three misses and retries beside the prayer book without scrolling', async ({
+test('hard circuit is discoverable, ends after three misses and retries from the death screen without scrolling', async ({
   page,
 }) => {
   await page.goto('/#drills');
@@ -43,9 +43,9 @@ test('hard circuit is discoverable, ends after three misses and retries beside t
   const score = page.getByLabel('Survival score');
   await expect(score).toContainText('0 / 3');
   await expect(score).toContainText('Run complete');
-  const retry = score.getByRole('button', { name: 'Retry run' });
-  await retry.evaluate((el) => el.scrollIntoView({ block: 'center' }));
-  await page.clock.runFor(30);
+  const death = page.getByRole('dialog', { name: 'YOU DIED' });
+  await expect(death).toBeVisible();
+  const retry = death.getByRole('button', { name: 'Retry run' });
   const top = await page.evaluate(() => scrollY);
   await page.clock.runFor(1200);
   await expect(score).toContainText('0 / 3');
@@ -68,6 +68,7 @@ test('hard stage advances automatically, carries points and lives, and banks a s
   await expect(page.getByLabel('Survival score')).toContainText('3 / 3');
   await expect(page.locator('.arena-overlay')).toContainText('3');
   await page.getByRole('button', { name: 'Finish run', exact: true }).click();
+  await expect(page.getByRole('dialog', { name: 'YOU DIED' })).toHaveCount(0);
   await expect(page.getByLabel('Survival score')).toContainText(
     'Personal best in this browser',
   );
@@ -102,6 +103,7 @@ test('endless starts with complete mager cycles and escalates to a two-enemy sta
   await tick(page, 'Ranged');
   await expect(page.getByLabel('Survival score')).toContainText('130');
   await page.getByRole('button', { name: 'Finish run', exact: true }).click();
+  await expect(page.getByRole('dialog', { name: 'YOU DIED' })).toHaveCount(0);
   expect(
     await page.evaluate((k) => JSON.parse(localStorage.getItem(k)!), key),
   ).toEqual({ endless: { points: 130, stage: 2, cleared: false } });
@@ -118,6 +120,7 @@ test('paused circuit can continue as practice but does not replace a high score'
     .getByRole('button', { name: 'Resume practice', exact: true })
     .click();
   await page.getByRole('button', { name: 'Finish run', exact: true }).click();
+  await expect(page.getByRole('dialog', { name: 'YOU DIED' })).toHaveCount(0);
   await expect(page.getByLabel('Survival score')).toContainText('20 points');
   expect(await page.evaluate((k) => localStorage.getItem(k), key)).toBeNull();
 });
@@ -151,6 +154,7 @@ test('a complete hard circuit reaches triple Jad and finishes without awarding i
   }
   const score = page.getByLabel('Survival score');
   await expect(score).toContainText('Circuit cleared!');
+  await expect(page.getByRole('dialog', { name: 'YOU DIED' })).toHaveCount(0);
   await expect(score).toContainText('3 / 3');
   await expect(score).toContainText('3510');
   expect(
@@ -173,6 +177,7 @@ test('mobile survival controls fit and finishing or retrying keeps the prayer pa
     .scrollIntoViewIfNeeded();
   const finishTop = await page.evaluate(() => scrollY);
   await page.getByRole('button', { name: 'Finish run', exact: true }).click();
+  await expect(page.getByRole('dialog', { name: 'YOU DIED' })).toHaveCount(0);
   expect(
     Math.abs((await page.evaluate(() => scrollY)) - finishTop),
   ).toBeLessThan(4);
@@ -233,5 +238,113 @@ test('progress retains earlier scoring for reference and reset also clears circu
   await page
     .getByRole('button', { name: 'Delete progress', exact: true })
     .click();
+  expect(await page.evaluate((k) => localStorage.getItem(k), key)).toBeNull();
+});
+
+for (const width of [1440, 390]) {
+  test(`death covers the viewport at ${width}px with stats, keyboard containment and a stable retry`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 844 });
+    await page.emulateMedia({
+      reducedMotion: width === 390 ? 'reduce' : 'no-preference',
+    });
+    await open(page, 'hard');
+    await tick(page, 'Magic');
+    await prayer(page, 'off');
+    for (let i = 0; i < 4; i++) await page.clock.runFor(600);
+    await page
+      .locator('.native-panel.prayers')
+      .evaluate((el) => el.scrollIntoView({ block: 'start' }));
+    const top = await page.evaluate(() => scrollY);
+    const bookTop = await page
+      .locator('.native-panel.prayers')
+      .evaluate((el) => el.getBoundingClientRect().top);
+    for (let i = 0; i < 2; i++) await page.clock.runFor(600);
+    const death = page.getByRole('dialog', { name: 'YOU DIED' });
+    await expect(death).toBeVisible();
+    await expect(
+      death.getByRole('heading', { name: 'YOU DIED' }),
+    ).toBeFocused();
+    await expect(death.locator('.death-stats')).toContainText('Score20');
+    await expect(death.locator('.death-stats')).toContainText('Stage reached1');
+    await expect(death.locator('.death-stats')).toContainText(
+      'Personal best20',
+    );
+    await expect(death).toContainText('Personal best · saved in this browser');
+    const rect = await death.boundingBox();
+    expect(rect!.y).toBe(0);
+    expect(rect!.height).toBe(844);
+    expect(Math.abs((await page.evaluate(() => scrollY)) - top)).toBeLessThan(
+      4,
+    );
+    await expect(
+      death.getByRole('button', { name: 'Retry run' }),
+    ).toBeDisabled();
+    await page.clock.runFor(1000);
+    await page.keyboard.press('Escape');
+    await expect(death).toBeVisible();
+    await page.keyboard.press('Tab');
+    await expect(
+      death.getByRole('button', { name: 'Retry run' }),
+    ).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(
+      death.getByRole('button', { name: 'Back to drills' }),
+    ).toBeFocused();
+    await page.keyboard.press('Tab');
+    expect(
+      await death.evaluate((el) => el.contains(document.activeElement)),
+    ).toBe(true);
+    if (width === 390)
+      await expect(death.locator('h2')).toHaveCSS('animation-name', 'none');
+    await death.getByRole('button', { name: 'Retry run' }).click();
+    await expect(death).toHaveCount(0);
+    await expect(page.getByLabel('Survival score')).toContainText('3 / 3');
+    await expect(page.locator('.arena-overlay')).toContainText('3');
+    expect(Math.abs((await page.evaluate(() => scrollY)) - top)).toBeLessThan(
+      4,
+    );
+    expect(
+      Math.abs(
+        (await page
+          .locator('.native-panel.prayers')
+          .evaluate((el) => el.getBoundingClientRect().top)) - bookTop,
+      ),
+    ).toBeLessThan(4);
+    expect(
+      await page.evaluate(() => document.documentElement.style.overflow),
+    ).toBe('');
+    // Die again and leave through the modal, including cleanup of scroll locking.
+    for (let i = 0; i < 8; i++) await page.clock.runFor(600);
+    await page.clock.runFor(1000);
+    await page
+      .getByRole('dialog', { name: 'YOU DIED' })
+      .getByRole('button', { name: 'Back to drills' })
+      .click();
+    await expect(
+      page.getByRole('heading', { name: 'Practice drills', exact: true }),
+    ).toBeVisible();
+    expect(
+      await page.evaluate(() => document.documentElement.style.overflow),
+    ).toBe('');
+  });
+}
+
+test('death after a pause identifies the practice score without recording a personal best', async ({
+  page,
+}) => {
+  await open(page, 'hard');
+  await tick(page, 'Magic');
+  await page.getByRole('button', { name: 'Pause', exact: true }).click();
+  await page
+    .getByRole('button', { name: 'Resume practice', exact: true })
+    .click();
+  await prayer(page, 'off');
+  for (let i = 0; i < 6; i++) await page.clock.runFor(600);
+  const death = page.getByRole('dialog', { name: 'YOU DIED' });
+  await expect(death).toContainText('Practice run · score not recorded');
+  await expect(death.locator('.death-stats')).toContainText('Score20');
+  await expect(death.locator('.death-stats')).toContainText('Personal best—');
   expect(await page.evaluate((k) => localStorage.getItem(k), key)).toBeNull();
 });
