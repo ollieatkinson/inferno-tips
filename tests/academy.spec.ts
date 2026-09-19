@@ -1943,59 +1943,94 @@ for (const timing of ['fixed rhythm', 'clearing circles'] as const) {
         document.querySelector<HTMLButtonElement>(
           `.prayer-button[aria-label="${name}"]`,
         )!;
-      return new Promise<number>((resolve, reject) => {
-        let first = 0,
-          lastTick = 0,
-          switches = 0;
-        let fixedTimer: number | undefined;
-        const guard = window.setTimeout(() => {
-          observer.disconnect();
-          window.clearInterval(fixedTimer);
-          reject(new Error('Alternating run did not finish on time'));
-        }, 28000);
-        const observer = new MutationObserver(() => {
-          const tick = Number(stats.textContent?.match(/^TICK(\d+)/)?.[1]);
-          if (!tick || tick === lastTick) return;
-          lastTick = tick;
-          if (tick === 1) first = performance.now();
-          if (tick === 36) {
+      return new Promise<{ elapsed: number; clears: number[] }>(
+        (resolve, reject) => {
+          let first = 0,
+            lastTick = 0,
+            switches = 0;
+          let fixedTimer: number | undefined;
+          let responseTimer: number | undefined;
+          const clears: number[] = [];
+          let previous = ['false', 'false'];
+          const circles = new MutationObserver(() => {
+            const buttons = ['Magic', 'Ranged'].map(button);
+            const lit = buttons.map((b) => b.dataset.lit);
+            const cleared = lit.findIndex(
+              (value, i) => value === 'false' && previous[i] === 'true',
+            );
+            previous = lit as string[];
+            if (cleared < 0) return;
+            clears.push(performance.now());
+            // React to the actual circle disappearing. The tick counter must
+            // not drive any switches after the initial mager anchor.
+            responseTimer = window.setTimeout(() => {
+              buttons[cleared].click();
+            }, 100);
+          });
+          if (timing === 'clearing circles')
+            ['Magic', 'Ranged'].map(button).forEach((b) =>
+              circles.observe(b, {
+                attributes: true,
+                attributeFilter: ['data-lit'],
+              }),
+            );
+          const guard = window.setTimeout(() => {
             observer.disconnect();
+            circles.disconnect();
             window.clearInterval(fixedTimer);
-            window.clearTimeout(guard);
-            resolve(performance.now() - first);
-            return;
-          }
-          if (timing === 'fixed rhythm' && tick === 1) {
-            window.setTimeout(() => {
-              button('Ranged').click();
-              fixedTimer = window.setInterval(
-                () => button(++switches % 2 ? 'Magic' : 'Ranged').click(),
-                600,
-              );
-            }, 60);
-          } else if (timing === 'clearing circles') {
-            window.setTimeout(() => {
-              const next = ['Magic', 'Ranged']
-                .map(button)
-                .find((b) => b.dataset.lit === 'false');
-              next?.click();
-            }, 60);
-          }
-        });
-        observer.observe(stats, {
-          subtree: true,
-          childList: true,
-          characterData: true,
-        });
-        [...document.querySelectorAll('button')]
-          .find((b) => b.textContent?.trim() === 'Start guided practice')!
-          .click();
-        // Prepare the first prayer during count-in; start switching after tick 1.
-        window.setTimeout(() => button('Magic').click(), 50);
-      });
+            window.clearTimeout(responseTimer);
+            reject(new Error('Alternating run did not finish on time'));
+          }, 28000);
+          const observer = new MutationObserver(() => {
+            const tick = Number(stats.textContent?.match(/^TICK(\d+)/)?.[1]);
+            if (!tick || tick === lastTick) return;
+            lastTick = tick;
+            if (tick === 1) first = performance.now();
+            if (tick === 36) {
+              observer.disconnect();
+              circles.disconnect();
+              window.clearInterval(fixedTimer);
+              window.clearTimeout(responseTimer);
+              window.clearTimeout(guard);
+              resolve({ elapsed: performance.now() - first, clears });
+              return;
+            }
+            if (timing === 'fixed rhythm' && tick === 1) {
+              window.setTimeout(() => {
+                button('Ranged').click();
+                fixedTimer = window.setInterval(
+                  () => button(++switches % 2 ? 'Magic' : 'Ranged').click(),
+                  600,
+                );
+              }, 60);
+            } else if (timing === 'clearing circles' && tick === 1) {
+              window.setTimeout(() => {
+                button('Ranged').click();
+              }, 100);
+            }
+          });
+          observer.observe(stats, {
+            subtree: true,
+            childList: true,
+            characterData: true,
+          });
+          [...document.querySelectorAll('button')]
+            .find((b) => b.textContent?.trim() === 'Start guided practice')!
+            .click();
+          // Prepare the first prayer during count-in; start switching after tick 1.
+          window.setTimeout(() => button('Magic').click(), 50);
+        },
+      );
     }, timing);
     await expect(page.locator('.result-score')).toHaveText('100%');
-    expect(Math.abs(elapsed - 35 * 600)).toBeLessThan(100);
+    expect(Math.abs(elapsed.elapsed - 35 * 600)).toBeLessThan(100);
+    if (timing === 'clearing circles') {
+      expect(elapsed.clears.length).toBeGreaterThanOrEqual(33);
+      for (let i = 1; i < elapsed.clears.length; i++)
+        expect(
+          Math.abs(elapsed.clears[i] - elapsed.clears[i - 1] - 600),
+        ).toBeLessThan(100);
+    }
   });
 }
 
@@ -2089,4 +2124,82 @@ test('touch prayer presses apply before touch release without a second toggle', 
   } finally {
     await context.close();
   }
+});
+
+test('idle alternating can follow only visible circles with sustained overlap', async ({
+  page,
+}) => {
+  await open(page);
+  await lesson(page, 'One-tick alternating');
+  const trace = await page.evaluate(async () => {
+    const buttons = ['Magic', 'Ranged'].map((name) =>
+      document.querySelector<HTMLButtonElement>(
+        `.prayer-button[aria-label="${name}"]`,
+      )!,
+    );
+    const wait = (ms: number) =>
+      new Promise((resolve) => setTimeout(resolve, ms));
+    const press = (index: number) => {
+      const button = buttons[index];
+      button.dispatchEvent(
+        new PointerEvent('pointerdown', {
+          button: 0,
+          isPrimary: true,
+          bubbles: true,
+        }),
+      );
+      button.dispatchEvent(
+        new PointerEvent('pointerup', {
+          button: 0,
+          isPrimary: true,
+          bubbles: true,
+        }),
+      );
+      button.dispatchEvent(
+        new MouseEvent('click', { button: 0, detail: 1, bubbles: true }),
+      );
+    };
+    const states: { time: number; lit: boolean[] }[] = [];
+    let previous = [false, false];
+    let responseTimer: number | undefined;
+    const observer = new MutationObserver(() => {
+      // Check the rendered glow, not a score, counter or expected-prayer hint.
+      const lit = buttons.map(
+        (button) =>
+          getComputedStyle(button, '::before').visibility === 'visible',
+      );
+      states.push({ time: performance.now(), lit });
+      const cleared = lit.findIndex((value, i) => !value && previous[i]);
+      previous = lit;
+      if (cleared >= 0)
+        responseTimer = window.setTimeout(() => press(cleared), 100);
+    });
+    buttons.forEach((button) =>
+      observer.observe(button, {
+        attributes: true,
+        attributeFilter: ['data-lit'],
+      }),
+    );
+    try {
+      press(0);
+      await wait(650);
+      press(1);
+      await wait(4200);
+      return states;
+    } finally {
+      observer.disconnect();
+      window.clearTimeout(responseTimer);
+    }
+  });
+  const overlaps = trace.filter((state) => state.lit.every(Boolean));
+  expect(overlaps.length).toBeGreaterThanOrEqual(6);
+  expect(trace.every((state) => state.lit.some(Boolean))).toBe(true);
+  // Once established, a 100 ms response leaves both circles visible for
+  // approximately 500 ms, as in the reference video's alternating sequence.
+  for (let i = 1; i < trace.length - 1; i++) {
+    const current = trace[i];
+    if (current.lit.every(Boolean) && current !== overlaps[0])
+      expect(trace[i + 1].time - current.time).toBeGreaterThan(400);
+  }
+  await expect(page.locator('.run-stats')).toContainText('0 / 36');
 });
