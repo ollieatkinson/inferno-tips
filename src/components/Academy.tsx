@@ -1237,18 +1237,11 @@ function Trainer({
             <div className="training-actions">
               {status === 'ready' || status === 'done' ? (
                 <>
-                  <button
-                    className="button primary"
-                    onClick={
-                      status === 'done' && mode === 'guided'
-                        ? () => beginChallenge()
-                        : () => begin()
-                    }
-                  >
+                  <button className="button primary" onClick={() => begin()}>
                     <Icon name="play" size={15} />
                     {status === 'done'
                       ? mode === 'guided'
-                        ? 'Start challenge'
+                        ? 'Restart practice'
                         : 'Try challenge again'
                       : mode === 'guided'
                         ? 'Start guided practice'
@@ -1257,9 +1250,9 @@ function Trainer({
                   {status === 'done' && mode === 'guided' && (
                     <button
                       className="button secondary"
-                      onClick={() => begin()}
+                      onClick={() => beginChallenge()}
                     >
-                      Repeat guided practice
+                      Start challenge
                     </button>
                   )}
                 </>
@@ -1572,7 +1565,7 @@ function Trainer({
                         className="button secondary nearby-retry"
                         onClick={() => begin()}
                       >
-                        Retry
+                        {mode === 'guided' ? 'Restart practice' : 'Retry'}
                       </button>
                     ) : (
                       <span>GAME SPEED · 0.6s</span>
@@ -1652,6 +1645,7 @@ function Trainer({
                     : undefined
                 }
                 onRetry={status === 'done' ? () => begin() : undefined}
+                retryLabel={mode === 'guided' ? 'Restart practice' : 'Retry'}
                 score={score}
                 activePrayer={displayedOverhead}
                 tickDeadline={tickDeadlineRef}
@@ -1843,30 +1837,25 @@ function Trainer({
           </div>
           {mode === 'guided' && (
             <p className="challenge-next-step">
-              Next: try the challenge with{' '}
+              Restart practice with hints, or try the challenge with{' '}
               {lesson.id === 'blowpipe' ? 'step' : 'prayer'} hints hidden. Same
               drill, same timing. Reach {passTarget} without pausing to earn a
               challenge pass.
             </p>
           )}
           <div className="result-actions">
+            <button className="button primary" onClick={() => begin(true)}>
+              {mode === 'guided' ? 'Restart practice' : 'Try challenge again'}
+              <Icon name="reset" size={16} />
+            </button>
             {mode === 'guided' && (
               <button
-                className="button primary"
+                className="button secondary"
                 onClick={() => beginChallenge(true)}
               >
                 Start challenge <Icon name="arrow" size={16} />
               </button>
             )}
-            <button
-              className={`button ${mode === 'guided' ? 'secondary' : 'primary'}`}
-              onClick={() => begin(true)}
-            >
-              {mode === 'guided'
-                ? 'Repeat guided practice'
-                : 'Try challenge again'}
-              <Icon name="reset" size={16} />
-            </button>
             <button className="text-button" onClick={onNext}>
               Next drill <Icon name="arrow" size={16} />
             </button>

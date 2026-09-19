@@ -74,6 +74,7 @@ export function GamePanels({
   prayerInstruction,
   activePrayer,
   onRetry,
+  retryLabel = 'Retry',
   score,
   tickDeadline,
   paused,
@@ -92,6 +93,7 @@ export function GamePanels({
   prayerInstruction?: string;
   activePrayer: Prayer;
   onRetry?: () => void;
+  retryLabel?: string;
   score: number;
   tickDeadline: RefObject<number | null>;
   paused: boolean;
@@ -285,7 +287,7 @@ export function GamePanels({
           </span>
           {onRetry && (
             <button className="button secondary nearby-retry" onClick={onRetry}>
-              Retry
+              {retryLabel}
             </button>
           )}
         </div>

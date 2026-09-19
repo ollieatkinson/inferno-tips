@@ -771,13 +771,25 @@ test('guided results start a fresh challenge with one click', async ({
     results.getByRole('heading', { name: 'Guided practice complete' }),
   ).toBeVisible();
   await expect(results).toContainText('Same drill, same timing');
+  await expect(results.locator('.result-actions .button').first()).toHaveText(
+    'Restart practice',
+  );
+  await expect(
+    results.getByRole('button', { name: 'Restart practice', exact: true }),
+  ).toHaveClass(/primary/);
+  await expect(
+    results.getByRole('button', { name: 'Start challenge', exact: true }),
+  ).toHaveClass(/secondary/);
+  await expect(page.locator('.training-actions .button').first()).toHaveText(
+    'Restart practice',
+  );
   // Reviewing the detailed results is an explicit scroll; finishing stays at the controls.
   await results.scrollIntoViewIfNeeded();
   await expect(
     results.getByRole('button', { name: 'Start challenge', exact: true }),
   ).toBeInViewport();
   await expect(
-    results.getByRole('button', { name: 'Repeat guided practice' }),
+    results.getByRole('button', { name: 'Restart practice', exact: true }),
   ).toBeVisible();
   await results
     .getByRole('button', { name: 'Start challenge', exact: true })
@@ -2383,7 +2395,12 @@ for (const width of [1440, 390]) {
         page.getByRole('region', { name: 'Run results' }),
       ).toBeVisible();
       expect(await positions()).toEqual(before);
-      const retry = page.getByRole('button', { name: 'Retry', exact: true });
+      const retry = page
+        .getByRole('complementary', { name: 'Player controls' })
+        .getByRole('button', {
+          name: mode === 'guided' ? 'Restart practice' : 'Retry',
+          exact: true,
+        });
       await expect(retry).toBeInViewport();
       await retry.click();
       expect(await positions()).toEqual(before);
