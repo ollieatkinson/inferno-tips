@@ -399,6 +399,32 @@ export function accuracy(checks: Check[]) {
     ? Math.round((scored.filter((c) => c.correct).length / scored.length) * 100)
     : 0;
 }
+export function alternatingOutOfPhase(checks: Check[]) {
+  // The first prayer check on each tick is the pattern; subsequent ones
+  // may describe a blob attack on the same tick.
+  const pattern = checks.filter(
+    (c, i) => c.kind === 'prayer' && (i === 0 || checks[i - 1].tick !== c.tick),
+  );
+  const swapped = pattern.filter(
+    (c) =>
+      (c.expected === 'magic' && c.actual === 'range') ||
+      (c.expected === 'range' && c.actual === 'magic'),
+  ).length;
+  const switches = pattern
+    .slice(1)
+    .filter(
+      (c, i) =>
+        ['magic', 'range'].includes(c.actual) &&
+        ['magic', 'range'].includes(pattern[i].actual) &&
+        c.actual !== pattern[i].actual,
+    ).length;
+  return (
+    pattern.length >= 4 &&
+    swapped > pattern.length / 2 &&
+    switches >= (pattern.length - 1) * 0.8
+  );
+}
+
 export function coaching(checks: Check[], id?: LessonId) {
   const missed = checks.filter((c) => !c.correct && c.kind !== 'round');
   if (id === 'movement' && missed.length) {
@@ -406,33 +432,8 @@ export function coaching(checks: Check[], id?: LessonId) {
       ? 'Your next focus: movement. Each point needs the marked tile reached by the fourth tick, with both attacks protected.'
       : 'Your tiles are on time. Protect Magic on tick 1 and Ranged on tick 3 as well to earn the round’s point.';
   }
-  if (id === 'alternate') {
-    // Each tick's first check is the prescribed pattern; later checks can
-    // describe the blob. Do not count those twice when assessing the rhythm.
-    const pattern = checks.filter(
-      (c, i) =>
-        c.kind === 'prayer' && (i === 0 || checks[i - 1].tick !== c.tick),
-    );
-    const swapped = pattern.filter(
-      (c) =>
-        (c.expected === 'magic' && c.actual === 'range') ||
-        (c.expected === 'range' && c.actual === 'magic'),
-    ).length;
-    const switches = pattern
-      .slice(1)
-      .filter(
-        (c, i) =>
-          ['magic', 'range'].includes(c.actual) &&
-          ['magic', 'range'].includes(pattern[i].actual) &&
-          c.actual !== pattern[i].actual,
-      ).length;
-    if (
-      pattern.length >= 4 &&
-      swapped > pattern.length / 2 &&
-      switches >= (pattern.length - 1) * 0.8
-    )
-      return 'Your prayers alternated, but the cycle was mostly one tick out of phase. Start on Magic and hold it through the first mager attack (tick 1), then switch to Ranged. After that, click the prayer whose circle just cleared.';
-  }
+  if (id === 'alternate' && alternatingOutOfPhase(checks))
+    return 'Your prayers alternated, but the cycle was mostly one tick out of phase. Start on Magic and hold it through the first mager attack (tick 1), then switch to Ranged. After that, click the prayer whose circle just cleared.';
   if (missed.some((c) => c.kind === 'flick'))
     return 'Your next focus: a single off–on pair between beats. The off–on pair and protection at the boundary are both required for a point.';
   if (missed.some((c) => c.kind === 'attack'))

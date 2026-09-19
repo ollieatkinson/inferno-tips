@@ -81,6 +81,7 @@ export function GamePanels({
   activePrayer,
   onRetry,
   retryLabel = 'Retry',
+  completionFeedback,
   children,
   score,
   tickDeadline,
@@ -102,6 +103,7 @@ export function GamePanels({
   activePrayer: Prayer;
   onRetry?: () => void;
   retryLabel?: string;
+  completionFeedback?: ReactNode;
   children?: ReactNode;
   score: number;
   tickDeadline: RefObject<number | null>;
@@ -326,6 +328,7 @@ export function GamePanels({
               : 'No supplies needed for this lesson.'}
         </p>
       </div>
+      {onRetry && completionFeedback}
     </aside>
   );
 }

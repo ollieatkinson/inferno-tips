@@ -1,4 +1,6 @@
 import { DeathOverlay } from './DeathOverlay';
+import { PracticeFeedback } from './RunFeedback';
+import { runFeedback } from '../lib/runFeedback';
 import {
   newSeries,
   updateSeries,
@@ -57,7 +59,6 @@ import {
   accuracy,
   scoredChecks,
   advance,
-  coaching,
   expectedPrayer,
   movementPeriod,
   isJad,
@@ -1172,6 +1173,8 @@ function Trainer({
   );
   const target = targetAt(nextTick, lesson.id);
   const score = accuracy(state.checks);
+  const feedback =
+    status === 'done' && !session ? runFeedback(state.checks, lesson.id) : null;
   const scoring = scoredChecks(state.checks);
   const roundPoints = scoring.filter((check) => check.correct).length;
   const prayerChecks = state.checks.filter((check) => check.kind === 'prayer');
@@ -1631,7 +1634,7 @@ function Trainer({
           </p>
           <p className="sr-only" role="status">
             {status === 'done'
-              ? `Run complete. ${score}% accuracy. Retry beside the controls, or review the results below.`
+              ? `Run complete. ${score}% accuracy. Retry and advice for your next attempt are beside the controls. Full results are below.`
               : ''}
           </p>
           <div
@@ -2012,6 +2015,9 @@ function Trainer({
                   {state.exposure}
                 </p>
               )}
+              {lesson.id === 'blowpipe' && feedback && (
+                <PracticeFeedback report={feedback} compact />
+              )}
               {mode === 'guided' && (
                 <PrayerPreview id={lesson.id} state={state} selected={prayer} />
               )}
@@ -2028,6 +2034,9 @@ function Trainer({
                   status === 'done' && !session ? () => begin() : undefined
                 }
                 retryLabel={mode === 'guided' ? 'Restart practice' : 'Retry'}
+                completionFeedback={
+                  feedback && <PracticeFeedback report={feedback} compact />
+                }
                 score={score}
                 activePrayer={displayedOverhead}
                 tickDeadline={tickDeadlineRef}
@@ -2101,13 +2110,17 @@ function Trainer({
               size={18}
             />
             <p>
-              {mode === 'guided'
-                ? hint
-                : lesson.id === 'blowpipe'
-                  ? recent?.message ||
-                    'Click the target, then run between shots.'
-                  : 'Prayer hints are hidden. Trust your rhythm.'}
-              {mode === 'guided' && recent && <small>{recent.message}</small>}
+              {status === 'done'
+                ? 'Run complete. Use the advice beside Retry to plan your next attempt.'
+                : mode === 'guided'
+                  ? hint
+                  : lesson.id === 'blowpipe'
+                    ? recent?.message ||
+                      'Click the target, then run between shots.'
+                    : 'Prayer hints are hidden. Trust your rhythm.'}
+              {status !== 'done' && mode === 'guided' && recent && (
+                <small>{recent.message}</small>
+              )}
             </p>
           </div>
           {soundError && (
@@ -2231,7 +2244,8 @@ function Trainer({
                       ? 'Challenge passed'
                       : 'Challenge complete'}
               </h2>
-              <p>{coaching(state.checks, lesson.id)}</p>
+              <p>{feedback?.summary}</p>
+              {goal && <p>{goal.rule}</p>}
             </div>
             <strong className="result-score">
               {score}
@@ -2285,6 +2299,7 @@ function Trainer({
                       : `${passTarget} earns a mastery pass`}
             </span>
           </div>
+          {feedback && <PracticeFeedback report={feedback} />}
           {state.exposures.length > 0 && (
             <div className="exposure-note">
               <strong>{state.exposures.length} attacks left unprotected</strong>

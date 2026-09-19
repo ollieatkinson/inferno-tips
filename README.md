@@ -38,6 +38,8 @@ Each field lesson has a decision question and timestamped source link. Knowledge
 
 Both modes use real 600 ms game ticks. Guided mode adds hints, a tick bar, a full tick counter and a six-tick prayer table above the controls. Challenges hide these and show one compact cycle digit beside the controls; movement drills count 1–4 to match the tile deadline. The table shows prayer icons, holds, off–on clicks, blob reads and supply/movement reminders. It advances with the run and uses actual pending blob reads. Jad drills teach cue reactions instead of a fixed cycle. Two uninterrupted challenges meeting the displayed pass target earn lesson mastery. All lessons remain open for practice. Completed runs show check-by-check feedback, accuracy, and best streak. Progress survives reloads and can be reset with confirmation.
 
+Completed individual drills also explain missed requirements: prayer off or wrong at a check, quiet ticks left active, uncontrolled blob reads, supplies, off–on pairs, movement and lost weapon ticks. The main correction appears beside Retry; the result review groups mistakes with counts, an example tick and a concrete next attempt. Counts exclude duplicate round failures and are not presented as lost points. Regular alternating on the wrong phase gets a specific starting-beat correction.
+
 Sequence drills award a point only when the whole mechanic is completed:
 
 | Drill                              | Pass target | A point requires                                                                 |

@@ -1103,6 +1103,63 @@ kbd {
   border-top: 1px solid #475038;
   padding: 15px 0;
 }
+.retry-feedback {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid #5b6246;
+  border-radius: 5px;
+  background: #242a1e;
+  font-size: 12px;
+  line-height: 1.6;
+  overflow-anchor: none;
+}
+.retry-feedback p {
+  margin: 0 0 8px;
+  color: #c4cdaf;
+}
+.retry-feedback p:last-child {
+  margin-bottom: 0;
+}
+.retry-feedback strong {
+  display: block;
+  color: #efc587;
+  margin-bottom: 5px;
+}
+.practice-feedback {
+  margin: 0 0 22px;
+}
+.practice-feedback > p {
+  font-size: 12px;
+  color: #c4cdaf;
+}
+.practice-feedback ul {
+  list-style: none;
+  padding: 0;
+  margin: 16px 0 0;
+}
+.practice-feedback li {
+  border-left: 2px solid var(--orange);
+  padding: 0 0 0 14px;
+  margin-top: 20px;
+}
+.practice-feedback h4 {
+  margin: 0 0 7px;
+  font-size: 14px;
+}
+.practice-feedback h4 span {
+  display: inline-block;
+  margin-left: 8px;
+  color: #efc587;
+  font-size: 12px;
+}
+.practice-feedback li p {
+  font-size: 13px;
+  line-height: 1.6;
+  margin: 7px 0;
+}
+.practice-feedback .feedback-example {
+  color: #c4cdaf;
+}
 .results summary {
   cursor: pointer;
   font-size: 12px;
