@@ -79,7 +79,7 @@ export const lessons: Lesson[] = [
     objective: 'Alternate Magic and Ranged on every tick, starting with Magic.',
     steps: [
       'Select Magic during the countdown and hold it through the first mager attack (tick 1). Then switch to Ranged for tick 2 and repeat. The countdown is not part of the alternating cycle.',
-      'Both prayer circles can briefly stay lit after a switch. When the old circle clears on the tick, switch back to it. Two circles do not mean two protections.',
+      'The old circle clears at the next tick. A switch just before that boundary gives only a short overlap. Click the cleared prayer just after each tick to keep the rhythm; the meter beside the prayer book shows that same clock.',
       'The three-tick gap between a blob’s read and attack means the opposite prayer is active at its attack check. The projectile lands later.',
       'Keep the rhythm steady. This drill scores every tick of the pattern, even when no attack occurs.',
     ],

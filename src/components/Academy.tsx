@@ -10,6 +10,7 @@ import { PrayerPreview } from './PrayerPreview';
 import { CombatEffects } from './CombatEffects';
 import { EnemyScene } from './EnemyScene';
 import { GamePanels } from './GamePanels';
+import { TickMeter } from './TickMeter';
 import { usePrayerSounds } from './usePrayerSounds';
 import { useSupplySounds } from './useSupplySounds';
 import {
@@ -849,7 +850,6 @@ function Trainer({
   );
   const prayerRef = useRef<Prayer>('off');
   const tickDeadlineRef = useRef<number | null>(null);
-  const tickBarRef = useRef<HTMLElement>(null);
   const tileRef = useRef(12);
   const audioRef = useRef<AudioContext | null>(null);
   const soundRef = useRef(sound);
@@ -1005,14 +1005,30 @@ function Trainer({
     [],
   );
   useEffect(() => {
-    if (lesson.id === 'blowpipe' || (status !== 'ready' && status !== 'done'))
+    if (status !== 'ready' && status !== 'done') return;
+    if (lesson.id === 'blowpipe') {
+      tickDeadlineRef.current = null;
       return;
-    // The prayer book still has a game clock before/after a run. This is only
-    // display reconciliation: no encounter ticks, scoring or metronome audio.
-    const timer = window.setInterval(() => {
+    }
+    // Keep the pre-start clock visible on the same deadline as the circles.
+    // It resolves prayer feedback without advancing the encounter or score.
+    let deadline = performance.now() + ms;
+    tickDeadlineRef.current = deadline;
+    let timer: number;
+    const tick = () => {
+      deadline += ms;
+      // After an idle-tab stall, resume with a full interval rather than
+      // playing a burst of old feedback ticks.
+      if (deadline <= performance.now()) deadline = performance.now() + ms;
+      tickDeadlineRef.current = deadline;
       commitPrayerFeedback(prayerRef.current);
-    }, ms);
-    return () => window.clearInterval(timer);
+      timer = window.setTimeout(
+        tick,
+        Math.max(0, deadline - performance.now()),
+      );
+    };
+    timer = window.setTimeout(tick, ms);
+    return () => window.clearTimeout(timer);
   }, [status, lesson.id, ms]);
   useEffect(() => {
     if (status !== 'countdown') return;
@@ -1036,13 +1052,6 @@ function Trainer({
     );
     return () => window.clearTimeout(timer);
   }, [status, countdown, ms]);
-  useLayoutEffect(() => {
-    if (status === 'running' && tickBarRef.current)
-      tickBarRef.current.style.animationDuration = `${Math.max(
-        1,
-        (tickDeadlineRef.current ?? performance.now() + ms) - performance.now(),
-      )}ms`;
-  }, [status, state.tick, ms]);
   useEffect(() => {
     if (status !== 'running') return;
     const deadline = tickDeadlineRef.current ?? performance.now() + ms;
@@ -1524,14 +1533,10 @@ function Trainer({
                   </span>
                   <span>GAME SPEED · 0.6s</span>
                 </div>
-                <div className="tick-meter">
-                  <i
-                    ref={tickBarRef}
-                    key={`${state.tick}-${status}`}
-                    className={status === 'running' ? 'ticking' : ''}
-                    style={{ animationDuration: `${ms}ms` }}
-                  />
-                </div>
+                <TickMeter
+                  deadline={tickDeadlineRef}
+                  paused={status === 'paused'}
+                />
                 {lesson.id !== 'blowpipe' && (
                   <div className="beat-dots">
                     {Array.from({ length: cycleLength }, (_, i) => (
@@ -1600,6 +1605,8 @@ function Trainer({
                     : undefined
                 }
                 activePrayer={displayedOverhead}
+                tickDeadline={tickDeadlineRef}
+                paused={status === 'paused'}
                 litPrayers={litPrayers}
                 panel={panel}
                 tabKeys={tabKeys}

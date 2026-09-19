@@ -843,18 +843,24 @@ footer a {
 }
 .tick-meter > i {
   height: 100%;
-  width: 0;
+  width: 100%;
   display: block;
   background: var(--orange);
   border-radius: 3px;
+  transform-origin: left;
 }
-.tick-meter > i.ticking {
-  animation: tick-fill linear forwards;
+.panel-tick-clock {
+  margin: 10px 2px 0;
 }
-@keyframes tick-fill {
-  to {
-    width: 100%;
-  }
+.panel-tick-clock > span {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  color: #bec5b2;
+  font-size: 10px;
+}
+.panel-tick-clock > span > span {
+  color: #8c977d;
 }
 .beat-dots {
   display: flex;
@@ -1647,9 +1653,6 @@ kbd {
   }
   .drill-card:hover {
     transform: none;
-  }
-  .tick-meter > i.ticking {
-    animation-timing-function: steps(4);
   }
 }
 @media (max-width: 650px) {

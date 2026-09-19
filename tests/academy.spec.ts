@@ -1353,12 +1353,22 @@ test('prayer book has a tick clock before starting without advancing the drill',
   const ranged = page.getByRole('button', { name: 'Ranged', exact: true });
   const status = page.locator('.game-panel-status');
   const stats = await page.locator('.run-stats').textContent();
+  const phase = () =>
+    page
+      .locator('.panel-tick-clock i')
+      .evaluate((bar) =>
+        Number(
+          (bar as HTMLElement).style.transform.match(/scaleX\(([^)]+)\)/)?.[1],
+        ),
+      );
   await magic.click();
   await expect(magic).toHaveAttribute('data-lit', 'true');
   await expect(status).toContainText('Active: None');
   await page.clock.runFor(600);
   await expect(status).toContainText('Active: Magic');
   await page.clock.runFor(100);
+  expect(await phase()).toBeGreaterThan(0.1);
+  expect(await phase()).toBeLessThan(0.2);
   await ranged.click();
   await expect(magic).toHaveAttribute('data-lit', 'true');
   await expect(ranged).toHaveAttribute('data-lit', 'true');
@@ -1370,12 +1380,16 @@ test('prayer book has a tick clock before starting without advancing the drill',
   await expect(status).toContainText('Active: Ranged');
   // A late click still uses the existing clock, not a new 600 ms timeout.
   await page.clock.runFor(550);
+  // This explains the brief overlap: the visible clock is already almost full.
+  expect(await phase()).toBeGreaterThan(0.88);
   await magic.click();
   await expect(ranged).toHaveAttribute('data-lit', 'true');
   await expect(magic).toHaveAttribute('data-lit', 'true');
   await page.clock.runFor(50);
   await expect(ranged).toHaveAttribute('data-lit', 'false');
   await expect(status).toContainText('Active: Magic');
+  await page.clock.runFor(16);
+  expect(await phase()).toBeLessThan(0.05);
   await expect(page.locator('.run-stats')).toHaveText(stats!);
   await page
     .getByRole('button', { name: 'Start guided practice', exact: true })
@@ -1425,11 +1439,22 @@ test('prayer circles keep the previous highlight until the shared tick boundary'
   await expect(ranged).toHaveAttribute('data-lit', 'true');
   await magic.click();
   await page.getByRole('button', { name: 'Pause', exact: true }).click();
+  const meter = page.locator('.panel-tick-clock i');
+  const pausedMeter = await meter.getAttribute('style');
   await page.clock.runFor(1800);
+  await expect(meter).toHaveAttribute('style', pausedMeter!);
   await expect(ranged).toHaveAttribute('data-lit', 'true');
   await expect(magic).toHaveAttribute('data-lit', 'true');
   await page.getByRole('button', { name: 'Resume', exact: true }).click();
-  await page.clock.runFor(600);
+  await page.clock.runFor(300);
+  const resumedPhase = await meter.evaluate((bar) =>
+    Number(
+      (bar as HTMLElement).style.transform.match(/scaleX\(([^)]+)\)/)?.[1],
+    ),
+  );
+  expect(resumedPhase).toBeGreaterThan(0.45);
+  expect(resumedPhase).toBeLessThanOrEqual(0.5);
+  await page.clock.runFor(300);
   await expect(ranged).toHaveAttribute('data-lit', 'false');
   await expect(magic).toHaveAttribute('data-lit', 'true');
   await page.getByRole('button', { name: 'End run', exact: true }).click();
@@ -1828,10 +1853,11 @@ for (const width of [1440, 390]) {
       page,
     }) => {
       await page.setViewportSize({ width, height: 1000 });
-      await page.clock.install();
+      const clockStart = new Date();
+      await page.clock.install({ time: clockStart });
+      await page.clock.pauseAt(new Date(clockStart.getTime() + 1000));
       await open(page);
       await lesson(page, 'Flick the mager');
-      await page.clock.pauseAt(new Date());
       if (mode === 'challenge')
         await page
           .getByRole('button', { name: 'Challenge', exact: true })

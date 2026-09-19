@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type RefObject } from 'react';
+import { TickMeter } from './TickMeter';
 import type { LessonId, Prayer } from '../lib/course';
 import { stock, type Supply } from '../lib/engine';
 import { tabKeyLabel, type Settings } from '../lib/settings';
@@ -72,6 +73,8 @@ export function GamePanels({
   id,
   prayerInstruction,
   activePrayer,
+  tickDeadline,
+  paused,
   litPrayers,
   panel,
   tabKeys,
@@ -86,6 +89,8 @@ export function GamePanels({
   id: LessonId;
   prayerInstruction?: string;
   activePrayer: Prayer;
+  tickDeadline: RefObject<number | null>;
+  paused: boolean;
   litPrayers: Prayer[];
   panel: 'prayers' | 'inventory';
   tabKeys: Settings['tabKeys'];
@@ -255,6 +260,12 @@ export function GamePanels({
             )}
           </div>
         )}
+      </div>
+      <div className="panel-tick-clock">
+        <span>
+          {paused ? 'Tick paused' : 'Next tick'} <span>0.6s cycle</span>
+        </span>
+        <TickMeter deadline={tickDeadline} paused={paused} />
       </div>
       <div className="game-panel-status">
         <span>Active: {prayerLabel(activePrayer)}</span>
