@@ -760,10 +760,10 @@ test('guided results start a fresh challenge with one click', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
+  await page.clock.install({ time: 0 });
+  await page.clock.pauseAt(1000);
   await open(page);
   await lesson(page, 'Flick the mager');
-  await page.clock.install();
-  await page.clock.pauseAt(new Date());
   await start(page, false);
   await perfectRun(page, 'rhythm');
   const results = page.getByRole('region', { name: 'Run results' });
@@ -771,6 +771,8 @@ test('guided results start a fresh challenge with one click', async ({
     results.getByRole('heading', { name: 'Guided practice complete' }),
   ).toBeVisible();
   await expect(results).toContainText('Same drill, same timing');
+  // Reviewing the detailed results is an explicit scroll; finishing stays at the controls.
+  await results.scrollIntoViewIfNeeded();
   await expect(
     results.getByRole('button', { name: 'Start challenge', exact: true }),
   ).toBeInViewport();
@@ -2352,3 +2354,55 @@ test('touch movement on a prayer stays on the control while the rest of the page
     await context.close();
   }
 });
+
+for (const width of [1440, 390]) {
+  for (const mode of ['guided', 'challenge'] as const) {
+    test(`finishing and retrying ${mode} at ${width}px stays beside the prayer controls`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width, height: 1000 });
+      await page.clock.install({ time: 0 });
+      await page.clock.pauseAt(1000);
+      await open(page);
+      await lesson(page, 'Flick the mager');
+      await start(page, mode === 'challenge');
+      await page.clock.runFor(35 * 600);
+      await page
+        .locator('.game-side-panel')
+        .evaluate((el) => el.scrollIntoView({ block: 'center' }));
+      const positions = () =>
+        page.evaluate(() => ({
+          scroll: scrollY,
+          controls: document
+            .querySelector('.native-panel')!
+            .getBoundingClientRect().top,
+        }));
+      const before = await positions();
+      await page.clock.runFor(600);
+      await expect(
+        page.getByRole('region', { name: 'Run results' }),
+      ).toBeVisible();
+      expect(await positions()).toEqual(before);
+      const retry = page.getByRole('button', { name: 'Retry', exact: true });
+      await expect(retry).toBeInViewport();
+      await retry.click();
+      expect(await positions()).toEqual(before);
+      await expect(
+        page.getByRole('region', { name: 'Run results' }),
+      ).toHaveCount(0);
+      await expect(
+        page.getByRole('button', {
+          name: mode === 'guided' ? 'Guided practice' : 'Challenge',
+          exact: true,
+        }),
+      ).toHaveAttribute('aria-pressed', 'true');
+      await expect(page.locator('.run-stats')).toContainText('0 / 36');
+      await expect(page.locator('.arena-overlay strong')).toHaveText('3');
+      await page.clock.runFor(1800);
+      await expect(
+        page.getByText('Preparing tick 1', { exact: true }),
+      ).toBeVisible();
+      expect(await positions()).toEqual(before);
+    });
+  }
+}

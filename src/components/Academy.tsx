@@ -859,7 +859,6 @@ function Trainer({
   const soundRef = useRef(sound);
   const completeRef = useRef(onComplete);
   const savedRef = useRef(false);
-  const resultRef = useRef<HTMLHeadingElement>(null);
   const trainingRef = useRef<HTMLElement>(null);
   const startFocus = useRef<'stay' | 'return' | null>(null);
   const ms = 600;
@@ -1103,14 +1102,6 @@ function Trainer({
     }
   }, [state, mode, lesson.id, interrupted]);
   useEffect(() => {
-    if (status === 'done') {
-      resultRef.current
-        ?.closest('.results')
-        ?.scrollIntoView({ block: 'start' });
-      resultRef.current?.focus({ preventScroll: true });
-    }
-  }, [status]);
-  useEffect(() => {
     const visibility = () => {
       if (document.hidden && (status === 'running' || status === 'countdown'))
         pause();
@@ -1296,6 +1287,11 @@ function Trainer({
               : lesson.id === 'blowpipe'
                 ? 'Keep firing while running the route. The next-step hints are hidden.'
                 : 'Challenge hides prayer hints. The timing stays at 0.6 seconds per tick.'}
+          </p>
+          <p className="sr-only" role="status">
+            {status === 'done'
+              ? `Run complete. ${score}% accuracy. Retry beside the controls, or review the results below.`
+              : ''}
           </p>
           <div className="run-stats">
             <div>
@@ -1535,7 +1531,17 @@ function Trainer({
                               ? 'Click the target to fire, then run two tiles'
                               : 'Choose your prayer before each beat'}
                   </span>
-                  {lesson.id === 'blowpipe' && <span>GAME SPEED · 0.6s</span>}
+                  {lesson.id === 'blowpipe' &&
+                    (status === 'done' ? (
+                      <button
+                        className="button secondary nearby-retry"
+                        onClick={() => begin()}
+                      >
+                        Retry
+                      </button>
+                    ) : (
+                      <span>GAME SPEED · 0.6s</span>
+                    ))}
                 </div>
                 {lesson.id === 'blowpipe' && (
                   <TickMeter
@@ -1598,7 +1604,7 @@ function Trainer({
                   {state.exposure}
                 </p>
               )}
-              {mode === 'guided' && status !== 'done' && (
+              {mode === 'guided' && (
                 <PrayerPreview id={lesson.id} state={state} selected={prayer} />
               )}
             </div>
@@ -1610,6 +1616,8 @@ function Trainer({
                     ? 'Start on Magic. Hold through the first mager attack (tick 1), then switch to Ranged.'
                     : undefined
                 }
+                onRetry={status === 'done' ? () => begin() : undefined}
+                score={score}
                 activePrayer={displayedOverhead}
                 tickDeadline={tickDeadlineRef}
                 paused={status === 'paused'}
@@ -1784,7 +1792,7 @@ function Trainer({
                   ? 'CHALLENGE COMPLETE'
                   : 'PRACTICE COMPLETE'}
               </span>
-              <h2 ref={resultRef} tabIndex={-1}>
+              <h2>
                 {mode === 'guided'
                   ? 'Guided practice complete'
                   : !interrupted && score >= PASS_SCORE

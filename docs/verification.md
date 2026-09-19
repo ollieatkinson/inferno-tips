@@ -217,3 +217,9 @@ Screenshots and raw DevTools output are temporary verification artifacts, not sh
 - Replaced the generic flame tile with an original vector cape emblem, using an angular silhouette and orange/gold lava detail. Paired it with a compact serif wordmark and a clearer subtitle. The sidebar/mobile header and footer share the same asset; the favicon uses a simplified version with a versioned URL on both pages.
 - Reviewed Chrome DevTools screenshots at 1280 px and 390 px, checked the 800 px sidebar fit, and inspected the favicon at 16/24/32/64 px against dark and light backgrounds. Branding stayed within its container, both logo images loaded, and no horizontal overflow or console warnings/errors were found.
 - The existing artwork/resources and mobile navigation browser checks passed. Astro check/build passed without diagnostics. No new behavior tests were added for this visual change.
+
+## Finish and retry without scrolling
+
+- Removed the automatic results scroll/focus. Completion is announced without moving focus, and a compact Retry button beside the player controls starts a fresh run in the same mode. Blowpipe has Retry beside its tick cue. Detailed results remain below the trainer.
+- Kept the guided pattern table and its header height stable at completion; excluded the trainer page from browser scroll anchoring. Desktop/mobile regressions verify unchanged scroll position and prayer-panel position through finish, Retry and countdown for both modes. The four existing start-position checks and the results-to-challenge flow also pass. Chrome DevTools mobile inspection confirmed the nearby Retry placement.
+- Astro check/build succeeds without diagnostics. The companion LoS site also has Retry immediately beneath its prayers; its desktop/mobile finish-and-retry tests and production build pass.

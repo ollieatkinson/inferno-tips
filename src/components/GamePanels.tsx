@@ -73,6 +73,8 @@ export function GamePanels({
   id,
   prayerInstruction,
   activePrayer,
+  onRetry,
+  score,
   tickDeadline,
   paused,
   litPrayers,
@@ -89,6 +91,8 @@ export function GamePanels({
   id: LessonId;
   prayerInstruction?: string;
   activePrayer: Prayer;
+  onRetry?: () => void;
+  score: number;
   tickDeadline: RefObject<number | null>;
   paused: boolean;
   litPrayers: Prayer[];
@@ -273,7 +277,18 @@ export function GamePanels({
         <TickMeter deadline={tickDeadline} paused={paused} />
       </div>
       <div className="game-panel-status">
-        <span>Active: {prayerLabel(activePrayer)}</span>
+        <div className="game-panel-active">
+          <span>
+            {onRetry
+              ? `Run complete · ${score}%`
+              : `Active: ${prayerLabel(activePrayer)}`}
+          </span>
+          {onRetry && (
+            <button className="button secondary nearby-retry" onClick={onRetry}>
+              Retry
+            </button>
+          )}
+        </div>
         {panel === 'inventory' && id === 'food' && (
           <span className="supply-count">
             {stock.shark - consumed.shark} sharks left

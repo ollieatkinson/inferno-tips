@@ -3580,3 +3580,27 @@ select:focus-visible {
     display: none;
   }
 }
+
+.game-panel-active {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 40px;
+}
+.button.nearby-retry {
+  padding: 7px 12px;
+  font-size: 11px;
+}
+
+/* Results and changing hint text must not become page scroll anchors. */
+.trainer-page {
+  overflow-anchor: none;
+}
+
+.prayer-preview thead tr {
+  height: 43px;
+}
+.blowpipe-workspace .tick-label {
+  min-height: 40px;
+}

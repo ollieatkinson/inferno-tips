@@ -19,7 +19,7 @@ export function PrayerPreview({
       </p>
     );
   const beats = prayerPreview(id, state, selected);
-  if (!beats.length) return null;
+  if (id === 'blowpipe') return null;
   const emptySlots = Array.from({ length: 6 - beats.length }, (_, i) => i);
   return (
     <section className="prayer-preview" aria-label="Upcoming prayer pattern">
