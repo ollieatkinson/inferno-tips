@@ -110,7 +110,9 @@ export function EnemyScene({
           ? events.filter((e) => e.enemy === enemy.id && e.tick === state.tick)
           : [];
         const attack = current.find((e) => e.kind === 'attack');
-        const read = current.find((e) => e.kind === 'read');
+        const read = guided
+          ? current.find((e) => e.kind === 'read')
+          : undefined;
         const cue = current.find((e) => e.kind === 'cue');
         const animation = active
           ? events.findLast(
