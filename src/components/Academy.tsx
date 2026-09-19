@@ -1531,12 +1531,14 @@ function Trainer({
                               ? 'Click the target to fire, then run two tiles'
                               : 'Choose your prayer before each beat'}
                   </span>
-                  <span>GAME SPEED · 0.6s</span>
+                  {lesson.id === 'blowpipe' && <span>GAME SPEED · 0.6s</span>}
                 </div>
-                <TickMeter
-                  deadline={tickDeadlineRef}
-                  paused={status === 'paused'}
-                />
+                {lesson.id === 'blowpipe' && (
+                  <TickMeter
+                    deadline={tickDeadlineRef}
+                    paused={status === 'paused'}
+                  />
+                )}
                 {lesson.id !== 'blowpipe' && (
                   <div className="beat-dots">
                     {Array.from({ length: cycleLength }, (_, i) => (

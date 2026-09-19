@@ -830,7 +830,7 @@ footer a {
   margin-bottom: 9px;
   gap: 10px;
 }
-.tick-label > span:last-child {
+.tick-label > span + span {
   font-size: 7px;
   letter-spacing: 1px;
   color: #8c977d;
@@ -3087,6 +3087,12 @@ select:focus-visible {
   grid-template-rows: repeat(6, 46.25px);
 }
 .native-prayer-grid .prayer-button {
+  /* Keep a press with slight finger movement on the game control. The rest
+     of the prayer book/page still permits scrolling and pinch zoom. */
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
   position: relative;
   display: grid;
   place-items: center;

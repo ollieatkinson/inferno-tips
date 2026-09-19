@@ -177,7 +177,12 @@ export function GamePanels({
                     title={name}
                     aria-pressed={litPrayers.includes(protection)}
                     onPointerDown={(event) => {
-                      if (event.button === 0 && event.isPrimary)
+                      // Two thumbs can overlap during alternating. A second
+                      // touch is non-primary but still an intentional press.
+                      if (
+                        event.button === 0 &&
+                        (event.isPrimary || event.pointerType === 'touch')
+                      )
                         onPrayer(protection);
                     }}
                     onClick={(event) => {

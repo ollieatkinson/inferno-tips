@@ -1629,10 +1629,10 @@ test('mobile run keeps pause, enemy cues and prayer clicks in the viewport', asy
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.clock.install();
+  await page.clock.install({ time: 0 });
+  await page.clock.pauseAt(1000);
   await open(page);
   await lesson(page, 'Flick the mager');
-  await page.clock.pauseAt(new Date());
   await start(page, false);
   // A deliberate user scroll keeps controls reachable; Start no longer scrolls.
   await page
@@ -2228,4 +2228,127 @@ test('idle alternating can follow only visible circles with sustained overlap', 
       expect(trace[i + 1].time - current.time).toBeGreaterThan(400);
   }
   await expect(page.locator('.run-stats')).toContainText('0 / 36');
+});
+
+test('mobile alternating accepts overlapping fingers for a complete challenge', async ({
+  browser,
+  baseURL,
+}) => {
+  const context = await browser.newContext({
+    baseURL,
+    hasTouch: true,
+    isMobile: true,
+    viewport: { width: 390, height: 844 },
+  });
+  try {
+    const page = await context.newPage();
+    await page.clock.install({ time: 0 });
+    await page.clock.pauseAt(1000);
+    await open(page);
+    await lesson(page, 'One-tick alternating');
+    await start(page);
+    const magic = page.getByRole('button', { name: 'Magic', exact: true });
+    const ranged = page.getByRole('button', { name: 'Ranged', exact: true });
+    await magic.scrollIntoViewIfNeeded();
+    const points = await Promise.all(
+      [magic, ranged].map(async (button) => {
+        const rect = (await button.boundingBox())!;
+        return { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 };
+      }),
+    );
+    const cdp = await context.newCDPSession(page);
+    let held = { ...points[0], id: 1 };
+    await cdp.send('Input.dispatchTouchEvent', {
+      type: 'touchStart',
+      touchPoints: [held],
+    });
+    await page.clock.runFor(600);
+    for (let tick = 2; tick <= 36; tick++) {
+      await page.clock.runFor(100);
+      const next = { ...points[(tick - 1) % 2], id: tick };
+      // One thumb lands while the other is still down. That new contact is
+      // non-primary, but is still a deliberate prayer press.
+      await cdp.send('Input.dispatchTouchEvent', {
+        type: 'touchStart',
+        touchPoints: [held, next],
+      });
+      await expect(magic).toHaveAttribute('data-lit', 'true');
+      await expect(ranged).toHaveAttribute('data-lit', 'true');
+      await cdp.send('Input.dispatchTouchEvent', {
+        type: 'touchEnd',
+        touchPoints: [held],
+      });
+      held = next;
+      await page.clock.runFor(500);
+      if (tick < 36)
+        await expect(page.locator('.run-stats')).toContainText('100%');
+    }
+    await cdp.send('Input.dispatchTouchEvent', {
+      type: 'touchEnd',
+      touchPoints: [],
+    });
+    await expect(page.locator('.result-score')).toHaveText('100%');
+    await expect(page.locator('.tick-meter')).toHaveCount(1);
+  } finally {
+    await context.close();
+  }
+});
+
+test('touch movement on a prayer stays on the control while the rest of the page scrolls', async ({
+  browser,
+  baseURL,
+}) => {
+  const context = await browser.newContext({
+    baseURL,
+    hasTouch: true,
+    isMobile: true,
+    viewport: { width: 390, height: 844 },
+  });
+  try {
+    const page = await context.newPage();
+    await open(page);
+    await lesson(page, 'One-tick alternating');
+    const magic = page.getByRole('button', { name: 'Magic', exact: true });
+    await magic.evaluate((el) => el.scrollIntoView({ block: 'center' }));
+    const rect = (await magic.boundingBox())!;
+    const cdp = await context.newCDPSession(page);
+    const initialScroll = await page.evaluate(() => scrollY);
+    const point = { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 };
+    await cdp.send('Input.dispatchTouchEvent', {
+      type: 'touchStart',
+      touchPoints: [point],
+    });
+    await expect(magic).toHaveAttribute('data-lit', 'true');
+    for (const distance of [10, 25, 45, 70])
+      await cdp.send('Input.dispatchTouchEvent', {
+        type: 'touchMove',
+        touchPoints: [{ ...point, y: point.y + distance }],
+      });
+    await cdp.send('Input.dispatchTouchEvent', {
+      type: 'touchEnd',
+      touchPoints: [],
+    });
+    await expect(magic).toHaveAttribute('data-lit', 'true');
+    expect(await page.evaluate(() => scrollY)).toBe(initialScroll);
+    // A swipe starting on unused book artwork is still ordinary page scrolling.
+    const outside = { x: point.x, y: point.y - 90 };
+    await cdp.send('Input.dispatchTouchEvent', {
+      type: 'touchStart',
+      touchPoints: [outside],
+    });
+    for (const distance of [10, 25, 45, 70])
+      await cdp.send('Input.dispatchTouchEvent', {
+        type: 'touchMove',
+        touchPoints: [{ ...outside, y: outside.y + distance }],
+      });
+    await cdp.send('Input.dispatchTouchEvent', {
+      type: 'touchEnd',
+      touchPoints: [],
+    });
+    await expect
+      .poll(() => page.evaluate(() => scrollY))
+      .toBeLessThan(initialScroll - 30);
+  } finally {
+    await context.close();
+  }
 });
