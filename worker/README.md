@@ -27,10 +27,10 @@ The API tests bundle the actual Worker and execute HTTP requests in Miniflare/wo
 
 ## Deployed environments
 
-| Environment | Frontend and API                                            | Database                  | Public submissions                 |
-| ----------- | ----------------------------------------------------------- | ------------------------- | ---------------------------------- |
-| Staging     | https://inferno-tips-api-staging.oliveratkinson.workers.dev | `inferno-tips-staging`    | Enabled                            |
-| Production  | https://inferno.tips                                        | `inferno-tips-production` | Disabled pending live verification |
+| Environment | Frontend and API                                            | Database                  | Public submissions |
+| ----------- | ----------------------------------------------------------- | ------------------------- | ------------------ |
+| Staging     | https://inferno-tips-api-staging.oliveratkinson.workers.dev | `inferno-tips-staging`    | Enabled            |
+| Production  | https://inferno.tips                                        | `inferno-tips-production` | Enabled            |
 
 Both databases have migration `0001_scores.sql` applied. Each Worker has its own managed Turnstile widget and `TURNSTILE_SECRET`; only public site keys and resource IDs belong in the repository. Staging deployment builds and uploads the frontend before deploying the Worker. Production frontend deployments still follow the Pages Git integration, while API deployments use the explicit script below.
 

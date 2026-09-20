@@ -78,7 +78,7 @@
         },
       ],
       "vars": {
-        "CLOUD_ENABLED": "false",
+        "CLOUD_ENABLED": "true",
         "APP_ORIGIN": "https://inferno.tips",
         "TURNSTILE_SITE_KEY": "0x4AAAAAAE9s_pD1qBMp1fzO",
         "ALLOW_TEST_TURNSTILE": "false",
