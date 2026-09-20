@@ -1,4 +1,10 @@
 import { expect, test, type Page } from '@playwright/test';
+// These regressions exercise local circuits; cloud recording has its own suite.
+test.beforeEach(async ({ page }) => {
+  await page.route('**/api/v1/config', (route) =>
+    route.fulfill({ json: { enabled: false, version: 1, siteKey: '' } }),
+  );
+});
 const key = 'inferno-tips-series-v1';
 async function open(page: Page, mode: 'hard' | 'endless') {
   await page.clock.install({ time: 0 });
@@ -317,6 +323,7 @@ for (const width of [1440, 390]) {
     ).toBe('');
     // Die again and leave through the modal, including cleanup of scroll locking.
     for (let i = 0; i < 8; i++) await page.clock.runFor(600);
+    await expect(page.getByRole('dialog', { name: 'YOU DIED' })).toBeVisible();
     await page.clock.runFor(1000);
     await page
       .getByRole('dialog', { name: 'YOU DIED' })

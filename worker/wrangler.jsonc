@@ -1,0 +1,91 @@
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "inferno-tips-api-local",
+  "main": "index.ts",
+  "compatibility_date": "2026-09-19",
+  "workers_dev": false,
+  "vars": {
+    "CLOUD_ENABLED": "true",
+    "APP_ORIGIN": "http://localhost:4321",
+    "TURNSTILE_SITE_KEY": "1x00000000000000000000AA",
+    "ALLOW_TEST_TURNSTILE": "true",
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "inferno-tips-local",
+      "database_id": "local",
+      "migrations_dir": "migrations",
+    },
+  ],
+  "ratelimits": [
+    {
+      "name": "WRITE_LIMIT",
+      "namespace_id": "1001",
+      "simple": { "limit": 60, "period": 60 },
+    },
+  ],
+  "triggers": { "crons": ["17 3 * * *"] },
+  "observability": { "enabled": true },
+  "env": {
+    "staging": {
+      "name": "inferno-tips-api-staging",
+      "workers_dev": false,
+      "routes": [
+        {
+          "pattern": "staging.inferno.tips/api/v1/*",
+          "zone_name": "inferno.tips",
+        },
+      ],
+      "vars": {
+        "CLOUD_ENABLED": "false",
+        "APP_ORIGIN": "https://staging.inferno.tips",
+        "TURNSTILE_SITE_KEY": "",
+        "ALLOW_TEST_TURNSTILE": "false",
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "inferno-tips-staging",
+          "database_id": "REPLACE_STAGING_DATABASE_ID",
+          "migrations_dir": "migrations",
+        },
+      ],
+      "ratelimits": [
+        {
+          "name": "WRITE_LIMIT",
+          "namespace_id": "1002",
+          "simple": { "limit": 60, "period": 60 },
+        },
+      ],
+    },
+    "production": {
+      "name": "inferno-tips-api",
+      "workers_dev": false,
+      "routes": [
+        { "pattern": "inferno.tips/api/v1/*", "zone_name": "inferno.tips" },
+      ],
+      "vars": {
+        "CLOUD_ENABLED": "false",
+        "APP_ORIGIN": "https://inferno.tips",
+        "TURNSTILE_SITE_KEY": "",
+        "ALLOW_TEST_TURNSTILE": "false",
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "inferno-tips-production",
+          "database_id": "REPLACE_PRODUCTION_DATABASE_ID",
+          "migrations_dir": "migrations",
+        },
+      ],
+      "ratelimits": [
+        {
+          "name": "WRITE_LIMIT",
+          "namespace_id": "1003",
+          "simple": { "limit": 60, "period": 60 },
+        },
+      ],
+    },
+  },
+}

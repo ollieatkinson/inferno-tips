@@ -1,4 +1,12 @@
 import { DeathOverlay } from './DeathOverlay';
+import { HighScores as HighScoresPage, ScoreSubmission } from './CloudScores';
+import {
+  getCloudConfig,
+  startCloudRun,
+  type CloudConfig,
+  type CloudRecorder,
+} from '../lib/cloudClient';
+import { stageSeed, type RunTick } from '../lib/cloudProtocol';
 import { PracticeFeedback } from './RunFeedback';
 import { runFeedback } from '../lib/runFeedback';
 import {
@@ -141,6 +149,7 @@ type Page =
   | 'resources'
   | 'settings'
   | 'hard'
+  | 'scores'
   | 'endless';
 
 export default function Academy() {
@@ -191,6 +200,7 @@ export default function Academy() {
           'resources',
           'settings',
           'hard',
+          'scores',
           'endless',
         ].includes(route)
       ) {
@@ -297,6 +307,7 @@ export default function Academy() {
               ['course', 'book', 'Learning path'],
               ['drills', 'bolt', 'Practice drills'],
               ['progress', 'chart', 'Your progress'],
+              ['scores', 'chart', 'High scores'],
             ] as const
           ).map(([id, icon, label]) => (
             <button
@@ -362,6 +373,7 @@ export default function Academy() {
                     progress: 'Your progress',
                     resources: 'Guides & resources',
                     settings: 'Settings',
+                    scores: 'High scores',
                     hard: 'Hard circuit',
                     endless: 'Endless gauntlet',
                   }[page]}
@@ -566,6 +578,7 @@ export default function Academy() {
                 </>
               )}
               {page === 'resources' && <Resources />}
+              {page === 'scores' && <HighScoresPage />}
               {page === 'settings' && (
                 <SettingsPage
                   settings={settings}
@@ -898,6 +911,8 @@ interface TrainerSession {
   panel: ReactNode;
   dispatch: (action: SeriesAction) => void;
   restart: () => void;
+  seed?: number;
+  record?: (stage: number, tick: RunTick) => void;
 }
 function SeriesTrainer({
   mode,
@@ -913,6 +928,26 @@ function SeriesTrainer({
   const [attempt, setAttempt] = useState(0);
   const [best, setBest] = useState<HighScores>({});
   const [storageError, setStorageError] = useState(false);
+  const [cloudConfig, setCloudConfig] = useState<CloudConfig | null>(null);
+  const [ranked, setRanked] = useState(true);
+  const [starting, setStarting] = useState(false);
+  const [cloudStartError, setCloudStartError] = useState('');
+  const [recorder, setRecorder] = useState<CloudRecorder | null>(null);
+  const startBusy = useRef(false);
+  const beforeRestart = useRef<(() => void) | undefined>(undefined);
+  const alive = useRef(true);
+  useEffect(() => {
+    alive.current = true;
+    void getCloudConfig().then((config) => {
+      if (alive.current) setCloudConfig(config);
+    });
+    return () => {
+      alive.current = false;
+    };
+  }, []);
+  useEffect(() => {
+    if (run.ended) recorder?.finish(run.practice);
+  }, [run.ended, run.practice, recorder]);
   useEffect(() => {
     try {
       setBest(parseHighScores(localStorage.getItem(SERIES_KEY)));
@@ -933,11 +968,59 @@ function SeriesTrainer({
   }, [run, best]);
   const dispatch = (action: SeriesAction) =>
     setRun((previous) => updateSeries(previous, action));
-  const restart = () => {
+  const restart = async (localOnly = false, beforeStart?: () => void) => {
+    if (startBusy.current) return;
+    if (beforeStart) beforeRestart.current = beforeStart;
+    startBusy.current = true;
+    setCloudStartError('');
+    let nextRecorder: CloudRecorder | null = null;
+    if (!localOnly && ranked && cloudConfig?.enabled) {
+      setStarting(true);
+      try {
+        nextRecorder = await startCloudRun(mode);
+      } catch (error) {
+        if (alive.current) {
+          setStarting(false);
+          setCloudStartError((error as Error).message);
+        }
+        startBusy.current = false;
+        return;
+      }
+    }
+    if (!alive.current) {
+      startBusy.current = false;
+      return;
+    }
+    setStarting(false);
+    beforeRestart.current?.();
+    beforeRestart.current = undefined;
+    setRecorder(nextRecorder);
     setRun(newSeries(mode));
     setAttempt((value) => value + 1);
     setStarted(true);
+    startBusy.current = false;
   };
+  const retry = () => {
+    void restart();
+  };
+  const cloudNotice = (starting || cloudStartError) && (
+    <div className="cloud-start-notice" role="status">
+      <p>{starting ? 'Preparing your next public run…' : cloudStartError}</p>
+      {!starting && (
+        <button className="button secondary" onClick={() => void restart(true)}>
+          Start local run
+        </button>
+      )}
+    </div>
+  );
+  const submission =
+    run.ended && !run.practice && run.points > 0 && recorder && cloudConfig ? (
+      <ScoreSubmission
+        key={recorder.row.ticket.id}
+        recorder={recorder}
+        siteKey={cloudConfig.siteKey}
+      />
+    ) : null;
   const lesson = lessons.find(
     (lesson) => lesson.id === stageLesson(mode, run.stage),
   )!;
@@ -982,9 +1065,14 @@ function SeriesTrainer({
                   ? 'Your best is saved in this browser.'
                   : 'Complete a clean check to set a personal best.'}
           </p>
-          <button className="button primary" onClick={restart}>
+          <button className="button primary" onClick={retry}>
             Retry run
           </button>
+          {run.lives > 0 && submission}
+          {run.lives > 0 && cloudNotice}
+          <a className="text-button" href="#scores">
+            High scores →
+          </a>
         </>
       )}
       {storageError && (
@@ -995,6 +1083,31 @@ function SeriesTrainer({
       )}
     </div>
   );
+  if (!started && (starting || cloudStartError))
+    return (
+      <div className="series-intro">
+        <h1>{seriesTitle(mode)}</h1>
+        <p role="status">
+          {starting ? 'Preparing your public run…' : cloudStartError}
+        </p>
+        {!starting && (
+          <>
+            <button className="button primary" onClick={retry}>
+              Retry connection
+            </button>
+            <button
+              className="button secondary"
+              onClick={() => void restart(true)}
+            >
+              Start local run
+            </button>
+          </>
+        )}
+        <button className="text-button" onClick={onExit}>
+          Back to drills
+        </button>
+      </div>
+    );
   if (!started)
     return (
       <div className="series-intro">
@@ -1056,7 +1169,23 @@ function SeriesTrainer({
         {storageError && (
           <p>Browser storage is unavailable. Scores last for this visit.</p>
         )}
-        <button className="button primary" onClick={restart}>
+        {cloudConfig?.enabled && (
+          <label className="ranked-option">
+            <input
+              type="checkbox"
+              checked={ranked}
+              onChange={(e) => setRanked(e.target.checked)}
+            />{' '}
+            Record this run for public high scores. Choose a name and publish
+            after finishing.
+          </label>
+        )}
+        <p>
+          <a className="text-button" href="#scores">
+            View public high scores →
+          </a>
+        </p>
+        <button className="button primary" onClick={retry}>
           Start {seriesTitle(mode).toLowerCase()}
         </button>
       </div>
@@ -1072,7 +1201,18 @@ function SeriesTrainer({
         onExit={onExit}
         onComplete={() => {}}
         onNext={() => {}}
-        session={{ run, panel, dispatch, restart }}
+        session={{
+          run,
+          panel,
+          dispatch,
+          restart: retry,
+          seed: recorder
+            ? stageSeed(recorder.row.ticket.seed, run.stage)
+            : undefined,
+          record: recorder
+            ? (stage, tick) => recorder.record(stage, tick)
+            : undefined,
+        }}
       />
       {run.ended && run.lives === 0 && (
         <DeathOverlay
@@ -1080,8 +1220,15 @@ function SeriesTrainer({
           best={best[mode]}
           encounter={lesson.title}
           storageError={storageError}
-          onRetry={restart}
+          onRetry={(beforeStart) => void restart(false, beforeStart)}
           onExit={onExit}
+          busy={starting}
+          scoreSubmission={
+            <>
+              {submission}
+              {cloudNotice}
+            </>
+          }
         />
       )}
     </>
@@ -1255,7 +1402,11 @@ function Trainer({
     tickDeadlineRef.current = performance.now() + ms;
     startFocus.current = fromResults ? 'return' : 'stay';
     void prepareAudio();
-    setState(initialState(Math.floor(Math.random() * 100000)));
+    setState(
+      initialState(
+        sessionRef.current?.seed ?? Math.floor(Math.random() * 100000),
+      ),
+    );
     transitionsRef.current = [];
     attackRef.current = null;
     setAttackQueued(null);
@@ -1395,6 +1546,14 @@ function Trainer({
           transitions: transitionsRef.current,
           blowpipe: attackRef.current,
         };
+        sessionRef.current?.record?.(sessionRef.current.run.stage, {
+          tick: state.tick + 1,
+          prayer: prayerAtTick,
+          tile: tileAtTick,
+          supply,
+          transitions: [...input.transitions],
+          blowpipe: input.blowpipe,
+        });
         transitionsRef.current = [];
         attackRef.current = null;
         setAttackQueued(null);

@@ -102,3 +102,9 @@ npx prettier --write src/lib/monsterSprites.json docs/monster-models.json docs/p
 ```
 
 The script downloads six public model files to a temporary directory, captures the source attack clips at 20 fps with a fixed camera, and records their URLs and hashes. The projectile exporter captures four additional game models as compact static sprites. Normal development, builds and tests do not need these tools or source models.
+
+## Public high scores (optional Worker)
+
+Hard and Endless can record public runs through a Cloudflare Worker and D1. Players publish with a guest display name after finishing; all-time and Monday-UTC weekly boards show one best result per browser identity. The server replays recorded tick inputs to calculate scores. Paused runs and old local personal bests cannot enter the public boards. Drills, settings and local progress continue to work when the API is disabled or unavailable.
+
+Run `npm run db:local`, `npm run dev:api` and `npm run dev` to try the complete flow at `http://localhost:4321`. Cloud environments default to disabled until their database IDs, Turnstile widgets and secrets are configured. See [Worker setup, endpoints, deployment and moderation](worker/README.md). Accounts and progress sync are follow-up features.

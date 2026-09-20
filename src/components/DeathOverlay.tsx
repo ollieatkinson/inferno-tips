@@ -1,4 +1,10 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 import { seriesTitle, type SeriesState, type HighScore } from '../lib/series';
 
 export function DeathOverlay({
@@ -8,13 +14,17 @@ export function DeathOverlay({
   storageError,
   onRetry,
   onExit,
+  scoreSubmission,
+  busy = false,
 }: {
   run: SeriesState;
   best?: HighScore;
   encounter: string;
   storageError: boolean;
-  onRetry: () => void;
+  onRetry: (beforeStart: () => void) => void;
   onExit: () => void;
+  scoreSubmission?: ReactNode;
+  busy?: boolean;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const title = useRef<HTMLHeadingElement>(null);
@@ -52,7 +62,7 @@ export function DeathOverlay({
         if (event.key !== 'Tab') return;
         const buttons = [
           ...event.currentTarget.querySelectorAll<HTMLButtonElement>(
-            'button:not(:disabled)',
+            'button:not(:disabled), input:not(:disabled), a[href], iframe, [tabindex="0"]',
           ),
         ];
         const first = buttons[0];
@@ -111,18 +121,19 @@ export function DeathOverlay({
           <div className="death-actions">
             <button
               className="button death-retry"
-              disabled={!ready}
+              disabled={!ready || busy}
               onClick={() => {
                 // Return native-dialog focus while its original control still
                 // exists, before Retry replaces the encounter DOM.
-                const { scrollX, scrollY } = window;
-                dialog.current?.close();
-                window.scrollTo({
-                  left: scrollX,
-                  top: scrollY,
-                  behavior: 'instant',
+                onRetry(() => {
+                  const { scrollX, scrollY } = window;
+                  dialog.current?.close();
+                  window.scrollTo({
+                    left: scrollX,
+                    top: scrollY,
+                    behavior: 'instant',
+                  });
                 });
-                onRetry();
               }}
             >
               Retry run
@@ -135,6 +146,7 @@ export function DeathOverlay({
               Back to drills
             </button>
           </div>
+          {scoreSubmission}
         </div>
       </div>
     </dialog>

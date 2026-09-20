@@ -1871,12 +1871,13 @@ kbd {
 @media (max-width: 650px) {
   .sidebar nav {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     overflow: visible;
     gap: 2px;
   }
   .sidebar nav .nav-item {
     flex-direction: column;
+    white-space: normal;
     gap: 7px;
     font-size: 9px;
     padding: 10px 3px;
@@ -4057,4 +4058,129 @@ select:focus-visible {
   font-size: 15px;
   margin: 0 0 0 auto;
   letter-spacing: normal;
+}
+
+/* Cloud score controls stay outside the game tick/interaction surfaces. */
+.ranked-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 18px 0;
+  max-width: 640px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.ranked-option input {
+  margin-top: 4px;
+}
+.board-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 18px;
+  margin: 24px 0 16px;
+}
+.board-filters label,
+.score-submission label {
+  display: grid;
+  gap: 8px;
+  font-size: 13px;
+}
+.board-filters select,
+.board-filters input,
+.score-submission input {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid #62694e;
+  border-radius: 4px;
+  background: #1b2017;
+  color: #e5e7dc;
+  padding: 10px;
+  font: inherit;
+}
+.leaderboard-scroll {
+  overflow-x: auto;
+  margin-top: 18px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+.leaderboard {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  text-align: left;
+}
+.leaderboard th,
+.leaderboard td {
+  padding: 14px;
+  border-bottom: 1px solid var(--border);
+}
+.leaderboard th {
+  color: var(--muted);
+  font-size: 11px;
+}
+.leaderboard .my-score {
+  background: #364127;
+}
+.score-submission {
+  margin-top: 18px;
+  text-align: left;
+  overflow-anchor: none;
+}
+.score-submission form {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid #75645355;
+}
+.score-submission p,
+.cloud-score-note {
+  font-size: 12px;
+  line-height: 1.6;
+  margin: 0;
+}
+.score-save-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.score-submission [role='alert'] {
+  color: #ffbf9b;
+}
+.pending-score {
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  margin: 16px 0;
+  max-width: 600px;
+}
+.pending-score > .text-button {
+  margin-top: 16px;
+}
+.guest-score-settings {
+  margin-top: 32px;
+  padding: 18px 0;
+  border-top: 1px solid var(--border);
+  font-size: 13px;
+}
+.guest-score-settings summary {
+  cursor: pointer;
+}
+.death-overlay[open] {
+  place-items: safe center;
+}
+@media (max-width: 600px) {
+  .board-filters label {
+    flex: 1 1 140px;
+  }
+  .leaderboard th,
+  .leaderboard td {
+    padding: 9px;
+  }
+  .leaderboard {
+    font-size: 11px;
+  }
 }
