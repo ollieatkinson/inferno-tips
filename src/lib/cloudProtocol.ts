@@ -71,10 +71,14 @@ export const weekOf = (time: number) => {
   return date.toISOString().slice(0, 10);
 };
 const prayers = ['off', 'magic', 'range', 'melee'];
+// Reject unused fields instead of persisting attacker-controlled padding in D1.
+const onlyKeys = (value: object, keys: string[]) =>
+  Object.keys(value).every((key) => keys.includes(key));
 export function validBatch(value: unknown): value is InputBatch {
   if (!value || typeof value !== 'object') return false;
   const b = value as InputBatch;
   return (
+    onlyKeys(b, ['sequence', 'stage', 'ticks']) &&
     Number.isSafeInteger(b.sequence) &&
     b.sequence >= 0 &&
     Number.isSafeInteger(b.stage) &&
@@ -85,6 +89,15 @@ export function validBatch(value: unknown): value is InputBatch {
     b.ticks.every(
       (t) =>
         t &&
+        typeof t === 'object' &&
+        onlyKeys(t, [
+          'tick',
+          'prayer',
+          'tile',
+          'supply',
+          'transitions',
+          'blowpipe',
+        ]) &&
         Number.isInteger(t.tick) &&
         t.tick >= 1 &&
         t.tick <= 36 &&
@@ -99,8 +112,9 @@ export function validBatch(value: unknown): value is InputBatch {
         t.transitions.every((p) => prayers.includes(p)) &&
         (t.blowpipe === null ||
           (t.blowpipe &&
-            (t.blowpipe.type === 'attack' ||
+            ((t.blowpipe.type === 'attack' && onlyKeys(t.blowpipe, ['type'])) ||
               (t.blowpipe.type === 'move' &&
+                onlyKeys(t.blowpipe, ['type', 'tile']) &&
                 Number.isInteger(t.blowpipe.tile) &&
                 t.blowpipe.tile >= 0 &&
                 t.blowpipe.tile <= 6)))),

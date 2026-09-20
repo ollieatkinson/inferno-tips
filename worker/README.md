@@ -61,6 +61,8 @@ The resources above already exist. The creation steps below are for rebuilding t
 
 For a new environment, start with `CLOUD_ENABLED=false` until its database and verification secret are configured. Disabling and redeploying the Worker stops cloud writes and reads without removing local practice, settings or personal bests. Initial deployment is a separate explicit script; pushing the site does not silently migrate production D1.
 
+The API limits each IP to 60 writes and 60 leaderboard reads per minute, with a separate limit of 20 new runs per minute. These Cloudflare counters are per-location abuse controls, not global quotas. See [the security review](../docs/security-review.md) for verified controls and remaining limits.
+
 Worker observability is enabled. Watch error rates, response/validation latency, 4xx rejection rates, CPU time and D1 usage in Cloudflare. Error responses explain connection/validation failures without exposing credentials. Use D1 Time Travel before destructive database changes; document the current restore bookmark during rollout.
 
 ## API and rules

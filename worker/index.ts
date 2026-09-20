@@ -13,6 +13,8 @@ import { updateSeries } from '../src/lib/series';
 export interface Env {
   DB: D1Database;
   WRITE_LIMIT: RateLimit;
+  READ_LIMIT: RateLimit;
+  RUN_LIMIT: RateLimit;
   CLOUD_ENABLED: string;
   APP_ORIGIN: string;
   TURNSTILE_SITE_KEY: string;
@@ -61,7 +63,10 @@ const hash = async (s: string) =>
     .map((v) => v.toString(16).padStart(2, '0'))
     .join('');
 async function body(request: Request): Promise<Record<string, unknown>> {
-  if (!request.headers.get('content-type')?.startsWith('application/json'))
+  if (
+    request.headers.get('content-type')?.split(';')[0].trim().toLowerCase() !==
+    'application/json'
+  )
     throw new ApiError(415, 'Send JSON.');
   const reader = request.body?.getReader();
   if (!reader) throw new ApiError(400, 'Missing request body.');
@@ -163,7 +168,7 @@ async function verifyTurnstile(token: unknown, request: Request, env: Env) {
     );
   }
   if (
-    !verification.success ||
+    verification.success !== true ||
     (!local &&
       (verification.hostname !== new URL(env.APP_ORIGIN).hostname ||
         verification.action !== 'publish-score'))
@@ -187,10 +192,19 @@ async function route(request: Request, env: Env): Promise<Response> {
       503,
       'Public high scores are not available yet. Local practice still works.',
     );
+  const rateKey = () =>
+    hash(request.headers.get('CF-Connecting-IP') || 'local');
+  if (path === '/leaderboards' && request.method === 'GET') {
+    if (!(await env.READ_LIMIT.limit({ key: await rateKey() })).success)
+      throw new ApiError(
+        429,
+        'Too many requests. Please wait a minute and retry.',
+      );
+  }
   if (request.method !== 'GET') {
     if (request.headers.get('Origin') !== env.APP_ORIGIN)
       throw new ApiError(403, 'Origin not allowed.');
-    const key = await hash(request.headers.get('CF-Connecting-IP') || 'local');
+    const key = await rateKey();
     if (!(await env.WRITE_LIMIT.limit({ key })).success)
       throw new ApiError(
         429,
@@ -198,6 +212,11 @@ async function route(request: Request, env: Env): Promise<Response> {
       );
   }
   if (path === '/runs' && request.method === 'POST') {
+    if (!(await env.RUN_LIMIT.limit({ key: await rateKey() })).success)
+      throw new ApiError(
+        429,
+        'Too many new runs. Please wait a minute and retry.',
+      );
     const input = await body(request);
     if (input.mode !== 'hard' && input.mode !== 'endless')
       throw new ApiError(400, 'Invalid challenge mode.');
@@ -483,6 +502,17 @@ export default {
       response.headers.set('Vary', 'Origin');
     }
     response.headers.set('X-Content-Type-Options', 'nosniff');
+    response.headers.set(
+      'Content-Security-Policy',
+      "default-src 'none'; frame-ancestors 'none'",
+    );
+    response.headers.set('X-Frame-Options', 'DENY');
+    response.headers.set('Referrer-Policy', 'no-referrer');
+    response.headers.set('Cache-Control', 'no-store');
+    response.headers.set('Vary', 'Origin');
+    if (new URL(request.url).protocol === 'https:')
+      response.headers.set('Strict-Transport-Security', 'max-age=31536000');
+    if (response.status === 429) response.headers.set('Retry-After', '60');
     return response;
   },
   async scheduled(_event: unknown, env: Env) {

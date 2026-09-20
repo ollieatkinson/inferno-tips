@@ -132,6 +132,43 @@ describe('cloud replay protocol', () => {
     ).toThrow();
     expect(CLOUD_SCORING_VERSION).toBe(1);
   });
+  it('rejects arbitrary stored fields at every input level', () => {
+    const batch: InputBatch = {
+      sequence: 0,
+      stage: 0,
+      ticks: ticks(0, 'hard', 0).slice(0, 1),
+    };
+    expect(validBatch({ ...batch, padding: 'untrusted' })).toBe(false);
+    expect(
+      validBatch({
+        ...batch,
+        ticks: [{ ...batch.ticks[0], padding: 'untrusted' }],
+      }),
+    ).toBe(false);
+    expect(
+      validBatch({
+        ...batch,
+        ticks: [
+          {
+            ...batch.ticks[0],
+            blowpipe: { type: 'attack', padding: 'untrusted' },
+          },
+        ],
+      }),
+    ).toBe(false);
+    expect(
+      validBatch({
+        ...batch,
+        ticks: [
+          {
+            ...batch.ticks[0],
+            blowpipe: { type: 'move', tile: 2, padding: 'untrusted' },
+          },
+        ],
+      }),
+    ).toBe(false);
+    expect(validBatch(batch)).toBe(true);
+  });
   it('uses Monday UTC across Sunday, year boundaries and British daylight saving', () => {
     expect(weekOf(Date.parse('2026-09-20T23:59:59Z'))).toBe('2026-09-14');
     expect(weekOf(Date.parse('2026-09-21T00:00:00Z'))).toBe('2026-09-21');

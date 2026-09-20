@@ -27,6 +27,22 @@
         "period": 60,
       },
     },
+    {
+      "name": "READ_LIMIT",
+      "namespace_id": "1011",
+      "simple": {
+        "limit": 60,
+        "period": 60,
+      },
+    },
+    {
+      "name": "RUN_LIMIT",
+      "namespace_id": "1021",
+      "simple": {
+        "limit": 20,
+        "period": 60,
+      },
+    },
   ],
   "triggers": {
     "crons": ["17 3 * * *"],
@@ -38,6 +54,7 @@
     "staging": {
       "name": "inferno-tips-api-staging",
       "workers_dev": true,
+      "preview_urls": false,
       "routes": [],
       "vars": {
         "CLOUD_ENABLED": "true",
@@ -59,6 +76,22 @@
           "namespace_id": "1002",
           "simple": {
             "limit": 60,
+            "period": 60,
+          },
+        },
+        {
+          "name": "READ_LIMIT",
+          "namespace_id": "1012",
+          "simple": {
+            "limit": 60,
+            "period": 60,
+          },
+        },
+        {
+          "name": "RUN_LIMIT",
+          "namespace_id": "1022",
+          "simple": {
+            "limit": 20,
             "period": 60,
           },
         },
@@ -97,6 +130,22 @@
           "namespace_id": "1003",
           "simple": {
             "limit": 60,
+            "period": 60,
+          },
+        },
+        {
+          "name": "READ_LIMIT",
+          "namespace_id": "1013",
+          "simple": {
+            "limit": 60,
+            "period": 60,
+          },
+        },
+        {
+          "name": "RUN_LIMIT",
+          "namespace_id": "1023",
+          "simple": {
+            "limit": 20,
             "period": 60,
           },
         },
