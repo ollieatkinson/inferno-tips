@@ -13,7 +13,7 @@
     "format": "prettier --write src tests *.ts *.mjs *.json *.md",
     "dev:api": "wrangler dev --config worker/wrangler.jsonc",
     "db:local": "wrangler d1 migrations apply DB --local --config worker/wrangler.jsonc",
-    "deploy:api:staging": "wrangler deploy --config worker/wrangler.jsonc --env staging",
+    "deploy:api:staging": "npm run build && wrangler deploy --config worker/wrangler.jsonc --env staging",
     "deploy:api:production": "wrangler deploy --config worker/wrangler.jsonc --env production",
     "test:api": "vitest run --config vitest.worker.config.ts"
   },

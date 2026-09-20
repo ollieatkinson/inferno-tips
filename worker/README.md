@@ -14,7 +14,7 @@ npm run dev
 
 Open **http://localhost:4321** (not the numeric hostname): the local Worker allows this exact Origin. Astro proxies `/api/v1` to port 8787. Local configuration uses Cloudflare's public Turnstile test site key and test verification secret; the test-secret fallback is restricted to localhost requests. No real account or cloud database is contacted except Turnstile's test validation endpoint when publishing.
 
-Staging uses `staging.inferno.tips/api/v1/*` over a Pages staging frontend with that custom domain. Both environments use same-origin API routes and an HttpOnly, Secure, SameSite=Lax guest cookie scoped to `/api/v1`. If overriding `PUBLIC_CLOUD_API`, keep the API on the same site and configure `APP_ORIGIN` to the exact frontend origin; cross-site Pages/Workers preview hostnames are not supported for guest cookies.
+Staging is deployed at `https://inferno-tips-api-staging.oliveratkinson.workers.dev`, with the built frontend uploaded as Worker static assets. Production remains on Pages at `https://inferno.tips`, with only `/api/v1/*` routed to its API Worker. Both environments use same-origin API routes and an HttpOnly, Secure, SameSite=Lax guest cookie scoped to `/api/v1`. If overriding `PUBLIC_CLOUD_API`, keep the API on the same site and configure `APP_ORIGIN` to the exact frontend origin; cross-site Pages/Workers preview hostnames are not supported for guest cookies.
 
 ```sh
 npm test
@@ -25,7 +25,18 @@ PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/path/to/chrome npx playwright test --config
 
 The API tests bundle the actual Worker and execute HTTP requests in Miniflare/workerd with a fresh D1 database. Only outbound Turnstile verification is stubbed. This avoids downgrading the existing Vitest 5 suite to the Vitest 4 peer dependency currently required by Cloudflare's Vitest plugin.
 
+## Deployed environments
+
+| Environment | Frontend and API                                            | Database                  | Public submissions                 |
+| ----------- | ----------------------------------------------------------- | ------------------------- | ---------------------------------- |
+| Staging     | https://inferno-tips-api-staging.oliveratkinson.workers.dev | `inferno-tips-staging`    | Enabled                            |
+| Production  | https://inferno.tips                                        | `inferno-tips-production` | Disabled pending live verification |
+
+Both databases have migration `0001_scores.sql` applied. Each Worker has its own managed Turnstile widget and `TURNSTILE_SECRET`; only public site keys and resource IDs belong in the repository. Staging deployment builds and uploads the frontend before deploying the Worker. Production frontend deployments still follow the Pages Git integration, while API deployments use the explicit script below.
+
 ## Provision and deploy
+
+The resources above already exist. The creation steps below are for rebuilding the service or adding an environment; normal releases only need any new migrations and the deployment scripts.
 
 1. Authenticate with `npx wrangler login`, or configure `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` outside the repository. The deployment identity needs Workers scripts/routes, D1 and access to the `inferno.tips` zone.
 2. Create isolated databases:
@@ -33,14 +44,14 @@ The API tests bundle the actual Worker and execute HTTP requests in Miniflare/wo
    npx wrangler d1 create inferno-tips-staging
    npx wrangler d1 create inferno-tips-production
    ```
-   Put the returned database IDs into their corresponding environments in `worker/wrangler.jsonc`. The placeholder IDs intentionally prevent accidentally deploying to a shared or unknown database.
+   Put the returned database IDs into their corresponding environments in `worker/wrangler.jsonc`. The checked-in IDs identify the existing isolated databases; replace them only when provisioning a new environment.
 3. Create Turnstile widgets for the staging frontend and `inferno.tips`. Set each environment's `TURNSTILE_SITE_KEY`, and store its secret using:
    ```sh
    npx wrangler secret put TURNSTILE_SECRET --config worker/wrangler.jsonc --env staging
    npx wrangler secret put TURNSTILE_SECRET --config worker/wrangler.jsonc --env production
    ```
    The server validates token success, the configured frontend hostname and `publish-score` action. Never copy local test keys into production.
-4. Attach `staging.inferno.tips` to an isolated Pages staging project/branch deployment of this repository. Keep its API route and `APP_ORIGIN` matched to that domain. Apply migrations and deploy the initially disabled API:
+4. Build the frontend with `npm run build`. Staging uploads `dist` as static assets and executes its Worker first for `/api/v1/*`. Its `APP_ORIGIN` and Turnstile domain must match its workers.dev hostname. Apply migrations and deploy the initially disabled API:
    ```sh
    npx wrangler d1 migrations apply DB --remote --config worker/wrangler.jsonc --env staging
    npm run deploy:api:staging
@@ -48,7 +59,7 @@ The API tests bundle the actual Worker and execute HTTP requests in Miniflare/wo
 5. Enable `CLOUD_ENABLED` in staging, redeploy, and verify a real run, score publication and leaderboard entry from the staging frontend. Test Turnstile with its actual staging hostname.
 6. Apply the production migration, then run `npm run deploy:api:production`. Confirm `/api/v1/config` responds, then enable `CLOUD_ENABLED` in production and redeploy after staging passes. The existing Pages deployment already contains the frontend. Confirm a production score and use the moderation command to remove the smoke-test entry.
 
-Both cloud environments start with `CLOUD_ENABLED=false`. Disabling and redeploying the Worker stops cloud writes and reads without removing local practice, settings or personal bests. Initial deployment is a separate explicit script; pushing the site does not silently migrate production D1.
+For a new environment, start with `CLOUD_ENABLED=false` until its database and verification secret are configured. Disabling and redeploying the Worker stops cloud writes and reads without removing local practice, settings or personal bests. Initial deployment is a separate explicit script; pushing the site does not silently migrate production D1.
 
 Worker observability is enabled. Watch error rates, response/validation latency, 4xx rejection rates, CPU time and D1 usage in Cloudflare. Error responses explain connection/validation failures without exposing credentials. Use D1 Time Travel before destructive database changes; document the current restore bookmark during rollout.
 

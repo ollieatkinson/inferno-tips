@@ -22,32 +22,34 @@
     {
       "name": "WRITE_LIMIT",
       "namespace_id": "1001",
-      "simple": { "limit": 60, "period": 60 },
+      "simple": {
+        "limit": 60,
+        "period": 60,
+      },
     },
   ],
-  "triggers": { "crons": ["17 3 * * *"] },
-  "observability": { "enabled": true },
+  "triggers": {
+    "crons": ["17 3 * * *"],
+  },
+  "observability": {
+    "enabled": true,
+  },
   "env": {
     "staging": {
       "name": "inferno-tips-api-staging",
-      "workers_dev": false,
-      "routes": [
-        {
-          "pattern": "staging.inferno.tips/api/v1/*",
-          "zone_name": "inferno.tips",
-        },
-      ],
+      "workers_dev": true,
+      "routes": [],
       "vars": {
-        "CLOUD_ENABLED": "false",
-        "APP_ORIGIN": "https://staging.inferno.tips",
-        "TURNSTILE_SITE_KEY": "",
+        "CLOUD_ENABLED": "true",
+        "APP_ORIGIN": "https://inferno-tips-api-staging.oliveratkinson.workers.dev",
+        "TURNSTILE_SITE_KEY": "0x4AAAAAAE9s_YZTYoo093V2",
         "ALLOW_TEST_TURNSTILE": "false",
       },
       "d1_databases": [
         {
           "binding": "DB",
           "database_name": "inferno-tips-staging",
-          "database_id": "REPLACE_STAGING_DATABASE_ID",
+          "database_id": "c9b84a00-f42c-4b27-9db0-34834a4db88c",
           "migrations_dir": "migrations",
         },
       ],
@@ -55,27 +57,37 @@
         {
           "name": "WRITE_LIMIT",
           "namespace_id": "1002",
-          "simple": { "limit": 60, "period": 60 },
+          "simple": {
+            "limit": 60,
+            "period": 60,
+          },
         },
       ],
+      "assets": {
+        "directory": "../dist",
+        "run_worker_first": ["/api/v1/*"],
+      },
     },
     "production": {
       "name": "inferno-tips-api",
       "workers_dev": false,
       "routes": [
-        { "pattern": "inferno.tips/api/v1/*", "zone_name": "inferno.tips" },
+        {
+          "pattern": "inferno.tips/api/v1/*",
+          "zone_name": "inferno.tips",
+        },
       ],
       "vars": {
         "CLOUD_ENABLED": "false",
         "APP_ORIGIN": "https://inferno.tips",
-        "TURNSTILE_SITE_KEY": "",
+        "TURNSTILE_SITE_KEY": "0x4AAAAAAE9s_pD1qBMp1fzO",
         "ALLOW_TEST_TURNSTILE": "false",
       },
       "d1_databases": [
         {
           "binding": "DB",
           "database_name": "inferno-tips-production",
-          "database_id": "REPLACE_PRODUCTION_DATABASE_ID",
+          "database_id": "f99af28a-83b9-4cb5-bea3-a1019f8b9c6a",
           "migrations_dir": "migrations",
         },
       ],
@@ -83,9 +95,13 @@
         {
           "name": "WRITE_LIMIT",
           "namespace_id": "1003",
-          "simple": { "limit": 60, "period": 60 },
+          "simple": {
+            "limit": 60,
+            "period": 60,
+          },
         },
       ],
     },
   },
+  "account_id": "70752272304e0c63623f7f6ac58f4ba7",
 }
