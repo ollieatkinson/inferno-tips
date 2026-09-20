@@ -4184,3 +4184,85 @@ select:focus-visible {
     font-size: 11px;
   }
 }
+
+/* Optional account sync */
+.topbar-account {
+  margin-left: auto;
+  margin-right: 16px;
+  white-space: nowrap;
+}
+.sidebar-bottom a {
+  display: block;
+  margin-top: 12px;
+}
+.account-page {
+  max-width: 900px;
+}
+.account-card {
+  padding: 24px;
+  margin: 20px 0;
+  border: 1px solid var(--border, #424635);
+  background: var(--surface, #20231d);
+  border-radius: 8px;
+}
+.account-card h2 {
+  margin: 0 0 12px;
+}
+.account-card h3 {
+  margin-top: 24px;
+}
+.account-card p {
+  line-height: 1.6;
+}
+.account-actions,
+.account-pending {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0;
+}
+.account-history article {
+  padding: 16px 0;
+  border-top: 1px solid #424635;
+}
+.account-history span {
+  display: block;
+  margin-top: 6px;
+  color: #c0c6af;
+  font-size: 0.85rem;
+}
+.account-history p {
+  margin-bottom: 0;
+}
+.account-message {
+  position: sticky;
+  bottom: 16px;
+  padding: 16px;
+  background: #313b25;
+  border: 1px solid #8b9964;
+  border-radius: 6px;
+  z-index: 5;
+}
+.account-card hr {
+  margin: 24px 0;
+  border: 0;
+  border-top: 1px solid #424635;
+}
+.account-settings-link {
+  margin-bottom: 24px;
+}
+@media (max-width: 600px) {
+  .account-card {
+    padding: 16px;
+  }
+  .topbar-account {
+    font-size: 0.8rem;
+  }
+  .account-actions .button {
+    width: 100%;
+  }
+  .account-message {
+    bottom: 76px;
+  }
+}

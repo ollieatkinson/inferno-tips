@@ -108,3 +108,7 @@ The script downloads six public model files to a temporary directory, captures t
 Hard and Endless can record public runs through a Cloudflare Worker and D1. Players publish with a guest display name after finishing; all-time and Monday-UTC weekly boards show one best result per browser identity. The server replays recorded tick inputs to calculate scores. Paused runs and old local personal bests cannot enter the public boards. Drills, settings and local progress continue to work when the API is disabled or unavailable.
 
 Run `npm run db:local`, `npm run dev:api` and `npm run dev` to try the complete flow at `http://localhost:4321`. Staging is deployed at https://inferno-tips-api-staging.oliveratkinson.workers.dev. Public submissions are enabled at https://inferno.tips, using an isolated production database. See [Worker setup, endpoints, deployment and moderation](worker/README.md). Accounts and progress sync are follow-up features.
+
+## Optional accounts (staging)
+
+Google/Discord login and account-backed drill progress are being introduced on staging. Browser-only practice remains available. Account results use server-issued attempts and replay; imported browser history stays unverified and never grants leaderboard scores. See [account setup, security boundaries and handover](docs/accounts.md) for OAuth callback URLs, secrets, tests, and production rollout requirements.

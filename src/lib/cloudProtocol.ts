@@ -86,39 +86,41 @@ export function validBatch(value: unknown): value is InputBatch {
     Array.isArray(b.ticks) &&
     b.ticks.length > 0 &&
     b.ticks.length <= 36 &&
-    b.ticks.every(
-      (t) =>
-        t &&
-        typeof t === 'object' &&
-        onlyKeys(t, [
-          'tick',
-          'prayer',
-          'tile',
-          'supply',
-          'transitions',
-          'blowpipe',
-        ]) &&
-        Number.isInteger(t.tick) &&
-        t.tick >= 1 &&
-        t.tick <= 36 &&
-        prayers.includes(t.prayer) &&
-        Number.isInteger(t.tile) &&
-        t.tile >= 0 &&
-        t.tile < 25 &&
-        (t.supply === null ||
-          ['shark', 'brew', 'restore'].includes(t.supply)) &&
-        Array.isArray(t.transitions) &&
-        t.transitions.length <= 32 &&
-        t.transitions.every((p) => prayers.includes(p)) &&
-        (t.blowpipe === null ||
-          (t.blowpipe &&
-            ((t.blowpipe.type === 'attack' && onlyKeys(t.blowpipe, ['type'])) ||
-              (t.blowpipe.type === 'move' &&
-                onlyKeys(t.blowpipe, ['type', 'tile']) &&
-                Number.isInteger(t.blowpipe.tile) &&
-                t.blowpipe.tile >= 0 &&
-                t.blowpipe.tile <= 6)))),
-    )
+    b.ticks.every((t) => validRunTick(t))
+  );
+}
+export function validRunTick(value: unknown, maxTick = 36): value is RunTick {
+  const t = value as RunTick;
+  return !!(
+    t &&
+    typeof t === 'object' &&
+    onlyKeys(t, [
+      'tick',
+      'prayer',
+      'tile',
+      'supply',
+      'transitions',
+      'blowpipe',
+    ]) &&
+    Number.isInteger(t.tick) &&
+    t.tick >= 1 &&
+    t.tick <= maxTick &&
+    prayers.includes(t.prayer) &&
+    Number.isInteger(t.tile) &&
+    t.tile >= 0 &&
+    t.tile < 25 &&
+    (t.supply === null || ['shark', 'brew', 'restore'].includes(t.supply)) &&
+    Array.isArray(t.transitions) &&
+    t.transitions.length <= 32 &&
+    t.transitions.every((p) => prayers.includes(p)) &&
+    (t.blowpipe === null ||
+      (t.blowpipe &&
+        ((t.blowpipe.type === 'attack' && onlyKeys(t.blowpipe, ['type'])) ||
+          (t.blowpipe.type === 'move' &&
+            onlyKeys(t.blowpipe, ['type', 'tile']) &&
+            Number.isInteger(t.blowpipe.tile) &&
+            t.blowpipe.tile >= 0 &&
+            t.blowpipe.tile <= 6))))
   );
 }
 export function replayBatch(

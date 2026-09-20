@@ -1,0 +1,84 @@
+---
+import '../styles/global.css';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Account data & privacy — Inferno Tips</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  </head>
+  <body>
+    <main class="credits-page">
+      <a href="/#account">← Account settings</a>
+      <h1>Account data & privacy</h1>
+      <p>
+        Signing in is optional. You can practise without an account, with
+        progress saved in your browser.
+      </p>
+      <h2>When you sign in</h2>
+      <p>
+        We use Google or Discord to identify your account. We store your
+        provider identifier, name, email, and sign-in session details in
+        Cloudflare D1. Provider tokens are encrypted by the authentication
+        library before storage. We do not ask for a password or access to your
+        Google files or Discord messages.
+      </p>
+      <p>
+        Your email is not shown on public leaderboards. Public scores use the
+        name you choose when publishing a result.
+      </p>
+      <h2>Drill results and browser history</h2>
+      <p>
+        Signed-in drills send your prayer, movement and supply inputs to our
+        server for scoring. Your account keeps the lesson, result, timing, and
+        feedback. Browser history can be imported once as unverified personal
+        history; it does not grant verified mastery or leaderboard scores.
+      </p>
+      <p>
+        Completed drill summaries remain until you delete your account.
+        Unfinished drill attempts expire after 30 days. The account export
+        includes up to 10,000 recent attempts. Pending uploads are kept in this
+        browser for retry and are not shared with another account.
+      </p>
+      <h2>Cookies and abuse prevention</h2>
+      <p>
+        We use secure cookies for sign-in and guest-score ownership. Cloudflare
+        Turnstile checks requests when signing in, publishing scores, or
+        deleting an account. Cloudflare processes network information to serve
+        the site and reduce abuse. The app uses IP-based and account-based
+        request limits.
+      </p>
+      <p>
+        Keybinds, sound settings, and browser-only progress stay on your device.
+        Clearing browser data may remove these settings and unsynced runs.
+      </p>
+      <h2>Your controls</h2>
+      <p>
+        Account settings let you export data, sign out on all devices, or
+        permanently delete your account and linked public scores. Deleting an
+        account does not clear browser-only progress. You can clear that
+        separately under Your progress.
+      </p>
+      <p>
+        Google and Discord accounts are linked only when you explicitly choose
+        to link them while signed in. We do not merge accounts based solely on a
+        matching email address.
+      </p>
+      <p>
+        <a href="https://www.cloudflare.com/privacypolicy/">
+          Cloudflare privacy policy
+        </a>{' '}
+        ·{' '}
+        <a href="https://policies.google.com/privacy">Google privacy policy</a>{' '}
+        · <a href="https://discord.com/privacy">Discord privacy policy</a>
+      </p>
+      <p>
+        This account feature is being tested in staging. Staging accounts and
+        scores are separate from production.
+      </p>
+    </main>
+  </body>
+</html>

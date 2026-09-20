@@ -21,14 +21,16 @@ declare global {
     turnstile?: TurnstileApi;
   }
 }
-function Verification({
+export function Verification({
   siteKey,
   onToken,
   reset,
+  action = 'publish-score',
 }: {
   siteKey: string;
   onToken: (token: string) => void;
   reset: number;
+  action?: string;
 }) {
   const container = useRef<HTMLDivElement>(null);
   const callback = useRef(onToken);
@@ -58,7 +60,7 @@ function Verification({
       if (disposed || widget || !window.turnstile || !container.current) return;
       widget = window.turnstile.render(container.current, {
         sitekey: siteKey,
-        action: 'publish-score',
+        action,
         theme: 'dark',
         size: 'compact',
         callback: (token: string) => callback.current(token),
@@ -84,7 +86,7 @@ function Verification({
       script?.removeEventListener('error', fail);
       if (widget) window.turnstile?.remove(widget);
     };
-  }, [siteKey, reset]);
+  }, [siteKey, reset, action]);
   return (
     <>
       <div ref={container} />

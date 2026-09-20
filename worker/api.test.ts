@@ -23,6 +23,7 @@ beforeAll(async () => {
     write: false,
     format: 'esm',
     platform: 'browser',
+    external: ['node:*'],
     target: 'es2022',
   });
   bundledWorker = bundle.outputFiles[0].text;
@@ -34,6 +35,7 @@ async function createApi(limits = { read: 1000, run: 1000, write: 1000 }) {
       modules: true,
       script: bundledWorker,
       compatibilityDate: '2026-09-19',
+      compatibilityFlags: ['nodejs_compat'],
       d1Databases: ['DB'],
       bindings: {
         CLOUD_ENABLED: 'true',
