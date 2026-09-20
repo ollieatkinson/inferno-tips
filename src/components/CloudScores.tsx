@@ -36,6 +36,7 @@ export function Verification({
   const callback = useRef(onToken);
   callback.current = onToken;
   const [error, setError] = useState('');
+  const [retry, setRetry] = useState(0);
   useEffect(() => {
     let disposed = false,
       widget: string | undefined;
@@ -63,8 +64,14 @@ export function Verification({
         action,
         theme: 'dark',
         size: 'compact',
-        callback: (token: string) => callback.current(token),
-        'expired-callback': () => callback.current(''),
+        callback: (token: string) => {
+          setError('');
+          callback.current(token);
+        },
+        'expired-callback': () => {
+          callback.current('');
+          setError('Verification expired. Please retry.');
+        },
         'error-callback': () => {
           callback.current('');
           setError(
@@ -86,11 +93,21 @@ export function Verification({
       script?.removeEventListener('error', fail);
       if (widget) window.turnstile?.remove(widget);
     };
-  }, [siteKey, reset, action]);
+  }, [siteKey, reset, action, retry]);
   return (
     <>
       <div ref={container} />
-      {error && <p role="status">{error}</p>}
+      {error && (
+        <div>
+          <p role="status">{error}</p>
+          <button
+            className="button secondary"
+            onClick={() => setRetry((n) => n + 1)}
+          >
+            Retry verification
+          </button>
+        </div>
+      )}
     </>
   );
 }

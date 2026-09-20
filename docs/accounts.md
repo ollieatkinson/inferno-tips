@@ -73,3 +73,6 @@ Questions left for the owner:
 - `npm audit --omit=dev`: zero known vulnerabilities.
 - Staging Chrome DevTools: account/config/leaderboard reads returned 200 with `no-store`; anonymous progress import returned 401; the existing Olbo high score remained on the staging board. The real account Turnstile iframe loaded with no parent-page CSP violations. Desktop and 390px mobile account pages had no horizontal overflow.
 - Real provider login is **not yet verified**: Google/Discord client credentials are absent. Callback integration tests use mocked provider responses. Real Turnstile completion still requires the owner's normal browser.
+
+- Added an explicit retry for failed or expired verification. All eight account/public-score production browser checks passed again, including the new expiry/retry case.
+- Final staging Worker version: `57bf7d47-7fdc-4a4d-8ca4-6a97dd6a7f58`. Draft review: https://github.com/ollieatkinson/inferno-tips/pull/1.

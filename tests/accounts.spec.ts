@@ -214,3 +214,46 @@ test('mobile account page fits and session revocation returns to sign-in', async
     page.getByText('Google and Discord sign-in are awaiting provider setup.'),
   ).toBeVisible();
 });
+
+test('failed or expired sign-in verification can be retried without reloading', async ({
+  page,
+}) => {
+  const view = account();
+  view.user = null;
+  view.linkedProviders = [];
+  await page.route('**/api/v1/account', (route) =>
+    route.fulfill({ json: view }),
+  );
+  await page.route(
+    'https://challenges.cloudflare.com/turnstile/v0/api.js*',
+    (route) =>
+      route.fulfill({
+        contentType: 'application/javascript',
+        body: `
+  window.verificationRenders=0;
+  window.turnstile={render(element,options){window.verificationOptions=options;const n=++window.verificationRenders;queueMicrotask(()=>n===1?options['error-callback']():options.callback('test-token'));return String(n);},remove(){}};
+ `,
+      }),
+  );
+  await ready(page, '/#account');
+  const google = page.getByRole('button', {
+    name: 'Continue with Google',
+    exact: true,
+  });
+  await expect(google).toBeDisabled();
+  await page
+    .getByRole('button', { name: 'Retry verification', exact: true })
+    .click();
+  await expect(google).toBeEnabled();
+  await page.evaluate(() =>
+    (
+      window as unknown as { verificationOptions: Record<string, () => void> }
+    ).verificationOptions['expired-callback'](),
+  );
+  await expect(google).toBeDisabled();
+  await expect(page.getByRole('status')).toContainText('Verification expired');
+  await page
+    .getByRole('button', { name: 'Retry verification', exact: true })
+    .click();
+  await expect(google).toBeEnabled();
+});
