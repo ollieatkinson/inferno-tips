@@ -12,6 +12,9 @@ Discord application policy URLs are `https://inferno.tips/terms/` and `https://i
 
 ## What is implemented
 
+- Public account nicknames are stored separately from Discord profile data. First use generates three words from curated lists using `crypto.getRandomValues`; concurrent requests preserve the first saved nickname. `PATCH /account/profile` accepts only a validated 2–24 character nickname for the authenticated account. Nicknames are non-unique display labels, never identity or ownership credentials.
+- Signed-in score publication reads the nickname from D1 and binds the run's guest identity to the session account. Client-supplied names cannot override it. Leaderboards resolve the current nickname for account-owned entries, including claimed scores, so renaming updates old entries without changing scores or ranks. Nicknames are included in exports and deleted with the account. Migration `0004_account_profiles.sql` must be applied before deploying this version.
+
 - Google and Discord authorization-code login through Better Auth 1.7.5, with native D1 storage. No email/password registration or client-supplied ID-token login is exposed.
 - Secure, HttpOnly, SameSite=Lax, host-only `__Host-inferno-auth.*` cookies on HTTPS. Auth tokens are never written to localStorage. Sessions last up to 14 days; all-device sign-out revokes their database records. OAuth access/refresh tokens are encrypted using `AUTH_SECRET`.
 - Optional account navigation from the header, Settings and Your progress. Guest practice remains available. Device settings and knowledge checks remain local.

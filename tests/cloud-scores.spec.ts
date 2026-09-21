@@ -213,3 +213,43 @@ test('disabled backend leaves local practice available and explains board availa
     'countdown',
   );
 });
+
+test('signed-in score uses the account nickname without asking for a public name', async ({
+  page,
+}) => {
+  const server = await cloud(page);
+  await page.route('**/api/v1/account', (route) =>
+    route.fulfill({
+      json: {
+        enabled: true,
+        providers: { discord: true, google: false },
+        user: {
+          id: 'account-one',
+          name: 'Private Profile',
+          email: 'private@example.test',
+          nickname: 'Amber Moss Falcon',
+        },
+        progress: {},
+        imported: null,
+        history: [],
+        linkedProviders: ['discord'],
+        siteKey: 'test',
+      },
+    }),
+  );
+  await dieWithPoints(page);
+  const dialog = page.getByRole('dialog', { name: 'YOU DIED' });
+  await dialog
+    .getByRole('button', { name: 'Save public score', exact: true })
+    .click();
+  await expect(dialog).toContainText('Saving as Amber Moss Falcon');
+  await expect(dialog.getByLabel('Public display name')).toHaveCount(0);
+  await expect(dialog).not.toContainText('Private Profile');
+  await expect(dialog).not.toContainText('private@example.test');
+  await dialog.getByRole('button', { name: 'Verify for test' }).click();
+  await dialog.getByRole('button', { name: 'Save score', exact: true }).click();
+  await expect(dialog).toContainText('Public score saved');
+  expect(server.published).toEqual([
+    { name: '', token: 'verified-token', accountId: 'account-one' },
+  ]);
+});

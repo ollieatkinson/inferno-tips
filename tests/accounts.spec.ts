@@ -9,7 +9,12 @@ function account(): AccountView {
     enabled: true,
     providers: { google: false, discord: true },
     siteKey: 'test',
-    user: { id: 'test-account', name: 'Olbo', email: 'olbo@example.test' },
+    user: {
+      id: 'test-account',
+      name: 'Olbo',
+      email: 'olbo@example.test',
+      nickname: 'Amber Moss Falcon',
+    },
     progress: {},
     imported: null,
     history: [],
@@ -263,4 +268,33 @@ test('failed or expired sign-in verification can be retried without reloading', 
     .getByRole('button', { name: 'Retry verification', exact: true })
     .click();
   await expect(discord).toBeEnabled();
+});
+
+test('account nickname saves and persists after reload without changing private profile details', async ({
+  page,
+}) => {
+  const state = account();
+  await page.route('**/api/v1/account**', async (route) => {
+    if (route.request().method() === 'PATCH') {
+      state.user!.nickname = route.request().postDataJSON().nickname.trim();
+      return route.fulfill({ json: { nickname: state.user!.nickname } });
+    }
+    return route.fulfill({ json: state });
+  });
+  await ready(page, '/#account');
+  await expect(page.getByLabel('Nickname', { exact: true })).toHaveValue(
+    'Amber Moss Falcon',
+  );
+  await page.getByLabel('Nickname', { exact: true }).fill('Olbo');
+  await page
+    .getByRole('button', { name: 'Save nickname', exact: true })
+    .click();
+  await expect(page.getByRole('status')).toContainText('Nickname saved');
+  await page.reload();
+  await expect(page.getByLabel('Nickname', { exact: true })).toHaveValue(
+    'Olbo',
+  );
+  await expect(
+    page.getByText('olbo@example.test', { exact: true }),
+  ).toBeVisible();
 });

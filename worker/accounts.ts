@@ -1,5 +1,6 @@
 import type { Env } from './env';
 import { accountSession, providers } from './auth';
+import { accountNickname, publicName } from './profiles';
 import {
   ApiError,
   body,
@@ -148,7 +149,12 @@ export async function accountRoute(
     ]);
     return json({
       ...base,
-      user: { id: userId, name: session.user.name, email: session.user.email },
+      user: {
+        id: userId,
+        name: session.user.name,
+        email: session.user.email,
+        nickname: await accountNickname(env, userId),
+      },
       progress: progressFromRows(rows.results),
       imported: imported
         ? {
@@ -163,6 +169,18 @@ export async function accountRoute(
       })),
       linkedProviders: linked.results.map((r) => r.providerId),
     });
+  }
+  if (path === '/account/profile' && request.method === 'PATCH') {
+    const input = await body(request);
+    if (Object.keys(input).some((key) => key !== 'nickname'))
+      throw new ApiError(400, 'Only the public nickname can be changed here.');
+    const nickname = publicName(input.nickname);
+    await env.DB.prepare(
+      'INSERT INTO account_profiles(user_id,nickname,updated_at) VALUES (?,?,?) ON CONFLICT(user_id) DO UPDATE SET nickname=excluded.nickname,updated_at=excluded.updated_at',
+    )
+      .bind(userId, nickname, Date.now())
+      .run();
+    return json({ nickname });
   }
   if (path === '/account/import' && request.method === 'POST') {
     const input = await body(request);
@@ -181,6 +199,7 @@ export async function accountRoute(
   }
   if (path === '/account/claim-scores' && request.method === 'POST') {
     await body(request);
+    await accountNickname(env, userId);
     const g = await requireGuest(request, env);
     await env.DB.prepare(
       'INSERT OR IGNORE INTO account_guests (guest_id, user_id) VALUES (?, ?)',
@@ -384,7 +403,11 @@ export async function accountRoute(
     ]);
     return json({
       exportedAt: new Date().toISOString(),
-      user: { name: session.user.name, email: session.user.email },
+      user: {
+        name: session.user.name,
+        email: session.user.email,
+        nickname: await accountNickname(env, userId),
+      },
       attempts: attempts.results,
       imported,
     });

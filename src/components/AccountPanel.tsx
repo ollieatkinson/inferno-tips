@@ -224,6 +224,13 @@ export function AccountPanel({
               <a href="/terms/">Terms of Service</a>
             </p>
           </div>
+          {account.user && (
+            <NicknameForm
+              key={account.user.id}
+              user={account.user}
+              refresh={refresh}
+            />
+          )}
           {staging && !providerReady && (
             <div className="account-card">
               <h2>Test account verification</h2>
@@ -509,6 +516,80 @@ export function AccountPanel({
           {message}
         </p>
       )}
+    </section>
+  );
+}
+
+function NicknameForm({
+  user,
+  refresh,
+}: {
+  user: NonNullable<AccountView['user']>;
+  refresh: () => Promise<void>;
+}) {
+  const [nickname, setNickname] = useState(user.nickname);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState('');
+  useEffect(() => setNickname(user.nickname), [user.nickname]);
+  return (
+    <section className="account-card" aria-labelledby="nickname-heading">
+      <h2 id="nickname-heading">Public nickname</h2>
+      <p>
+        Your scores use this name automatically. Changing it updates your
+        existing leaderboard entries too.
+      </p>
+      <form
+        className="nickname-form"
+        onSubmit={async (event) => {
+          event.preventDefault();
+          if (saving) return;
+          setSaving(true);
+          setMessage('');
+          try {
+            const saved = await api<{ nickname: string }>(
+              '/account/profile',
+              { nickname },
+              'PATCH',
+            );
+            setNickname(saved.nickname);
+            setMessage('Nickname saved.');
+            accountChanged();
+            await refresh();
+          } catch (error) {
+            setMessage(
+              error instanceof Error
+                ? error.message
+                : 'Could not save your nickname. Please retry.',
+            );
+          } finally {
+            setSaving(false);
+          }
+        }}
+      >
+        <label htmlFor="account-nickname">Nickname</label>
+        <input
+          id="account-nickname"
+          value={nickname}
+          onChange={(event) => setNickname(event.target.value)}
+          minLength={2}
+          maxLength={24}
+          required
+          autoComplete="nickname"
+          disabled={saving}
+          aria-describedby="nickname-help"
+        />
+        <p className="fine-print" id="nickname-help">
+          We start you with three random words. Choose any 2–24 character name;
+          nicknames are not unique.
+        </p>
+        <button
+          className="button secondary"
+          disabled={saving || nickname === user.nickname}
+        >
+          {saving ? 'Saving…' : 'Save nickname'}
+        </button>
+        {message && <p role="status">{message}</p>}
+      </form>
     </section>
   );
 }

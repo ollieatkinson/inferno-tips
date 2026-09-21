@@ -11,6 +11,8 @@ import {
 } from '../lib/cloudClient';
 import { weekOf, type Board } from '../lib/cloudProtocol';
 import { seriesTitle, type SeriesMode } from '../lib/series';
+import { ACCOUNT_CHANGED, getAccount } from '../lib/accountClient';
+import type { AccountView } from '../lib/accountProtocol';
 
 interface TurnstileApi {
   render: (container: HTMLElement, options: Record<string, unknown>) => string;
@@ -126,6 +128,39 @@ export function ScoreSubmission({
     [error, setError] = useState(''),
     [reset, setReset] = useState(0);
   const mounted = useRef(true);
+  const [user, setUser] = useState<AccountView['user']>(null);
+  const [accountReady, setAccountReady] = useState(false);
+  const [accountError, setAccountError] = useState('');
+  const [accountRetry, setAccountRetry] = useState(0);
+  useEffect(() => {
+    if (!open) return;
+    let disposed = false;
+    let latest = 0;
+    const refreshAccount = async () => {
+      const sequence = ++latest;
+      setAccountReady(false);
+      setAccountError('');
+      try {
+        const account = await getAccount();
+        if (disposed || sequence !== latest) return;
+        setUser(account.user || null);
+        setAccountReady(true);
+      } catch {
+        if (!disposed && sequence === latest)
+          setAccountError(
+            'Could not check your account. Retry before saving your score.',
+          );
+      }
+    };
+    void refreshAccount();
+    window.addEventListener(ACCOUNT_CHANGED, refreshAccount);
+    window.addEventListener('focus', refreshAccount);
+    return () => {
+      disposed = true;
+      window.removeEventListener(ACCOUNT_CHANGED, refreshAccount);
+      window.removeEventListener('focus', refreshAccount);
+    };
+  }, [open, accountRetry]);
   useEffect(() => {
     mounted.current = true;
     return () => {
@@ -148,11 +183,11 @@ export function ScoreSubmission({
         <form
           onSubmit={async (e) => {
             e.preventDefault();
-            if (saving) return;
+            if (saving || !accountReady) return;
             setSaving(true);
             setError('');
             try {
-              await recorder.publish(name, token);
+              await recorder.publish(user ? '' : name, token, user?.id);
               if (mounted.current) setSaved(true);
             } catch (err) {
               if (mounted.current) {
@@ -165,22 +200,44 @@ export function ScoreSubmission({
             }
           }}
         >
-          <label>
-            Public display name
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              minLength={2}
-              maxLength={24}
-              required
-              autoComplete="nickname"
-              disabled={saving}
-            />
-          </label>
-          <p>
-            Your name and score will be public. Guest names are not verified or
-            reserved.
-          </p>
+          {!accountReady ? (
+            <p role="status">
+              {accountError || 'Checking your account…'}
+              {accountError && (
+                <button
+                  type="button"
+                  className="text-button"
+                  onClick={() => setAccountRetry((n) => n + 1)}
+                >
+                  Retry account check
+                </button>
+              )}
+            </p>
+          ) : user ? (
+            <p>
+              Saving as <strong>{user.nickname}</strong>. This public score will
+              belong to your account. <a href="#account">Change nickname</a>
+            </p>
+          ) : (
+            <>
+              <label>
+                Public display name
+                <input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  minLength={2}
+                  maxLength={24}
+                  required
+                  autoComplete="nickname"
+                  disabled={saving}
+                />
+              </label>
+              <p>
+                Your name and score will be public. Guest names are not verified
+                or reserved.
+              </p>
+            </>
+          )}
           <Verification siteKey={siteKey} onToken={setToken} reset={reset} />
           {error && <p role="alert">{error}</p>}
           {!recorder.persistent && (
@@ -190,7 +247,10 @@ export function ScoreSubmission({
             </p>
           )}
           <div className="score-save-actions">
-            <button className="button primary" disabled={saving || !token}>
+            <button
+              className="button primary"
+              disabled={saving || !token || !accountReady}
+            >
               {saving ? 'Saving…' : 'Save score'}
             </button>
             <button

@@ -79,6 +79,7 @@ beforeAll(async () => {
     write: false,
     format: 'esm',
     platform: 'browser',
+    conditions: ['workerd'],
     external: ['node:*'],
     target: 'es2022',
   });
@@ -152,6 +153,7 @@ beforeAll(async () => {
     '0001_scores',
     '0002_accounts',
     '0003_drill_progress',
+    '0004_account_profiles',
   ]) {
     const sql = await readFile(`worker/migrations/${migration}.sql`, 'utf8');
     for (const statement of sql.split(';').filter((s) => s.trim()))
@@ -715,5 +717,188 @@ describe('auth request boundaries', () => {
       .bind(Date.now() - 1, a.id)
       .run();
     expect((await view(a.cookie)).user).toBeNull();
+  });
+});
+
+describe('account nicknames', () => {
+  it('creates one stable three-word nickname across concurrent reads without using Discord profile data', async () => {
+    const a = await session();
+    const reads = await Promise.all([
+      view(a.cookie),
+      view(a.cookie),
+      view(a.cookie),
+    ]);
+    const nickname = reads[0].user!.nickname;
+    expect(nickname).toMatch(/^[A-Z][a-z]+ [A-Z][a-z]+ [A-Z][a-z]+$/);
+    expect(nickname.length).toBeLessThanOrEqual(24);
+    expect(reads.every((r) => r.user!.nickname === nickname)).toBe(true);
+    expect(nickname).not.toContain('Test');
+    expect((await view(a.cookie)).user!.nickname).toBe(nickname);
+  });
+
+  it('edits only the authenticated profile, validates input and exports/deletes the nickname', async () => {
+    const a = await session(),
+      b = await session();
+    const other = (await view(b.cookie)).user!.nickname;
+    expect(
+      (await request('/account/profile', '', { nickname: 'Olbo' }, 'PATCH'))
+        .status,
+    ).toBe(401);
+    expect(
+      (
+        await request(
+          '/account/profile',
+          a.cookie,
+          { nickname: 'Olbo' },
+          'PATCH',
+          { Origin: 'https://other.test' },
+        )
+      ).status,
+    ).toBe(403);
+    expect(
+      (
+        await request(
+          '/account/profile',
+          a.cookie,
+          { nickname: 'Olbo', userId: b.id },
+          'PATCH',
+        )
+      ).status,
+    ).toBe(400);
+    for (const nickname of [
+      '',
+      'a',
+      'a'.repeat(25),
+      '<script>',
+      '---',
+      'a\nb',
+      'a\u200bb',
+      123,
+    ]) {
+      expect(
+        (await request('/account/profile', a.cookie, { nickname }, 'PATCH'))
+          .status,
+      ).toBe(400);
+    }
+    expect(
+      await (
+        await request(
+          '/account/profile',
+          a.cookie,
+          { nickname: "  Olbo's Rune  " },
+          'PATCH',
+        )
+      ).json(),
+    ).toEqual({ nickname: "Olbo's Rune" });
+    expect((await view(a.cookie)).user!.nickname).toBe("Olbo's Rune");
+    expect((await view(b.cookie)).user!.nickname).toBe(other);
+    const exported = (await (
+      await request('/account/export', a.cookie)
+    ).json()) as { user: { nickname: string } };
+    expect(exported.user.nickname).toBe("Olbo's Rune");
+    tokenAction = 'delete-account';
+    expect(
+      (
+        await request(
+          '/account',
+          a.cookie,
+          { confirm: true, token: 'test' },
+          'DELETE',
+        )
+      ).status,
+    ).toBe(200);
+    const db = await mf.getD1Database('DB');
+    expect(
+      await db
+        .prepare('SELECT * FROM account_profiles WHERE user_id=?')
+        .bind(a.id)
+        .first(),
+    ).toBeNull();
+  });
+
+  it('uses the server nickname for signed-in publishing, binds guest ownership and renames existing entries', async () => {
+    const a = await session(),
+      b = await session();
+    // Prepare a completed run; replay validation has independent end-to-end coverage.
+    const response = await request('/runs', '', { mode: 'hard' });
+    const ticket = (await response.json()) as { id: string };
+    const guest = response.headers.get('set-cookie')!.split(';')[0];
+    const db = await mf.getD1Database('DB');
+    const row = await db
+      .prepare('SELECT state FROM runs WHERE id=?')
+      .bind(ticket.id)
+      .first<{ state: string }>();
+    const state = JSON.parse(row!.state);
+    state.ticks = 7;
+    state.series.points = 20;
+    state.series.status = 'dead';
+    await db
+      .prepare('UPDATE runs SET finished=1,state=? WHERE id=?')
+      .bind(JSON.stringify(state), ticket.id)
+      .run();
+    await request('/account/profile', a.cookie, { nickname: 'Olbo' }, 'PATCH');
+    tokenAction = 'publish-score';
+    const path = `/runs/${ticket.id}/publish`;
+    expect(
+      (
+        await request(path, guest, {
+          accountId: a.id,
+          name: 'Forged',
+          token: 'test',
+        })
+      ).status,
+    ).toBe(401);
+    expect(
+      (
+        await request(path, `${a.cookie}; ${guest}`, {
+          accountId: b.id,
+          name: 'Forged',
+          token: 'test',
+        })
+      ).status,
+    ).toBe(401);
+    tokenValid = false;
+    expect(
+      (
+        await request(path, `${a.cookie}; ${guest}`, {
+          accountId: a.id,
+          token: 'test',
+        })
+      ).status,
+    ).toBe(400);
+    tokenValid = true;
+    const saved = await request(path, `${a.cookie}; ${guest}`, {
+      accountId: a.id,
+      name: 'Forged',
+      token: 'test',
+    });
+    expect(saved.status, await saved.clone().text()).toBe(200);
+    const stored = await db
+      .prepare('SELECT name FROM scores WHERE id=?')
+      .bind(ticket.id)
+      .first<{ name: string }>();
+    expect(stored?.name).toBe('Olbo');
+    expect(
+      (
+        await request(path, `${b.cookie}; ${guest}`, {
+          name: 'Imposter',
+          token: 'test',
+        })
+      ).status,
+    ).toBe(401);
+    expect(
+      (await request(path, guest, { name: 'Imposter', token: 'test' })).status,
+    ).toBe(401);
+    await request(
+      '/account/profile',
+      a.cookie,
+      { nickname: 'New Nickname' },
+      'PATCH',
+    );
+    const board = (await (
+      await request('/leaderboards?mode=hard', a.cookie)
+    ).json()) as { entries: Array<{ name: string; mine: boolean }> };
+    expect(board.entries.find((e) => e.mine)?.name).toBe('New Nickname');
+    expect(JSON.stringify(board)).not.toContain(a.id);
   });
 });
