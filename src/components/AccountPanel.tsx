@@ -220,7 +220,8 @@ export function AccountPanel({
             <p className="fine-print">
               No password to create. Your name and email stay private unless you
               choose a public name for a high score.{' '}
-              <a href="/privacy/">Account data & privacy</a>
+              <a href="/privacy/">Privacy Policy</a> ·{' '}
+              <a href="/terms/">Terms of Service</a>
             </p>
           </div>
           {staging && !providerReady && (

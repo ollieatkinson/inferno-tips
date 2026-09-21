@@ -6,7 +6,9 @@ Work is on `feat/account-progress`. Production accounts remain disabled. Staging
 
 The owner confirmed real Discord login and successful Turnstile verification on staging. This release will use Discord only; Google is deferred. The UI only offers configured providers and only requests linking verification when another configured provider is available. Google support remains dormant until a later release configures it.
 
-Production now has `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`, its existing Turnstile secret, and a newly generated, distinct `AUTH_SECRET`. Before launch, register the Discord callback `https://inferno.tips/api/v1/auth/callback/discord`, apply the account migrations, and deploy the frontend/API with accounts enabled. Google configuration is not a launch requirement.
+Production now has `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`, its existing Turnstile secret, and a newly generated, distinct `AUTH_SECRET`. The owner confirmed OAuth setup. Before launch, apply the account migrations and deploy the frontend/API with accounts enabled, then verify real production sign-in. Google configuration is not a launch requirement.
+
+Discord application policy URLs are `https://inferno.tips/terms/` and `https://inferno.tips/privacy/`. The contact address on both pages is `tos@inferno.tips`, supplied by the owner. Policy pages were published separately on trunk so they are accessible before account rollout.
 
 ## What is implemented
 
