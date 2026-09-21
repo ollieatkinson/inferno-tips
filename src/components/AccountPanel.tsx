@@ -228,6 +228,7 @@ export function AccountPanel({
             <NicknameForm
               key={account.user.id}
               user={account.user}
+              hasDiscord={account.linkedProviders.includes('discord')}
               refresh={refresh}
             />
           )}
@@ -522,9 +523,11 @@ export function AccountPanel({
 
 function NicknameForm({
   user,
+  hasDiscord,
   refresh,
 }: {
   user: NonNullable<AccountView['user']>;
+  hasDiscord: boolean;
   refresh: () => Promise<void>;
 }) {
   const [nickname, setNickname] = useState(user.nickname);
@@ -579,15 +582,30 @@ function NicknameForm({
           aria-describedby="nickname-help"
         />
         <p className="fine-print" id="nickname-help">
-          We start you with three random words. Choose any 2–24 character name;
-          nicknames are not unique.
+          We start you with three random words. Use 2–24 letters, numbers,
+          spaces, apostrophes, hyphens or underscores. Nicknames are not unique.
         </p>
-        <button
-          className="button secondary"
-          disabled={saving || nickname === user.nickname}
-        >
-          {saving ? 'Saving…' : 'Save nickname'}
-        </button>
+        <div className="account-actions">
+          <button
+            className="button secondary"
+            disabled={saving || nickname === user.nickname}
+          >
+            {saving ? 'Saving…' : 'Save nickname'}
+          </button>
+          {hasDiscord && (
+            <button
+              type="button"
+              className="text-button"
+              disabled={saving}
+              onClick={() => {
+                setNickname(user.name.trim().normalize('NFC'));
+                setMessage('Review the name, then save to use it publicly.');
+              }}
+            >
+              Use my Discord name
+            </button>
+          )}
+        </div>
         {message && <p role="status">{message}</p>}
       </form>
     </section>
