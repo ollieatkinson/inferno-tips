@@ -231,7 +231,7 @@ export function SettingsPage({
             <h2 id="settings-zuk-title">Zuk timer</h2>
             <p>
               Warnings for the next set and preparation before healers.{' '}
-              <a href="/zuk-timer/">Open the timer →</a>
+              <a href="/zuk-timer/?focus=1">Open the timer →</a>
             </p>
           </div>
           <div className="settings-fields">

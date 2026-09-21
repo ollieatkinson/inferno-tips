@@ -255,7 +255,7 @@ export function LearningPath({
                 Start at the first set, pause below 600 HP and resume at Jad.
                 Includes a healer preparation reminder and Focus mode.
               </p>
-              <a className="button secondary" href="/zuk-timer/">
+              <a className="button secondary" href="/zuk-timer/?focus=1">
                 Open Zuk timer →
               </a>
             </div>
