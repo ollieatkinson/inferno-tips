@@ -9,6 +9,7 @@
     "APP_ORIGIN": "http://localhost:4321",
     "TURNSTILE_SITE_KEY": "1x00000000000000000000AA",
     "ALLOW_TEST_TURNSTILE": "true",
+    "ACCOUNTS_ENABLED": "false",
   },
   "d1_databases": [
     {
@@ -43,6 +44,22 @@
         "period": 60,
       },
     },
+    {
+      "name": "AUTH_LIMIT",
+      "namespace_id": "1031",
+      "simple": {
+        "limit": 60,
+        "period": 60,
+      },
+    },
+    {
+      "name": "ACCOUNT_LIMIT",
+      "namespace_id": "1041",
+      "simple": {
+        "limit": 60,
+        "period": 60,
+      },
+    },
   ],
   "triggers": {
     "crons": ["17 3 * * *"],
@@ -61,6 +78,7 @@
         "APP_ORIGIN": "https://inferno-tips-api-staging.oliveratkinson.workers.dev",
         "TURNSTILE_SITE_KEY": "0x4AAAAAAE9s_YZTYoo093V2",
         "ALLOW_TEST_TURNSTILE": "false",
+        "ACCOUNTS_ENABLED": "true",
       },
       "d1_databases": [
         {
@@ -95,6 +113,22 @@
             "period": 60,
           },
         },
+        {
+          "name": "AUTH_LIMIT",
+          "namespace_id": "1032",
+          "simple": {
+            "limit": 60,
+            "period": 60,
+          },
+        },
+        {
+          "name": "ACCOUNT_LIMIT",
+          "namespace_id": "1042",
+          "simple": {
+            "limit": 60,
+            "period": 60,
+          },
+        },
       ],
       "assets": {
         "directory": "../dist",
@@ -115,6 +149,7 @@
         "APP_ORIGIN": "https://inferno.tips",
         "TURNSTILE_SITE_KEY": "0x4AAAAAAE9s_pD1qBMp1fzO",
         "ALLOW_TEST_TURNSTILE": "false",
+        "ACCOUNTS_ENABLED": "true",
       },
       "d1_databases": [
         {
@@ -149,8 +184,25 @@
             "period": 60,
           },
         },
+        {
+          "name": "AUTH_LIMIT",
+          "namespace_id": "1033",
+          "simple": {
+            "limit": 60,
+            "period": 60,
+          },
+        },
+        {
+          "name": "ACCOUNT_LIMIT",
+          "namespace_id": "1043",
+          "simple": {
+            "limit": 60,
+            "period": 60,
+          },
+        },
       ],
     },
   },
   "account_id": "70752272304e0c63623f7f6ac58f4ba7",
+  "compatibility_flags": ["nodejs_compat"],
 }

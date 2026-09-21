@@ -21,19 +21,22 @@ declare global {
     turnstile?: TurnstileApi;
   }
 }
-function Verification({
+export function Verification({
   siteKey,
   onToken,
   reset,
+  action = 'publish-score',
 }: {
   siteKey: string;
   onToken: (token: string) => void;
   reset: number;
+  action?: string;
 }) {
   const container = useRef<HTMLDivElement>(null);
   const callback = useRef(onToken);
   callback.current = onToken;
   const [error, setError] = useState('');
+  const [retry, setRetry] = useState(0);
   useEffect(() => {
     let disposed = false,
       widget: string | undefined;
@@ -58,11 +61,17 @@ function Verification({
       if (disposed || widget || !window.turnstile || !container.current) return;
       widget = window.turnstile.render(container.current, {
         sitekey: siteKey,
-        action: 'publish-score',
+        action,
         theme: 'dark',
         size: 'compact',
-        callback: (token: string) => callback.current(token),
-        'expired-callback': () => callback.current(''),
+        callback: (token: string) => {
+          setError('');
+          callback.current(token);
+        },
+        'expired-callback': () => {
+          callback.current('');
+          setError('Verification expired. Please retry.');
+        },
         'error-callback': () => {
           callback.current('');
           setError(
@@ -84,11 +93,21 @@ function Verification({
       script?.removeEventListener('error', fail);
       if (widget) window.turnstile?.remove(widget);
     };
-  }, [siteKey, reset]);
+  }, [siteKey, reset, action, retry]);
   return (
     <>
       <div ref={container} />
-      {error && <p role="status">{error}</p>}
+      {error && (
+        <div>
+          <p role="status">{error}</p>
+          <button
+            className="button secondary"
+            onClick={() => setRetry((n) => n + 1)}
+          >
+            Retry verification
+          </button>
+        </div>
+      )}
     </>
   );
 }

@@ -1,3 +1,5 @@
+import { AccountPanel, useAccount } from './AccountPanel';
+import { DrillRecorder } from '../lib/accountClient';
 import { DeathOverlay } from './DeathOverlay';
 import { HighScores as HighScoresPage, ScoreSubmission } from './CloudScores';
 import {
@@ -148,11 +150,17 @@ type Page =
   | 'progress'
   | 'resources'
   | 'settings'
+  | 'account'
   | 'hard'
   | 'scores'
   | 'endless';
 
 export default function Academy() {
+  const {
+    account,
+    error: accountError,
+    refresh: refreshAccount,
+  } = useAccount();
   const [page, setPage] = useState<Page>('overview');
   const returnRoute = useRef('#drills');
   const [settings, setSettings] = useState(readSettings);
@@ -170,7 +178,8 @@ export default function Academy() {
   }
   const [courseEntry, setCourseEntry] = useState<string>();
   const [active, setActive] = useState<Lesson | null>(null);
-  const [progress, setProgress] = useState<Progress>({});
+  const [localProgress, setProgress] = useState<Progress>({});
+  const progress = account.user ? account.progress : localProgress;
   const [storageError, setStorageError] = useState(false);
   const [resetConfirm, setResetConfirm] = useState(false);
   useEffect(() => {
@@ -199,6 +208,7 @@ export default function Academy() {
           'progress',
           'resources',
           'settings',
+          'account',
           'hard',
           'scores',
           'endless',
@@ -355,7 +365,14 @@ export default function Academy() {
           <Icon name="settings" /> Settings
         </button>
         <div className="sidebar-bottom">
-          <p>Progress is saved in this browser.</p>
+          <p>
+            {account.user
+              ? 'Progress is saved to your account.'
+              : 'Progress is saved in this browser.'}
+          </p>
+          <a href="#account">
+            {account.user ? 'Manage account' : 'Sign in to sync progress'}
+          </a>
           <a href="/credits/">Sources & simulation limits ↗</a>
         </div>
       </aside>
@@ -373,12 +390,16 @@ export default function Academy() {
                     progress: 'Your progress',
                     resources: 'Guides & resources',
                     settings: 'Settings',
+                    account: 'Account',
                     scores: 'High scores',
                     hard: 'Hard circuit',
                     endless: 'Endless gauntlet',
                   }[page]}
             </b>
           </div>
+          <a className="topbar-account" href="#account">
+            {account.user ? 'Account' : 'Sign in'}
+          </a>
           <a
             className="topbar-los"
             href={sourceLinks.los}
@@ -399,6 +420,7 @@ export default function Academy() {
           {active ? (
             <Trainer
               key={active.id}
+              accountUserId={account.user?.id}
               settings={settings}
               lesson={active}
               progress={progress[active.id]}
@@ -459,10 +481,19 @@ export default function Academy() {
                       <span className="eyebrow">SAVED RESULTS</span>
                       <h1>Your practice results</h1>
                       <p>
-                        Challenge passes and best scores, saved in this browser.
+                        {account.user
+                          ? 'Challenge passes and best scores, verified and saved to your account.'
+                          : 'Challenge passes and best scores, saved in this browser.'}
                       </p>
                     </div>
                   </div>
+                  <p>
+                    <a href="#account">
+                      {account.user
+                        ? 'Account, imported history & recent attempts →'
+                        : 'Sign in to save progress across devices →'}
+                    </a>
+                  </p>
                   <div className="progress-stats">
                     <div>
                       <strong>
@@ -571,20 +602,36 @@ export default function Academy() {
                         onClick={() => setResetConfirm(true)}
                       >
                         <Icon name="reset" size={15} />
-                        Reset saved progress
+                        Reset browser progress
                       </button>
                     )}
                   </div>
                 </>
               )}
+              {page === 'account' && (
+                <AccountPanel
+                  account={account}
+                  error={accountError}
+                  refresh={refreshAccount}
+                />
+              )}
               {page === 'resources' && <Resources />}
               {page === 'scores' && <HighScoresPage />}
               {page === 'settings' && (
-                <SettingsPage
-                  settings={settings}
-                  onChange={saveSettings}
-                  saveError={settingsError}
-                />
+                <>
+                  <p className="account-settings-link">
+                    <a href="#account">
+                      {account.user
+                        ? 'Manage account & synced progress →'
+                        : 'Sign in to sync your drill progress →'}
+                    </a>
+                  </p>
+                  <SettingsPage
+                    settings={settings}
+                    onChange={saveSettings}
+                    saveError={settingsError}
+                  />
+                </>
               )}
             </>
           )}
@@ -1237,6 +1284,7 @@ function SeriesTrainer({
 }
 
 function Trainer({
+  accountUserId,
   settings,
   lesson,
   progress,
@@ -1260,7 +1308,20 @@ function Trainer({
   ) => void;
   onNext: () => void;
   session?: TrainerSession;
+  accountUserId?: string;
 }) {
+  const recorderRef = useRef<DrillRecorder | null>(null);
+  const startingRef = useRef(false);
+  const mountedRef = useRef(true);
+  const [starting, setStarting] = useState(false);
+  const [syncMessage, setSyncMessage] = useState('');
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      void recorderRef.current?.cancel().catch(() => {});
+    };
+  }, []);
   const [mode, setMode] = useState<Mode>(
     session ? 'challenge' : settings.defaultMode,
   );
@@ -1399,13 +1460,46 @@ function Trainer({
       setSoundError(true);
     }
   }
-  function begin(fromResults = false) {
+  async function begin(fromResults = false, selectedMode = mode) {
+    if (startingRef.current) return;
+    startingRef.current = true;
+    setStarting(true);
+    setStatus('ready');
+    setSyncMessage('');
+    const previousRecorder = recorderRef.current;
+    recorderRef.current = null;
+    if (previousRecorder) await previousRecorder.cancel().catch(() => {});
+    void prepareAudio();
+    if (accountUserId && !sessionRef.current) {
+      try {
+        recorderRef.current = await DrillRecorder.start(
+          accountUserId,
+          lesson.id,
+          selectedMode,
+        );
+        if (mountedRef.current)
+          setSyncMessage('This run will sync to your account.');
+      } catch (error) {
+        if (mountedRef.current)
+          setSyncMessage(
+            `${error instanceof Error ? error.message : 'Account sync unavailable.'} This run will be saved in this browser only.`,
+          );
+      }
+    }
+    startingRef.current = false;
+    if (!mountedRef.current) {
+      void recorderRef.current?.cancel().catch(() => {});
+      return;
+    }
+    setStarting(false);
     tickDeadlineRef.current = performance.now() + ms;
     startFocus.current = fromResults ? 'return' : 'stay';
     void prepareAudio();
     setState(
       initialState(
-        sessionRef.current?.seed ?? Math.floor(Math.random() * 100000),
+        sessionRef.current?.seed ??
+          recorderRef.current?.ticket.seed ??
+          Math.floor(Math.random() * 100000),
       ),
     );
     transitionsRef.current = [];
@@ -1433,7 +1527,7 @@ function Trainer({
   }, [session?.run.ended]);
   function beginChallenge(fromResults = false) {
     setMode('challenge');
-    begin(fromResults);
+    void begin(fromResults, 'challenge');
   }
   useLayoutEffect(() => {
     if (status !== 'countdown' || !startFocus.current) return;
@@ -1547,14 +1641,16 @@ function Trainer({
           transitions: transitionsRef.current,
           blowpipe: attackRef.current,
         };
-        sessionRef.current?.record?.(sessionRef.current.run.stage, {
+        const tickInput: RunTick = {
           tick: state.tick + 1,
           prayer: prayerAtTick,
           tile: tileAtTick,
           supply,
           transitions: [...input.transitions],
           blowpipe: input.blowpipe,
-        });
+        };
+        sessionRef.current?.record?.(sessionRef.current.run.stage, tickInput);
+        recorderRef.current?.record(tickInput);
         transitionsRef.current = [];
         attackRef.current = null;
         setAttackQueued(null);
@@ -1586,6 +1682,14 @@ function Trainer({
     if (state.tick === totalTicks && !savedRef.current) {
       savedRef.current = true;
       setStatus('done');
+      const recorder = recorderRef.current;
+      if (recorder)
+        void recorder
+          .finish(interrupted || finishingAsPractice)
+          .then((message) => {
+            if (mountedRef.current && recorderRef.current === recorder)
+              setSyncMessage(message);
+          });
       completeRef.current(
         lesson.id,
         accuracy(state.checks),
@@ -1680,6 +1784,11 @@ function Trainer({
         </div>
         <GameIcon name={lesson.icon} className="lesson-heading-icon" />
       </div>
+      {syncMessage && (
+        <p className="storage-notice" role="status">
+          {syncMessage} <a href="#account">Account settings</a>
+        </p>
+      )}
       <div className="trainer-layout">
         <section
           className="training-panel"
@@ -1698,7 +1807,7 @@ function Trainer({
                 aria-label="Training mode"
               >
                 <button
-                  disabled={busy}
+                  disabled={busy || starting}
                   aria-pressed={mode === 'guided'}
                   className={mode === 'guided' ? 'selected' : ''}
                   onClick={() => {
@@ -1710,7 +1819,7 @@ function Trainer({
                   Guided practice
                 </button>
                 <button
-                  disabled={busy}
+                  disabled={busy || starting}
                   aria-pressed={mode === 'challenge'}
                   className={mode === 'challenge' ? 'selected' : ''}
                   onClick={() => {
@@ -1728,18 +1837,21 @@ function Trainer({
                 <>
                   <button
                     className="button primary"
-                    onClick={() => (session ? session.restart() : begin())}
+                    disabled={starting}
+                    onClick={() => (session ? session.restart() : void begin())}
                   >
                     <Icon name="play" size={15} />
-                    {session
-                      ? 'Retry run'
-                      : status === 'done'
-                        ? mode === 'guided'
-                          ? 'Restart practice'
-                          : 'Try challenge again'
-                        : mode === 'guided'
-                          ? 'Start guided practice'
-                          : 'Start challenge'}
+                    {starting
+                      ? 'Preparing run…'
+                      : session
+                        ? 'Retry run'
+                        : status === 'done'
+                          ? mode === 'guided'
+                            ? 'Restart practice'
+                            : 'Try challenge again'
+                          : mode === 'guided'
+                            ? 'Start guided practice'
+                            : 'Start challenge'}
                   </button>
                   {status === 'done' && mode === 'guided' && (
                     <button

@@ -1,4 +1,10 @@
 import { expect, test } from '@playwright/test';
+// Timing displays are exercised locally; network recording has its own suite.
+test.beforeEach(async ({ page }) => {
+  await page.route('**/api/v1/config', (route) =>
+    route.fulfill({ json: { enabled: false, version: 1, siteKey: '' } }),
+  );
+});
 
 for (const [id, cycle] of [
   ['rhythm', 4],

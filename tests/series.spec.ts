@@ -239,7 +239,7 @@ test('progress retains earlier scoring for reference and reset also clears circu
     page.getByText(/Their new scores and passes start fresh/),
   ).toBeVisible();
   await page
-    .getByRole('button', { name: 'Reset saved progress', exact: true })
+    .getByRole('button', { name: 'Reset browser progress', exact: true })
     .click();
   await page
     .getByRole('button', { name: 'Delete progress', exact: true })

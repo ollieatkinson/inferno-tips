@@ -1,4 +1,13 @@
-import type { D1Database, RateLimit } from '@cloudflare/workers-types';
+import type { Env } from './env';
+import { ApiError, json, hash, body, verifyTurnstile } from './http';
+import {
+  accountRoute,
+  cleanupAccounts,
+  scoreGuest,
+  requireScoreGuest,
+  attachNewGuest,
+} from './accounts';
+import { authRoute, accountSession } from './auth';
 import {
   CLOUD_SCORING_VERSION,
   initialVerified,
@@ -10,21 +19,6 @@ import {
 } from '../src/lib/cloudProtocol';
 import { updateSeries } from '../src/lib/series';
 
-export interface Env {
-  DB: D1Database;
-  WRITE_LIMIT: RateLimit;
-  READ_LIMIT: RateLimit;
-  RUN_LIMIT: RateLimit;
-  CLOUD_ENABLED: string;
-  APP_ORIGIN: string;
-  TURNSTILE_SITE_KEY: string;
-  TURNSTILE_SECRET?: string;
-  ALLOW_TEST_TURNSTILE?: string;
-}
-interface Guest {
-  id: string;
-  blocked: number;
-}
 interface Run {
   id: string;
   guest_id: string;
@@ -37,85 +31,6 @@ interface Run {
   next_batch: number;
   state: string;
   finished: number;
-}
-class ApiError extends Error {
-  constructor(
-    public status: number,
-    message: string,
-  ) {
-    super(message);
-  }
-}
-const json = (value: unknown, status = 200) =>
-  new Response(JSON.stringify(value), {
-    status,
-    headers: {
-      'Content-Type': 'application/json',
-      'Cache-Control': 'no-store',
-    },
-  });
-const hash = async (s: string) =>
-  [
-    ...new Uint8Array(
-      await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)),
-    ),
-  ]
-    .map((v) => v.toString(16).padStart(2, '0'))
-    .join('');
-async function body(request: Request): Promise<Record<string, unknown>> {
-  if (
-    request.headers.get('content-type')?.split(';')[0].trim().toLowerCase() !==
-    'application/json'
-  )
-    throw new ApiError(415, 'Send JSON.');
-  const reader = request.body?.getReader();
-  if (!reader) throw new ApiError(400, 'Missing request body.');
-  const chunks: Uint8Array[] = [];
-  let length = 0;
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    length += value.length;
-    if (length > 65536) {
-      await reader.cancel();
-      throw new ApiError(413, 'Request too large.');
-    }
-    chunks.push(value);
-  }
-  const bytes = new Uint8Array(length);
-  let offset = 0;
-  for (const chunk of chunks) {
-    bytes.set(chunk, offset);
-    offset += chunk.length;
-  }
-  try {
-    const value = JSON.parse(new TextDecoder().decode(bytes));
-    if (!value || typeof value !== 'object' || Array.isArray(value)) throw 0;
-    return value;
-  } catch {
-    throw new ApiError(400, 'Invalid JSON object.');
-  }
-}
-async function guest(request: Request, env: Env): Promise<Guest | null> {
-  const token = request.headers
-    .get('Cookie')
-    ?.match(/(?:^|;\s*)inferno_guest=([a-f0-9]{64})(?:;|$)/)?.[1];
-  if (!token) return null;
-  return env.DB.prepare(
-    'SELECT id, blocked FROM guests WHERE credential_hash = ?',
-  )
-    .bind(await hash(token))
-    .first<Guest>();
-}
-async function requireGuest(request: Request, env: Env) {
-  const g = await guest(request, env);
-  if (!g) throw new ApiError(401, 'This browser no longer owns the run.');
-  if (g.blocked)
-    throw new ApiError(
-      403,
-      'Public submissions are unavailable for this identity.',
-    );
-  return g;
 }
 async function ownedRun(id: string, owner: string, env: Env) {
   const run = await env.DB.prepare(
@@ -133,54 +48,12 @@ async function ownedRun(id: string, owner: string, env: Env) {
     throw new ApiError(410, 'This run has expired.');
   return run;
 }
-async function verifyTurnstile(token: unknown, request: Request, env: Env) {
-  if (typeof token !== 'string' || !token || token.length > 2048)
-    throw new ApiError(400, 'Complete the verification before saving.');
-  const local = ['localhost', '127.0.0.1'].includes(
-    new URL(request.url).hostname,
-  );
-  const secret =
-    local && env.ALLOW_TEST_TURNSTILE === 'true'
-      ? '1x0000000000000000000000000000000AA'
-      : env.TURNSTILE_SECRET;
-  if (!secret)
-    throw new ApiError(503, 'Public score verification is not configured yet.');
-  let verification: { success?: boolean; hostname?: string; action?: string };
-  try {
-    const response = await fetch(
-      'https://challenges.cloudflare.com/turnstile/v0/siteverify',
-      {
-        method: 'POST',
-        body: JSON.stringify({
-          secret,
-          response: token,
-          remoteip: request.headers.get('CF-Connecting-IP') ?? undefined,
-        }),
-        headers: { 'Content-Type': 'application/json' },
-        signal: AbortSignal.timeout(10000),
-      },
-    );
-    verification = await response.json();
-  } catch {
-    throw new ApiError(
-      503,
-      'Verification is temporarily unavailable. Please retry.',
-    );
-  }
-  if (
-    verification.success !== true ||
-    (!local &&
-      (verification.hostname !== new URL(env.APP_ORIGIN).hostname ||
-        verification.action !== 'publish-score'))
-  )
-    throw new ApiError(
-      400,
-      'Verification expired or failed. Please try again.',
-    );
-}
 async function route(request: Request, env: Env): Promise<Response> {
   const url = new URL(request.url),
     path = url.pathname.replace(/^\/api\/v1/, '');
+  if (path.startsWith('/auth/')) return authRoute(request, env);
+  if (path === '/account' || path.startsWith('/account/'))
+    return accountRoute(request, env, path);
   if (path === '/config' && request.method === 'GET')
     return json({
       enabled: env.CLOUD_ENABLED === 'true',
@@ -220,7 +93,7 @@ async function route(request: Request, env: Env): Promise<Response> {
     const input = await body(request);
     if (input.mode !== 'hard' && input.mode !== 'endless')
       throw new ApiError(400, 'Invalid challenge mode.');
-    let g = await guest(request, env),
+    let g = await scoreGuest(request, env),
       cookie: string | undefined;
     if (g?.blocked)
       throw new ApiError(
@@ -239,6 +112,7 @@ async function route(request: Request, env: Env): Promise<Response> {
         .run();
       cookie = `inferno_guest=${token}; HttpOnly; SameSite=Lax; Path=/api/v1; Max-Age=31536000${url.protocol === 'https:' ? '; Secure' : ''}`;
     }
+    await attachNewGuest(request, env, g.id);
     const id = crypto.randomUUID(),
       seed = crypto.getRandomValues(new Uint32Array(1))[0] % 100000,
       now = Date.now();
@@ -288,18 +162,32 @@ async function route(request: Request, env: Env): Promise<Response> {
         weekOf(Date.parse(week)) !== week)
     )
       throw new ApiError(400, 'Choose a Monday in UTC.');
-    const g = await guest(request, env);
+    const g = await scoreGuest(request, env);
+    const user = await accountSession(request, env);
+    const identity = user
+      ? `account:${user.user.id}`
+      : g
+        ? `guest:${g.id}`
+        : '';
+    const accountJoin =
+      env.ACCOUNTS_ENABLED === 'true'
+        ? 'LEFT JOIN account_guests ag ON ag.guest_id = s.guest_id'
+        : '';
+    const identitySQL =
+      env.ACCOUNTS_ENABLED === 'true'
+        ? "COALESCE('account:' || ag.user_id, 'guest:' || s.guest_id)"
+        : "'guest:' || s.guest_id";
     const rows = await env.DB.prepare(
       `WITH personal AS (
-      SELECT s.*, ROW_NUMBER() OVER (PARTITION BY s.guest_id ORDER BY s.points DESC, s.cleared DESC, s.stage DESC, s.published_at, s.id) AS personal_order
-      FROM scores s JOIN guests g ON s.guest_id = g.id WHERE s.hidden = 0 AND g.blocked = 0 AND s.mode = ? AND s.version = ? AND (? IS NULL OR s.week = ?)
+      SELECT s.*, ${identitySQL} AS view_identity, ROW_NUMBER() OVER (PARTITION BY ${identitySQL} ORDER BY s.points DESC, s.cleared DESC, s.stage DESC, s.published_at, s.id) AS personal_order
+      FROM scores s JOIN guests g ON s.guest_id = g.id ${accountJoin} WHERE s.hidden = 0 AND g.blocked = 0 AND s.mode = ? AND s.version = ? AND (? IS NULL OR s.week = ?)
     ), ranked AS (
       SELECT *, RANK() OVER (ORDER BY points DESC, cleared DESC, stage DESC) AS rank FROM personal WHERE personal_order = 1
     ), displayed AS (
       SELECT *, ROW_NUMBER() OVER (ORDER BY rank, published_at, id) AS position FROM ranked
-    ) SELECT id, name, points, stage, cleared, published_at AS publishedAt, rank, guest_id = ? AS mine FROM displayed WHERE position <= 100 OR guest_id = ? ORDER BY position`,
+    ) SELECT id, name, points, stage, cleared, published_at AS publishedAt, rank, view_identity = ? AS mine FROM displayed WHERE position <= 100 OR view_identity = ? ORDER BY position`,
     )
-      .bind(mode, version, week, week, g?.id ?? '', g?.id ?? '')
+      .bind(mode, version, week, week, identity, identity)
       .all<Record<string, unknown>>();
     const versions = await env.DB.prepare(
       'SELECT DISTINCT version FROM scores WHERE hidden = 0 ORDER BY version DESC',
@@ -322,10 +210,19 @@ async function route(request: Request, env: Env): Promise<Response> {
     });
   }
   if (path === '/scores/mine' && request.method === 'DELETE') {
-    const g = await requireGuest(request, env);
-    await env.DB.prepare('UPDATE scores SET hidden = 1 WHERE guest_id = ?')
-      .bind(g.id)
-      .run();
+    const user = await accountSession(request, env);
+    if (user)
+      await env.DB.prepare(
+        'UPDATE scores SET hidden = 1 WHERE guest_id IN (SELECT guest_id FROM account_guests WHERE user_id = ?)',
+      )
+        .bind(user.user.id)
+        .run();
+    else {
+      const g = await requireScoreGuest(request, env);
+      await env.DB.prepare('UPDATE scores SET hidden = 1 WHERE guest_id = ?')
+        .bind(g.id)
+        .run();
+    }
     return json({ removed: true });
   }
   const match = path.match(
@@ -333,7 +230,7 @@ async function route(request: Request, env: Env): Promise<Response> {
   );
   if (!match || request.method !== 'POST')
     throw new ApiError(404, 'Not found.');
-  const g = await requireGuest(request, env),
+  const g = await requireScoreGuest(request, env),
     run = await ownedRun(match[1], g.id, env),
     input = await body(request);
   if (match[2] === 'batches') {
@@ -498,7 +395,10 @@ export default {
         'Access-Control-Allow-Methods',
         'GET, POST, DELETE, OPTIONS',
       );
-      response.headers.set('Access-Control-Allow-Headers', 'Content-Type');
+      response.headers.set(
+        'Access-Control-Allow-Headers',
+        'Content-Type, X-Captcha-Response',
+      );
       response.headers.set('Vary', 'Origin');
     }
     response.headers.set('X-Content-Type-Options', 'nosniff');
@@ -517,6 +417,7 @@ export default {
   },
   async scheduled(_event: unknown, env: Env) {
     const cutoff = Date.now() - 30 * 86400000;
+    if (env.ACCOUNTS_ENABLED === 'true') await cleanupAccounts(env, cutoff);
     await env.DB.batch([
       env.DB.prepare('DELETE FROM batches WHERE created_at < ?').bind(cutoff),
       env.DB.prepare(

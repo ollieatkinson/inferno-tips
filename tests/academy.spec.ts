@@ -187,12 +187,12 @@ test('two passes master a lesson, persist on reload, and reset only after confir
   await expect(
     page.locator('.progress-table').getByText('2/2 passes'),
   ).toHaveCount(1);
-  await page.getByRole('button', { name: 'Reset saved progress' }).click();
+  await page.getByRole('button', { name: 'Reset browser progress' }).click();
   await page.getByRole('button', { name: 'Keep progress' }).click();
   await expect(
     page.locator('.progress-table').getByText('2/2 passes'),
   ).toHaveCount(1);
-  await page.getByRole('button', { name: 'Reset saved progress' }).click();
+  await page.getByRole('button', { name: 'Reset browser progress' }).click();
   await page
     .getByRole('button', { name: 'Delete progress', exact: true })
     .click();
@@ -249,7 +249,9 @@ test('missed prayers receive specific feedback and no passing score', async ({
   await start(page);
   for (let i = 0; i < 36; i++) await page.clock.runFor(600);
   await expect(page.locator('.result-score')).toHaveText('0%');
-  await expect(page.getByText(/Your next focus: blob reads/)).toBeVisible();
+  await expect(page.getByLabel('Next attempt advice')).toContainText(
+    'Have Magic or Ranged active when the blob reads.',
+  );
   await page.getByText('Review all 18 checks').click();
   await expect(page.locator('.review-list .incorrect')).toHaveCount(18);
 });
@@ -314,7 +316,10 @@ test('corrupt or blocked storage cannot prevent practice', async ({ page }) => {
   await expect(page.getByRole('status')).toContainText(
     'Browser storage is unavailable',
   );
-  await page.getByRole('button', { name: 'Start drill →' }).click();
+  await page
+    .getByRole('button', { name: 'Practise', exact: true })
+    .first()
+    .click();
   await expect(
     page.getByRole('button', { name: 'Start guided practice' }),
   ).toBeVisible();
@@ -1327,7 +1332,10 @@ test('authentic prayer audio follows toggles and respects saved sound preference
         ).prayerAudioStarts,
     );
   await open(page);
-  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await page
+    .locator('.app-shell')
+    .getByRole('button', { name: 'Settings', exact: true })
+    .click();
   await expect(page.getByLabel('Enable prayer sounds')).toBeChecked();
   await page.getByRole('slider', { name: 'Prayer sound volume' }).fill('25');
   await page.reload();
@@ -1378,11 +1386,17 @@ test('authentic prayer audio follows toggles and respects saved sound preference
   await page.getByRole('button', { name: 'Resume', exact: true }).click();
   await page.clock.runFor(600);
   await expect.poll(async () => (await starts()).length).toBe(7);
-  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await page
+    .locator('.app-shell')
+    .getByRole('button', { name: 'Settings', exact: true })
+    .click();
   await page.getByLabel('Enable prayer sounds').uncheck();
   await page.reload();
   await expect(page.locator('astro-island')).not.toHaveAttribute('ssr');
-  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await page
+    .locator('.app-shell')
+    .getByRole('button', { name: 'Settings', exact: true })
+    .click();
   await expect(page.getByLabel('Enable prayer sounds')).not.toBeChecked();
   await expect(
     page.getByRole('slider', { name: 'Prayer sound volume' }),
@@ -1483,7 +1497,9 @@ test('prayer circles keep the previous highlight until the shared tick boundary'
   await page.clock.runFor(1);
   await expect(magic).toHaveAttribute('data-lit', 'false');
   await expect(ranged).toHaveAttribute('data-lit', 'true');
-  await expect(page.locator('.run-stats')).toContainText('100%');
+  await expect(page.locator('.mechanic-scoring')).toContainText(
+    'Prayer accuracy: 100%',
+  );
   // Explicit off/on toggles the local circle; protection stays on the tick.
   await ranged.click();
   await expect(ranged).toHaveAttribute('data-lit', 'false');
@@ -1637,7 +1653,10 @@ test('page and drill links survive reload and browser history', async ({
   page,
 }) => {
   await open(page);
-  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await page
+    .locator('.app-shell')
+    .getByRole('button', { name: 'Settings', exact: true })
+    .click();
   await expect(page).toHaveURL(/#settings$/);
   await page.reload();
   await expect(
@@ -1700,7 +1719,9 @@ test('mobile run keeps pause, enemy cues and prayer clicks in the viewport', asy
   }
   await magic.click();
   await page.clock.runFor(600);
-  await expect(page.locator('.run-stats')).toContainText('100%');
+  await expect(page.locator('.mechanic-scoring')).toContainText(
+    'Prayer accuracy: 100%',
+  );
   await pause.click();
   await expect(
     page.getByRole('heading', { name: 'Practice paused' }),
@@ -1767,9 +1788,9 @@ test('supplies play accepted sounds, change dose sprites, leave vials and obey m
           }
         ).supplyAudioStarts,
     );
-  await page.clock.install();
+  await page.clock.install({ time: 0 });
+  await page.clock.pauseAt(1000);
   await open(page);
-  await page.clock.pauseAt(new Date());
   await lesson(page, 'Brew and restore between flicks');
   await page.waitForLoadState('networkidle');
   await start(page, false);
@@ -1879,7 +1900,10 @@ test('supplies play accepted sounds, change dose sprites, leave vials and obey m
   await expect.poll(async () => (await starts()).length).toBe(9);
   // Browser Vorbis decoders can retain a small amount of encoder padding.
   expect((await starts())[8].duration).toBeCloseTo(1.2, 1);
-  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await page
+    .locator('.app-shell')
+    .getByRole('button', { name: 'Settings', exact: true })
+    .click();
   await expect(page.getByLabel('Enable food and potion sounds')).toBeChecked();
   await expect(
     page.getByRole('slider', { name: 'Food and potion volume' }),
