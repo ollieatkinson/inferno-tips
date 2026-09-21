@@ -32,7 +32,6 @@ export default function ZukTimer() {
   const [resetOpen, setResetOpen] = useState(false);
   const [history, setHistory] = useState<ZukTimerState[]>([]);
   const [lastAction, setLastAction] = useState(0);
-  const root = useRef<HTMLDivElement>(null);
   const audio = useRef<AudioContext | null>(null);
   const sounded = useRef<number | null>(null);
   const active = state.deadline !== null;
@@ -142,21 +141,9 @@ export default function ZukTimer() {
     if (value) url.searchParams.set('focus', '1');
     else url.searchParams.delete('focus');
     historyReplace(url);
-    if (!value && document.fullscreenElement)
-      void document.exitFullscreen().catch(() => {});
   }
   function historyReplace(url: URL) {
     window.history.replaceState(null, '', url);
-  }
-  async function fullscreen() {
-    toggleFocus(true);
-    try {
-      await root.current?.requestFullscreen();
-    } catch {
-      setMessage(
-        'Fullscreen is unavailable in this browser. Focus mode is on.',
-      );
-    }
   }
   function toggleSound() {
     const next: Settings = { ...readSettings(), zukSound: !settings.zukSound };
@@ -170,7 +157,23 @@ export default function ZukTimer() {
   }
 
   return (
-    <div ref={root} className={`zuk-shell ${focus ? 'zuk-focus' : ''}`}>
+    <div
+      className={`zuk-shell ${focus ? 'zuk-focus' : ''}`}
+      onClick={(event) => {
+        if (
+          !ready ||
+          state.phase === 'done' ||
+          resetOpen ||
+          event.detail > 1 ||
+          window.getSelection()?.toString() ||
+          (event.target as Element).closest(
+            'button, a, input, select, textarea, label, [role="button"], .zuk-toolbar, .zuk-corrections, .zuk-reset, .zuk-nav, .zuk-footer',
+          )
+        )
+          return;
+        act('next');
+      }}
+    >
       <nav className="zuk-nav" aria-label="Timer navigation">
         <a className="zuk-brand" href="/">
           <img src="/brand-mark.svg" alt="" width="28" height="28" />{' '}
@@ -195,9 +198,6 @@ export default function ZukTimer() {
             onClick={() => toggleFocus(!focus)}
           >
             {focus ? 'Exit focus mode' : 'Focus mode'}
-          </button>
-          <button className="text-button" onClick={() => void fullscreen()}>
-            Fullscreen
           </button>
           <button
             className="text-button"
@@ -263,13 +263,16 @@ export default function ZukTimer() {
                       : 'Repeats every 3:30. Keep following the shield.'}
             </p>
             {state.phase !== 'done' && (
-              <button
-                className="button primary zuk-next"
-                disabled={!ready || now - lastAction < 400}
-                onClick={() => act('next')}
-              >
-                {nextActions[state.phase]}
-              </button>
+              <div>
+                <button
+                  className="button primary zuk-next"
+                  disabled={!ready || now - lastAction < 400}
+                  onClick={() => act('next')}
+                >
+                  {nextActions[state.phase]}
+                </button>
+                <p className="zuk-tap-hint">Tap anywhere to mark this phase.</p>
+              </div>
             )}
             {state.setPending && state.phase !== 'done' && (
               <div className="zuk-set-status" role="status">

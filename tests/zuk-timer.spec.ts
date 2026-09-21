@@ -115,3 +115,63 @@ test('a fresh set keeps the healer caution visible until marked under control', 
     'Don’t spawn healers yet',
   );
 });
+
+test('page clicks advance once and leave controls, text selection and reset independent', async ({
+  page,
+}) => {
+  await ready(page);
+  await expect(
+    page.getByRole('button', { name: 'Fullscreen', exact: true }),
+  ).toHaveCount(0);
+  await page.getByRole('timer').dblclick();
+  await expect(page.locator('.zuk-phase')).toHaveText('Before Jad');
+  await page.clock.runFor(500);
+  await page.evaluate(() => window.getSelection()?.removeAllRanges());
+  await page.getByRole('button', { name: 'Focus mode', exact: true }).click();
+  await expect(page.locator('.zuk-phase')).toHaveText('Before Jad');
+  await page
+    .getByRole('button', { name: 'Set under control', exact: true })
+    .click();
+  await page.getByRole('button', { name: 'Add 5 seconds' }).click();
+  await expect(page.locator('.zuk-phase')).toHaveText('Before Jad');
+  await page.getByRole('button', { name: 'Reset', exact: true }).click();
+  await page.getByRole('timer').click();
+  await expect(page.locator('.zuk-phase')).toHaveText('Before Jad');
+  await page.getByRole('button', { name: 'Keep timer' }).click();
+  await page.locator('.zuk-shell').click({ position: { x: 3, y: 3 } });
+  await expect(page.locator('.zuk-phase')).toContainText('timer paused');
+  await page.clock.runFor(500);
+  await page.evaluate(() => {
+    const selection = window.getSelection()!;
+    const range = document.createRange();
+    range.selectNodeContents(document.querySelector('.zuk-phase')!);
+    selection.removeAllRanges();
+    selection.addRange(range);
+    document.querySelector<HTMLElement>('.zuk-digits')!.click();
+  });
+  await expect(page.locator('.zuk-phase')).toContainText('timer paused');
+  await page.evaluate(() => window.getSelection()?.removeAllRanges());
+  await next(page, 'Jad spawned');
+  await expect(page.locator('.zuk-phase')).toHaveText('Jad is alive');
+});
+
+test.describe('touch phase changes', () => {
+  test.use({ hasTouch: true, viewport: { width: 390, height: 844 } });
+  test('taps on the clock and page background work in Focus mode', async ({
+    page,
+  }) => {
+    await ready(page, '/zuk-timer/?focus=1');
+    await page.getByRole('timer').tap();
+    await expect(page.locator('.zuk-phase')).toHaveText('Before Jad');
+    await page.getByRole('timer').tap();
+    await expect(page.locator('.zuk-phase')).toHaveText('Before Jad');
+    await page.clock.runFor(500);
+    await page.touchscreen.tap(3, 3);
+    await expect(page.locator('.zuk-phase')).toContainText('timer paused');
+    await page.clock.runFor(500);
+    await page.getByRole('button', { name: 'Exit focus mode' }).tap();
+    await expect(page.locator('.zuk-phase')).toContainText('timer paused');
+    await page.getByRole('timer').tap();
+    await expect(page.locator('.zuk-phase')).toHaveText('Jad is alive');
+  });
+});
