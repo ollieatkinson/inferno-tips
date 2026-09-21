@@ -149,7 +149,7 @@
         "APP_ORIGIN": "https://inferno.tips",
         "TURNSTILE_SITE_KEY": "0x4AAAAAAE9s_pD1qBMp1fzO",
         "ALLOW_TEST_TURNSTILE": "false",
-        "ACCOUNTS_ENABLED": "false",
+        "ACCOUNTS_ENABLED": "true",
       },
       "d1_databases": [
         {

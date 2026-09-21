@@ -1,12 +1,12 @@
 # Optional accounts and drill progress
 
-Work is on `feat/account-progress`. Production accounts remain disabled. Staging uses the existing staging Worker and D1 database; no additional Cloudflare product is required.
+The production release enables Discord accounts and verified drill progress. Production and staging use separate existing Workers and D1 databases; no additional Cloudflare product is required.
 
 ## Release scope — 21 September 2026
 
 The owner confirmed real Discord login and successful Turnstile verification on staging. This release will use Discord only; Google is deferred. The UI only offers configured providers and only requests linking verification when another configured provider is available. Google support remains dormant until a later release configures it.
 
-Production now has `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`, its existing Turnstile secret, and a newly generated, distinct `AUTH_SECRET`. The owner confirmed OAuth setup. Before launch, apply the account migrations and deploy the frontend/API with accounts enabled, then verify real production sign-in. Google configuration is not a launch requirement.
+Production now has `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`, its existing Turnstile secret, and a newly generated, distinct `AUTH_SECRET`. The owner confirmed OAuth setup and authorised production deployment. Migrations 0002 and 0003 are applied to production, and the production configuration enables accounts. Google configuration is not a launch requirement.
 
 Discord application policy URLs are `https://inferno.tips/terms/` and `https://inferno.tips/privacy/`. The contact address on both pages is `tos@inferno.tips`, supplied by the owner. Policy pages were published separately on trunk so they are accessible before account rollout.
 
@@ -45,7 +45,7 @@ https://inferno-tips-api-staging.oliveratkinson.workers.dev/api/v1/auth/callback
 
 Google uses `openid email profile`; Discord uses `identify email`. No bot token or guild/message permissions are needed. For a Google consent app still in testing, add the intended tester accounts. The staging home page and privacy notice are available at the Worker origin and `/privacy/`.
 
-Use separate production clients/secrets where possible. The production Discord callback is `https://inferno.tips/api/v1/auth/callback/discord`. Production credentials and a distinct `AUTH_SECRET` are installed. Before enabling production, apply migrations 0002 and 0003 and register the callback. Then enable `ACCOUNTS_ENABLED`, deploy the frontend/API together, and verify real production sign-in. Google can be configured later with `https://inferno.tips/api/v1/auth/callback/google`.
+Use separate production clients/secrets where possible. The production Discord callback is `https://inferno.tips/api/v1/auth/callback/discord`. Production credentials and a distinct `AUTH_SECRET` are installed. Migrations 0002 and 0003 are applied, the callback is registered, and `ACCOUNTS_ENABLED` is enabled in the production configuration. Deploy the API with `npm run deploy:api:production`; Cloudflare Pages deploys the frontend from `trunk`. Google can be configured later with `https://inferno.tips/api/v1/auth/callback/google`.
 
 For local development, put a random secret of at least 32 characters in ignored `worker/.dev.vars` as `AUTH_SECRET` and set `ACCOUNTS_ENABLED=true` in the same file, apply local migrations and run the existing API/dev scripts. Do not copy a deployed secret into local development. Use provider clients explicitly registered for localhost if testing real local sign-in.
 
@@ -64,7 +64,7 @@ Server replay checks consistency, not whether a human actually clicked the praye
 3. Complete an individual challenge while signed in, reload, and inspect Your progress and Recent attempts. Sign in on a second device to confirm the same result. Import old browser history and confirm it remains labelled unverified.
 4. Review the staging experience before enabling production.
 
-Questions left for the owner:
+Historical questions from the original handover:
 
 - Which Google Cloud project and Discord application should own the OAuth clients? Are the intended Google testers added to its consent configuration?
 - Does the real Turnstile account verification succeed in your normal desktop and mobile browsers?
@@ -90,3 +90,11 @@ Questions left for the owner:
 - Owner confirmed real Discord sign-in and Turnstile completion in staging. Google is deferred.
 - Discord-only account presentation: production build/type checks and all four account browser tests pass, covering upload retries, import isolation, mobile session revocation, and verification retries.
 - Production Discord secret names confirmed and a distinct production `AUTH_SECRET` generated directly into the Worker secret store. Production accounts remain disabled pending rollout.
+
+## Production release checks — 21 September 2026
+
+- Owner authorised merge and production deployment after configuring Discord OAuth and secrets.
+- Required production secret names verified: `AUTH_SECRET`, `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`, and `TURNSTILE_SECRET`. No Google credentials are configured.
+- Applied `0002_accounts.sql` and `0003_drill_progress.sql` successfully to production D1. Pre-migration Time Travel bookmark: `0000000b-00000000-000050ed-f86c9bf4aec8c170bbfe62148a4fee14`. This recovery point predates account data; restoring it later would discard subsequent writes.
+- Release validation: all 49 Worker/D1 tests and all nine focused production browser tests passed (accounts, public scores, CSP). The frontend build/type checks passed before these tests.
+- Real Discord login and Turnstile completion were verified by the owner on staging. Production OAuth completion still requires a normal-browser sign-in after deployment; automated checks do not bypass Turnstile.
