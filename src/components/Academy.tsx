@@ -597,7 +597,8 @@ export default function Academy() {
               Fan-made. Not affiliated with Jagex.
               <br />
               RuneScape and game artwork © Jagex Ltd.{' '}
-              <a href="/credits/">Credits & sources</a>
+              <a href="/credits/">Credits & sources</a> ·{' '}
+              <a href="/terms/">Terms</a> · <a href="/privacy/">Privacy</a>
             </p>
           </footer>
         </main>
