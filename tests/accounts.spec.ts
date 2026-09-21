@@ -285,7 +285,16 @@ test('account nickname saves and persists after reload without changing private 
   await expect(page.getByLabel('Nickname', { exact: true })).toHaveValue(
     'Amber Moss Falcon',
   );
-  await page.getByLabel('Nickname', { exact: true }).fill('Olbo');
+  await page
+    .getByRole('button', { name: 'Use my Discord name', exact: true })
+    .click();
+  await expect(page.getByLabel('Nickname', { exact: true })).toHaveValue(
+    'Olbo',
+  );
+  expect(state.user!.nickname).toBe('Amber Moss Falcon');
+  await expect(page.getByRole('status')).toContainText(
+    'Review the name, then save',
+  );
   await page
     .getByRole('button', { name: 'Save nickname', exact: true })
     .click();
