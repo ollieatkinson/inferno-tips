@@ -16,6 +16,10 @@ export interface Settings {
   supplySound: boolean;
   supplyVolume: number;
   volume: number;
+  zukSound: boolean;
+  zukVolume: number;
+  zukWarning: number;
+  zukHealerWindow: number;
 }
 export const defaultSettings: Settings = {
   tabKeys: { inventory: 'Escape', prayers: 'F1' },
@@ -26,6 +30,10 @@ export const defaultSettings: Settings = {
   supplySound: true,
   supplyVolume: 50,
   volume: 50,
+  zukSound: false,
+  zukVolume: 50,
+  zukWarning: 10,
+  zukHealerWindow: 90,
 };
 function parse(raw: string | null): unknown {
   try {
@@ -50,6 +58,20 @@ export function parseSettings(
   const value = parse(raw) as Partial<Settings> | null;
   const oldKeys = parse(legacy);
   return {
+    zukSound: value?.zukSound === true,
+    zukVolume:
+      typeof value?.zukVolume === 'number' &&
+      Number.isFinite(value.zukVolume) &&
+      value.zukVolume >= 0 &&
+      value.zukVolume <= 100
+        ? value.zukVolume
+        : defaultSettings.zukVolume,
+    zukWarning: [10, 30, 60].includes(value?.zukWarning as number)
+      ? value!.zukWarning!
+      : defaultSettings.zukWarning,
+    zukHealerWindow: [60, 90, 120].includes(value?.zukHealerWindow as number)
+      ? value!.zukHealerWindow!
+      : defaultSettings.zukHealerWindow,
     tabKeys: validKeys(value?.tabKeys)
       ? value.tabKeys
       : validKeys(oldKeys)

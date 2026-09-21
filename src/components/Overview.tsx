@@ -220,6 +220,9 @@ export function Overview({
             >
               Full combat simulator · Jad & Zuk ↗
             </a>
+            <a className="source-link" href="/zuk-timer/">
+              Zuk set timer →
+            </a>
           </section>
           <section>
             <h2>Before the next wave</h2>

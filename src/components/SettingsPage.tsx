@@ -21,7 +21,7 @@ export function SettingsPage({
         <div>
           <h1>Settings</h1>
           <p>
-            Preferences for every drill. Changes save automatically in this
+            Preferences for drills and tools. Changes save automatically in this
             browser.
           </p>
         </div>
@@ -223,6 +223,79 @@ export function SettingsPage({
             <p className="setting-help">
               Sound starts when you begin a run. The visual tick bar remains
               available with sound off.
+            </p>
+          </div>
+        </section>
+        <section aria-labelledby="settings-zuk-title">
+          <div>
+            <h2 id="settings-zuk-title">Zuk timer</h2>
+            <p>
+              Warnings for the next set and preparation before healers.{' '}
+              <a href="/zuk-timer/">Open the timer →</a>
+            </p>
+          </div>
+          <div className="settings-fields">
+            <label className="settings-check">
+              <input
+                type="checkbox"
+                checked={settings.zukSound}
+                onChange={(e) =>
+                  onChange({ ...settings, zukSound: e.target.checked })
+                }
+              />
+              Enable Zuk timer sound
+            </label>
+            <label>
+              Zuk timer volume
+              <div className="settings-volume">
+                <input
+                  type="range"
+                  aria-label="Zuk timer volume"
+                  min="0"
+                  max="100"
+                  step="5"
+                  value={settings.zukVolume}
+                  aria-valuetext={`${settings.zukVolume}%`}
+                  onChange={(e) =>
+                    onChange({ ...settings, zukVolume: Number(e.target.value) })
+                  }
+                />
+                <output>{settings.zukVolume}%</output>
+              </div>
+            </label>
+            <label>
+              Set warning
+              <select
+                value={settings.zukWarning}
+                onChange={(e) =>
+                  onChange({ ...settings, zukWarning: Number(e.target.value) })
+                }
+              >
+                <option value="10">10 seconds before</option>
+                <option value="30">30 seconds before</option>
+                <option value="60">1 minute before</option>
+              </select>
+            </label>
+            <label>
+              Healer planning reminder
+              <select
+                value={settings.zukHealerWindow}
+                onChange={(e) =>
+                  onChange({
+                    ...settings,
+                    zukHealerWindow: Number(e.target.value),
+                  })
+                }
+              >
+                <option value="60">1:00 before the next set</option>
+                <option value="90">1:30 before the next set</option>
+                <option value="120">2:00 before the next set</option>
+              </select>
+            </label>
+            <p className="setting-help">
+              Shown after you mark Jad defeated. This is a planning window, not
+              a guaranteed safe time to start healers; gear, health and
+              execution matter.
             </p>
           </div>
         </section>
