@@ -201,13 +201,13 @@ export class CloudRecorder {
       throw error;
     }
   }
-  async publish(name: string, token: string) {
+  async publish(name: string, token: string, accountId?: string) {
     await this.sync();
     if (!this.row.result || this.row.result.practice)
       throw new CloudError('This run is practice only.');
     const result = await api<CloudResult>(
       `/runs/${this.row.ticket.id}/publish`,
-      { name, token },
+      { name, token, ...(accountId ? { accountId } : {}) },
     );
     discardPending(this.row.ticket.id);
     return result;

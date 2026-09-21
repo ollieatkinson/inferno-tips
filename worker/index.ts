@@ -8,6 +8,7 @@ import {
   attachNewGuest,
 } from './accounts';
 import { authRoute, accountSession } from './auth';
+import { accountNickname, publicName } from './profiles';
 import {
   CLOUD_SCORING_VERSION,
   initialVerified,
@@ -171,7 +172,7 @@ async function route(request: Request, env: Env): Promise<Response> {
         : '';
     const accountJoin =
       env.ACCOUNTS_ENABLED === 'true'
-        ? 'LEFT JOIN account_guests ag ON ag.guest_id = s.guest_id'
+        ? 'LEFT JOIN account_guests ag ON ag.guest_id = s.guest_id LEFT JOIN account_profiles ap ON ap.user_id = ag.user_id'
         : '';
     const identitySQL =
       env.ACCOUNTS_ENABLED === 'true'
@@ -179,13 +180,13 @@ async function route(request: Request, env: Env): Promise<Response> {
         : "'guest:' || s.guest_id";
     const rows = await env.DB.prepare(
       `WITH personal AS (
-      SELECT s.*, ${identitySQL} AS view_identity, ROW_NUMBER() OVER (PARTITION BY ${identitySQL} ORDER BY s.points DESC, s.cleared DESC, s.stage DESC, s.published_at, s.id) AS personal_order
+      SELECT s.*, ${env.ACCOUNTS_ENABLED === 'true' ? 'COALESCE(ap.nickname, s.name)' : 's.name'} AS public_name, ${identitySQL} AS view_identity, ROW_NUMBER() OVER (PARTITION BY ${identitySQL} ORDER BY s.points DESC, s.cleared DESC, s.stage DESC, s.published_at, s.id) AS personal_order
       FROM scores s JOIN guests g ON s.guest_id = g.id ${accountJoin} WHERE s.hidden = 0 AND g.blocked = 0 AND s.mode = ? AND s.version = ? AND (? IS NULL OR s.week = ?)
     ), ranked AS (
       SELECT *, RANK() OVER (ORDER BY points DESC, cleared DESC, stage DESC) AS rank FROM personal WHERE personal_order = 1
     ), displayed AS (
       SELECT *, ROW_NUMBER() OVER (ORDER BY rank, published_at, id) AS position FROM ranked
-    ) SELECT id, name, points, stage, cleared, published_at AS publishedAt, rank, view_identity = ? AS mine FROM displayed WHERE position <= 100 OR view_identity = ? ORDER BY position`,
+    ) SELECT id, public_name AS name, points, stage, cleared, published_at AS publishedAt, rank, view_identity = ? AS mine FROM displayed WHERE position <= 100 OR view_identity = ? ORDER BY position`,
     )
       .bind(mode, version, week, week, identity, identity)
       .all<Record<string, unknown>>();
@@ -333,18 +334,33 @@ async function route(request: Request, env: Env): Promise<Response> {
       );
     return json({ ...result, published: true });
   }
-  const name =
-    typeof input.name === 'string' ? input.name.trim().normalize('NFC') : '';
-  if (
-    name.length < 2 ||
-    name.length > 24 ||
-    !/^[\p{L}\p{N} _'’-]+$/u.test(name)
-  )
+  const user = await accountSession(request, env);
+  if (input.accountId !== undefined && input.accountId !== user?.user.id)
     throw new ApiError(
-      400,
-      'Use 2–24 letters, numbers, spaces, apostrophes, hyphens or underscores.',
+      401,
+      'Your account changed. Sign in again before saving.',
     );
+  const name = user
+    ? await accountNickname(env, user.user.id)
+    : publicName(input.name);
   await verifyTurnstile(input.token, request, env);
+  if (user) {
+    await env.DB.prepare(
+      'INSERT OR IGNORE INTO account_guests(guest_id,user_id) VALUES (?,?)',
+    )
+      .bind(g.id, user.user.id)
+      .run();
+    const owner = await env.DB.prepare(
+      'SELECT user_id FROM account_guests WHERE guest_id=?',
+    )
+      .bind(g.id)
+      .first<{ user_id: string }>();
+    if (owner?.user_id !== user.user.id)
+      throw new ApiError(
+        409,
+        'These scores already belong to another account.',
+      );
+  }
   await env.DB.prepare(
     'INSERT OR IGNORE INTO scores (id, guest_id, name, mode, version, week, points, stage, cleared, published_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
   )

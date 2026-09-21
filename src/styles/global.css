@@ -4088,7 +4088,8 @@ select:focus-visible {
 }
 .board-filters select,
 .board-filters input,
-.score-submission input {
+.score-submission input,
+.nickname-form input {
   width: 100%;
   min-width: 0;
   border: 1px solid #62694e;
@@ -4097,6 +4098,14 @@ select:focus-visible {
   color: #e5e7dc;
   padding: 10px;
   font: inherit;
+}
+.nickname-form {
+  display: grid;
+  gap: 12px;
+  max-width: 480px;
+}
+.nickname-form .button {
+  justify-self: start;
 }
 .leaderboard-scroll {
   overflow-x: auto;

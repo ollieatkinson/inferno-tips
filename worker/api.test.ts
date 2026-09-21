@@ -23,6 +23,7 @@ beforeAll(async () => {
     write: false,
     format: 'esm',
     platform: 'browser',
+    conditions: ['workerd'],
     external: ['node:*'],
     target: 'es2022',
   });

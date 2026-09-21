@@ -27,7 +27,7 @@ export interface AccountView {
   enabled: boolean;
   providers: { google: boolean; discord: boolean };
   siteKey: string;
-  user: { id: string; name: string; email: string } | null;
+  user: { id: string; name: string; email: string; nickname: string } | null;
   progress: Progress;
   imported: { progress: Progress; importedAt: number } | null;
   history: AttemptSummary[];
