@@ -248,6 +248,18 @@ export function LearningPath({
               </a>
             </div>
           )}
+          {chapter === 'zuk' && (
+            <div className="los-assignment">
+              <strong>Track sets during a run</strong>
+              <p>
+                Start at the first set, pause below 600 HP and resume at Jad.
+                Includes a healer preparation reminder and Focus mode.
+              </p>
+              <a className="button secondary" href="/zuk-timer/">
+                Open Zuk timer →
+              </a>
+            </div>
+          )}
           <div className="chapter-actions">
             {chapters.indexOf(selected) > 0 && (
               <button

@@ -357,6 +357,9 @@ export default function Academy() {
           Wave simulator
           <Icon name="external" size={14} />
         </a>
+        <a className="nav-item" href="/zuk-timer/">
+          <Icon name="clock" /> Zuk timer
+        </a>
         <button
           className={`nav-item ${page === 'settings' ? 'active' : ''}`}
           aria-current={page === 'settings' ? 'page' : undefined}

@@ -1,0 +1,29 @@
+---
+import ZukTimer from '../components/ZukTimer';
+import '../styles/global.css';
+import '../styles/zuk-timer.css';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="A Zuk set timer with Focus mode, Jad phase controls, optional alerts and healer preparation reminders."
+    />
+    <meta name="theme-color" content="#151615" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>Zuk set timer — Inferno Tips</title>
+  </head>
+  <body>
+    <ZukTimer client:load />
+    <noscript>
+      <p class="noscript">
+        Enable JavaScript to run the timer.{' '}
+        <a href="/#lesson-zuk-thresholds">Read the Zuk lessons</a>.
+      </p>
+    </noscript>
+  </body>
+</html>

@@ -603,7 +603,7 @@ export const fieldLessons: FieldLesson[] = [
     title: 'Know what the next threshold starts',
     summary: '600, 480 and 240 HP mark different decisions.',
     paragraphs: [
-      'At 600 HP, the set timer pauses; use that interval to finish the controlled mager and prepare. At 480 HP, Jad spawns and the timer resumes. Tag Jad promptly so it stops attacking the shield, while continuing shield movement.',
+      'Below 600 HP, the set timer pauses; use that interval to finish the controlled mager and prepare. Below 480 HP, Jad spawns and the timer resumes with a one-time 1 minute 45 second extension. Tag Jad promptly so it stops attacking the shield, while continuing shield movement. Killing Jad does not reset the timer.',
       'At 240 HP, healers spawn and Zuk’s attacks speed up. Set timing, health, boosts and shield position all matter before crossing that threshold. Do not copy “always wait a set” or “always send” without checking the state of your run.',
     ],
     question:
@@ -649,6 +649,7 @@ export const fieldLessons: FieldLesson[] = [
     summary: 'A well-timed start reduces healing and frantic movement.',
     paragraphs: [
       'Approach the healer threshold with health, prayer and ranged boosts ready. Aim to trigger healers at a useful side of the shield’s sweep so you can reach them promptly. A poorly timed send leaves healers restoring Zuk while you wait to reach them.',
+      'After Jad, if the next set is close, hold Zuk above 240 HP and get the set under control before starting healers. Avoid handling a fresh ranger and mager during the healer phase. There is no universal safe countdown: gear, health, shield position and your execution determine how much time you need.',
       'Tag healers as you move with the shield. A newly tagged healer has a turning delay before it can be hit again, so another target may be the better next shot. Keep health out of danger; Redemption is a backup, not a reliable repeated healing plan.',
     ],
     question:
