@@ -2,6 +2,12 @@
 
 Work is on `feat/account-progress`. Production accounts remain disabled. Staging uses the existing staging Worker and D1 database; no additional Cloudflare product is required.
 
+## Release scope — 21 September 2026
+
+The owner confirmed real Discord login and successful Turnstile verification on staging. This release will use Discord only; Google is deferred. The UI only offers configured providers and only requests linking verification when another configured provider is available. Google support remains dormant until a later release configures it.
+
+Production now has `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`, its existing Turnstile secret, and a newly generated, distinct `AUTH_SECRET`. Before launch, register the Discord callback `https://inferno.tips/api/v1/auth/callback/discord`, apply the account migrations, and deploy the frontend/API with accounts enabled. Google configuration is not a launch requirement.
+
 ## What is implemented
 
 - Google and Discord authorization-code login through Better Auth 1.7.5, with native D1 storage. No email/password registration or client-supplied ID-token login is exposed.
@@ -19,7 +25,7 @@ Work is on `feat/account-progress`. Production accounts remain disabled. Staging
 
 The existing staging Turnstile widget supports the new `sign-in` and `delete-account` actions as well as `publish-score`; the API validates the action and hostname for each request. `AUTH_SECRET` has been generated directly into the staging Worker secret store. It is not in source control or chat.
 
-The OAuth provider credentials are still required. Configure them using Wrangler's secret prompts, never by pasting values into an issue, commit or chat:
+Discord credentials are configured on staging and production; the Google commands below are for the deferred follow-up. Configure credentials using Wrangler's secret prompts, never by pasting values into an issue, commit or chat:
 
 ```sh
 npx wrangler secret put GOOGLE_CLIENT_ID --config worker/wrangler.jsonc --env staging
@@ -37,7 +43,7 @@ https://inferno-tips-api-staging.oliveratkinson.workers.dev/api/v1/auth/callback
 
 Google uses `openid email profile`; Discord uses `identify email`. No bot token or guild/message permissions are needed. For a Google consent app still in testing, add the intended tester accounts. The staging home page and privacy notice are available at the Worker origin and `/privacy/`.
 
-Use separate production clients/secrets where possible. Production callback URLs will be `https://inferno.tips/api/v1/auth/callback/google` and `/discord`. Before enabling production, apply migrations 0002 and 0003, install a different production `AUTH_SECRET`, set provider credentials, and test the configured callbacks. Then enable `ACCOUNTS_ENABLED` and deploy the frontend/API together. None of those production steps is part of the current staging deployment.
+Use separate production clients/secrets where possible. The production Discord callback is `https://inferno.tips/api/v1/auth/callback/discord`. Production credentials and a distinct `AUTH_SECRET` are installed. Before enabling production, apply migrations 0002 and 0003 and register the callback. Then enable `ACCOUNTS_ENABLED`, deploy the frontend/API together, and verify real production sign-in. Google can be configured later with `https://inferno.tips/api/v1/auth/callback/google`.
 
 For local development, put a random secret of at least 32 characters in ignored `worker/.dev.vars` as `AUTH_SECRET` and set `ACCOUNTS_ENABLED=true` in the same file, apply local migrations and run the existing API/dev scripts. Do not copy a deployed secret into local development. Use provider clients explicitly registered for localhost if testing real local sign-in.
 
@@ -49,7 +55,7 @@ Browser tests cover a complete challenge with captured inputs, failed-upload rec
 
 Server replay checks consistency, not whether a human actually clicked the prayers. A script can fabricate legal inputs and wait; a modified client can hide pauses. Turnstile and IP/account limits add abuse friction, not proof of human gameplay. Imported browser-only history cannot be verified retrospectively. Completed private attempts are not uploaded to public leaderboards.
 
-## Morning handover
+## Original morning handover (superseded by the release scope above)
 
 1. Open the staging `#account` page. Until provider credentials are configured it shows their setup status and a **Test account verification** panel. Complete Turnstile and click **Check verification**; the server must report success. The Chrome DevTools browser tab is left on that page, but the automated browser may still be rejected by Turnstile. A normal browser can use the same URL.
 2. Configure the four provider credentials above. Test Google and Discord separately, then explicitly link the second provider from an account using the same email. Confirm that matching emails do not silently merge independently created identities.
@@ -72,7 +78,13 @@ Questions left for the owner:
 - `npm run build`: zero type errors/warnings/hints. Astro's pre-existing general Shiki/CSP warning remains; these pages do not use Shiki.
 - `npm audit --omit=dev`: zero known vulnerabilities.
 - Staging Chrome DevTools: account/config/leaderboard reads returned 200 with `no-store`; anonymous progress import returned 401; the existing Olbo high score remained on the staging board. The real account Turnstile iframe loaded with no parent-page CSP violations. Desktop and 390px mobile account pages had no horizontal overflow.
-- Real provider login is **not yet verified**: Google/Discord client credentials are absent. Callback integration tests use mocked provider responses. Real Turnstile completion still requires the owner's normal browser.
+- At the end of the 20 September run, real provider login was **not yet verified**: Google/Discord client credentials are absent. Callback integration tests use mocked provider responses. Real Turnstile completion still requires the owner's normal browser.
 
 - Added an explicit retry for failed or expired verification. All eight account/public-score production browser checks passed again, including the new expiry/retry case.
 - Final staging Worker version: `57bf7d47-7fdc-4a4d-8ca4-6a97dd6a7f58`. Draft review: https://github.com/ollieatkinson/inferno-tips/pull/1.
+
+## Verification record — 21 September 2026
+
+- Owner confirmed real Discord sign-in and Turnstile completion in staging. Google is deferred.
+- Discord-only account presentation: production build/type checks and all four account browser tests pass, covering upload retries, import isolation, mobile session revocation, and verification retries.
+- Production Discord secret names confirmed and a distinct production `AUTH_SECRET` generated directly into the Worker secret store. Production accounts remain disabled pending rollout.

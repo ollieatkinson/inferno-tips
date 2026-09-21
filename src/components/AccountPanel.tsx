@@ -64,7 +64,16 @@ export function AccountPanel({
     typeof location !== 'undefined' &&
     location.hostname === 'inferno-tips-api-staging.oliveratkinson.workers.dev';
   const pending = account.user ? pendingDrills(account.user.id) : [];
-  const providerReady = Object.values(account.providers).some(Boolean);
+  const availableProviders = (['discord', 'google'] as const).filter(
+    (provider) => account.providers[provider],
+  );
+  const providerReady = availableProviders.length > 0;
+  const linkableProviders = availableProviders.filter(
+    (provider) => !account.linkedProviders.includes(provider),
+  );
+  const signInOptions = availableProviders
+    .map((provider) => (provider === 'discord' ? 'Discord' : 'Google'))
+    .join(' or ');
   async function act(task: () => Promise<unknown>, success: string) {
     setBusy(true);
     setMessage('');
@@ -97,7 +106,7 @@ export function AccountPanel({
           <p>
             {account.user
               ? 'Your completed drills follow you between devices.'
-              : 'Sign in with Google or Discord to save drill results across devices. You can keep practising without an account.'}
+              : `Sign in with ${signInOptions || 'Discord'} to save drill results across devices. You can keep practising without an account.`}
           </p>
         </div>
       </div>
@@ -117,8 +126,9 @@ export function AccountPanel({
       {typeof location !== 'undefined' &&
         new URLSearchParams(location.search).has('auth-error') && (
           <p role="alert">
-            Sign-in did not finish. Retry below. When linking a second provider,
-            both providers must use the same email address.
+            Sign-in did not finish. Retry below.
+            {availableProviders.length > 1 &&
+              ' When linking a second provider, both providers must use the same email address.'}
           </p>
         )}
       {account.enabled && (
@@ -168,13 +178,13 @@ export function AccountPanel({
             )}
             {!providerReady && (
               <p>
-                Google and Discord sign-in are awaiting provider setup. Your
-                browser progress remains available.
+                Sign-in is not available here yet. Your browser progress remains
+                available.
               </p>
             )}
             {providerReady &&
               !deleting &&
-              (!account.user || account.linkedProviders.length < 2) && (
+              (!account.user || linkableProviders.length > 0) && (
                 <>
                   {account.user && (
                     <p>
@@ -190,22 +200,20 @@ export function AccountPanel({
                     reset={reset}
                   />
                   <div className="account-actions">
-                    {(['google', 'discord'] as const)
-                      .filter((p) => !account.linkedProviders.includes(p))
-                      .map((provider) => (
-                        <button
-                          key={provider}
-                          className="button primary"
-                          disabled={
-                            busy || !token || !account.providers[provider]
-                          }
-                          onClick={() => void start(provider)}
-                        >
-                          {account.user ? 'Link' : 'Continue with'}{' '}
-                          {provider === 'google' ? 'Google' : 'Discord'}
-                          {!account.providers[provider] ? ' (not set up)' : ''}
-                        </button>
-                      ))}
+                    {(account.user
+                      ? linkableProviders
+                      : availableProviders
+                    ).map((provider) => (
+                      <button
+                        key={provider}
+                        className="button primary"
+                        disabled={busy || !token}
+                        onClick={() => void start(provider)}
+                      >
+                        {account.user ? 'Link' : 'Continue with'}{' '}
+                        {provider === 'google' ? 'Google' : 'Discord'}
+                      </button>
+                    ))}
                   </div>
                 </>
               )}

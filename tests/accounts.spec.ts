@@ -7,13 +7,13 @@ import type { RunTick } from '../src/lib/cloudProtocol';
 function account(): AccountView {
   return {
     enabled: true,
-    providers: { google: true, discord: true },
+    providers: { google: false, discord: true },
     siteKey: 'test',
     user: { id: 'test-account', name: 'Olbo', email: 'olbo@example.test' },
     progress: {},
     imported: null,
     history: [],
-    linkedProviders: ['google', 'discord'],
+    linkedProviders: ['discord'],
   };
 }
 async function ready(page: Page, url: string) {
@@ -206,12 +206,17 @@ test('mobile account page fits and session revocation returns to sign-in', async
       () => document.documentElement.scrollWidth <= window.innerWidth,
     ),
   ).toBe(true);
+  await expect(page.getByRole('button', { name: /Link/ })).toHaveCount(0);
+  await expect(page.getByText(/Link another provider/)).toHaveCount(0);
+  await expect(
+    page.locator('iframe[src*="challenges.cloudflare.com"]'),
+  ).toHaveCount(0);
   await page.getByRole('button', { name: 'Sign out on all devices' }).click();
   await expect(
     page.getByRole('heading', { name: 'Keep your progress' }),
   ).toBeVisible();
   await expect(
-    page.getByText('Google and Discord sign-in are awaiting provider setup.'),
+    page.getByText('Sign-in is not available here yet.', { exact: false }),
   ).toBeVisible();
 });
 
@@ -236,24 +241,26 @@ test('failed or expired sign-in verification can be retried without reloading', 
       }),
   );
   await ready(page, '/#account');
-  const google = page.getByRole('button', {
-    name: 'Continue with Google',
+  const discord = page.getByRole('button', {
+    name: 'Continue with Discord',
     exact: true,
   });
-  await expect(google).toBeDisabled();
+  await expect(page.getByRole('button', { name: /Google/ })).toHaveCount(0);
+  await expect(page.getByText(/Sign in with Discord to save/)).toBeVisible();
+  await expect(discord).toBeDisabled();
   await page
     .getByRole('button', { name: 'Retry verification', exact: true })
     .click();
-  await expect(google).toBeEnabled();
+  await expect(discord).toBeEnabled();
   await page.evaluate(() =>
     (
       window as unknown as { verificationOptions: Record<string, () => void> }
     ).verificationOptions['expired-callback'](),
   );
-  await expect(google).toBeDisabled();
+  await expect(discord).toBeDisabled();
   await expect(page.getByRole('status')).toContainText('Verification expired');
   await page
     .getByRole('button', { name: 'Retry verification', exact: true })
     .click();
-  await expect(google).toBeEnabled();
+  await expect(discord).toBeEnabled();
 });
