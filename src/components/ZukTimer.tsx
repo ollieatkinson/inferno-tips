@@ -167,7 +167,7 @@ export default function ZukTimer() {
           event.detail > 1 ||
           window.getSelection()?.toString() ||
           (event.target as Element).closest(
-            'button, a, input, select, textarea, label, [role="button"], .zuk-toolbar, .zuk-corrections, .zuk-reset, .zuk-nav, .zuk-footer',
+            'button, a, input, select, textarea, label, summary, [role="button"], .zuk-toolbar, .zuk-adjustments, .zuk-reset, .zuk-nav, .zuk-footer',
           )
         )
           return;
@@ -193,11 +193,12 @@ export default function ZukTimer() {
         </header>
         <div className="zuk-toolbar" aria-label="Timer display and audio">
           <button
-            className="button secondary"
+            className="text-button"
             aria-pressed={focus}
+            aria-label={focus ? 'Help' : 'Focus mode'}
             onClick={() => toggleFocus(!focus)}
           >
-            {focus ? 'Exit focus mode' : 'Focus mode'}
+            {focus ? 'Help' : 'Focus mode'}
           </button>
           <button
             className="text-button"
@@ -206,17 +207,20 @@ export default function ZukTimer() {
           >
             Sound {settings.zukSound ? 'on' : 'off'}
           </button>
-          <button className="text-button" onClick={() => void beep()}>
-            Test sound
-          </button>
-          <a href="/#settings" target="_blank" rel="noreferrer">
-            Settings ↗
-          </a>
+          {!focus && (
+            <button className="text-button" onClick={() => void beep()}>
+              Test sound
+            </button>
+          )}
+          {!focus && (
+            <a href="/#settings" target="_blank" rel="noreferrer">
+              Settings ↗
+            </a>
+          )}
         </div>
         {restored && (
           <div className="zuk-notice" role="status">
-            Timer restored. Check it against your current run; use “Set spawned
-            now” to resynchronise.
+            Timer restored — check it matches your run.
             <button className="text-button" onClick={() => setRestored(false)}>
               Dismiss
             </button>
@@ -271,21 +275,23 @@ export default function ZukTimer() {
                 >
                   {nextActions[state.phase]}
                 </button>
-                <p className="zuk-tap-hint">Tap anywhere to mark this phase.</p>
+                <p className="zuk-tap-hint">Tap anywhere</p>
               </div>
             )}
-            {state.setPending && state.phase !== 'done' && (
-              <div className="zuk-set-status" role="status">
-                <p>A set may still need attention.</p>
-                <button
-                  className="button secondary"
-                  onClick={() => act('controlled')}
-                >
-                  Set under control
-                </button>
-              </div>
-            )}
-            {advice && (
+            {state.setPending &&
+              state.phase !== 'done' &&
+              (!focus || state.phase === 'pre-healers') && (
+                <div className="zuk-set-status" role="status">
+                  <p>A set may still need attention.</p>
+                  <button
+                    className="button secondary"
+                    onClick={() => act('controlled')}
+                  >
+                    Set under control
+                  </button>
+                </div>
+              )}
+            {advice && (!focus || advice.caution) && (
               <aside
                 className={`zuk-advice ${advice.caution ? 'caution' : ''}`}
                 role="status"
@@ -311,49 +317,73 @@ export default function ZukTimer() {
                 set spawns.
               </p>
             )}
-            <div className="zuk-corrections" aria-label="Timer corrections">
-              <button
-                className="button secondary"
-                disabled={!active}
-                onClick={() => act('sync')}
-              >
-                Set spawned now
-              </button>
-              <button
-                className="text-button"
-                disabled={state.phase === 'idle' || state.phase === 'done'}
-                onClick={() => act('earlier')}
-                aria-label="Subtract 5 seconds"
-              >
-                −5s
-              </button>
-              <button
-                className="text-button"
-                disabled={state.phase === 'idle' || state.phase === 'done'}
-                onClick={() => act('later')}
-                aria-label="Add 5 seconds"
-              >
-                +5s
-              </button>
-              <button
-                className="text-button"
-                disabled={!history.length}
-                onClick={() => {
-                  setState(advanceZukTimer(history.at(-1)!, Date.now()));
-                  setHistory((h) => h.slice(0, -1));
-                  setLastAction(0);
-                  setMessage('Last action undone.');
-                }}
-              >
-                Undo
-              </button>
-              <button
-                className="text-button"
-                onClick={() => setResetOpen(true)}
-              >
-                Reset
-              </button>
-            </div>
+            <details className="zuk-adjustments" open={!focus}>
+              <summary>Adjust timer</summary>
+              {focus &&
+                state.setPending &&
+                state.phase !== 'pre-healers' &&
+                state.phase !== 'done' && (
+                  <button
+                    className="button secondary"
+                    onClick={() => act('controlled')}
+                  >
+                    Set under control
+                  </button>
+                )}
+              <div className="zuk-corrections" aria-label="Timer corrections">
+                <button
+                  className="button secondary"
+                  disabled={!active}
+                  onClick={() => act('sync')}
+                >
+                  Set spawned now
+                </button>
+                <button
+                  className="text-button"
+                  disabled={state.phase === 'idle' || state.phase === 'done'}
+                  onClick={() => act('earlier')}
+                  aria-label="Subtract 5 seconds"
+                >
+                  −5s
+                </button>
+                <button
+                  className="text-button"
+                  disabled={state.phase === 'idle' || state.phase === 'done'}
+                  onClick={() => act('later')}
+                  aria-label="Add 5 seconds"
+                >
+                  +5s
+                </button>
+                <button
+                  className="text-button"
+                  disabled={!history.length}
+                  onClick={() => {
+                    setState(advanceZukTimer(history.at(-1)!, Date.now()));
+                    setHistory((h) => h.slice(0, -1));
+                    setLastAction(0);
+                    setMessage('Last action undone.');
+                  }}
+                >
+                  Undo
+                </button>
+                <button
+                  className="text-button"
+                  onClick={() => setResetOpen(true)}
+                >
+                  Reset
+                </button>
+              </div>
+              {focus && (
+                <div className="zuk-extra-controls">
+                  <button className="text-button" onClick={() => void beep()}>
+                    Test sound
+                  </button>
+                  <a href="/#settings" target="_blank" rel="noreferrer">
+                    Settings ↗
+                  </a>
+                </div>
+              )}
+            </details>
             {resetOpen && (
               <div
                 className="zuk-reset"

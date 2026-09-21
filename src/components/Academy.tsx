@@ -357,7 +357,7 @@ export default function Academy() {
           Wave simulator
           <Icon name="external" size={14} />
         </a>
-        <a className="nav-item" href="/zuk-timer/">
+        <a className="nav-item" href="/zuk-timer/?focus=1">
           <Icon name="clock" /> Zuk timer
         </a>
         <button

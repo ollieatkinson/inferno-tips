@@ -16,6 +16,14 @@ async function deadline(page: Page) {
     key,
   );
 }
+async function adjustments(page: Page) {
+  if (
+    !(await page
+      .locator('.zuk-adjustments')
+      .evaluate((el) => (el as HTMLDetailsElement).open))
+  )
+    await page.getByText('Adjust timer', { exact: true }).click();
+}
 test('phase controls pause once, preserve deadlines at Jad death, and warn before healers', async ({
   page,
 }) => {
@@ -48,11 +56,14 @@ test('background catch-up, reload, undo and reset work in mobile Focus mode', as
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await ready(page, '/zuk-timer/?focus=1');
-  await expect(
-    page.getByRole('button', { name: 'Exit focus mode' }),
-  ).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Help' })).toBeVisible();
   await next(page, 'First set spawned');
   const initial = await deadline(page);
+  await expect(page.locator('.zuk-clock-hint')).toBeHidden();
+  await expect(
+    page.getByRole('button', { name: 'Reset', exact: true }),
+  ).toBeHidden();
+  await adjustments(page);
   await page
     .getByRole('button', { name: 'Set under control', exact: true })
     .click();
@@ -65,6 +76,7 @@ test('background catch-up, reload, undo and reset work in mobile Focus mode', as
   await page.reload();
   await expect(page.locator('.zuk-notice')).toContainText('Timer restored');
   expect(await deadline(page)).toBe(initial + 420000);
+  await adjustments(page);
   await next(page, 'Below 600 HP');
   await page.getByRole('button', { name: 'Undo', exact: true }).click();
   expect(await deadline(page)).toBe(initial + 420000);
@@ -129,6 +141,7 @@ test('page clicks advance once and leave controls, text selection and reset inde
   await page.evaluate(() => window.getSelection()?.removeAllRanges());
   await page.getByRole('button', { name: 'Focus mode', exact: true }).click();
   await expect(page.locator('.zuk-phase')).toHaveText('Before Jad');
+  await adjustments(page);
   await page
     .getByRole('button', { name: 'Set under control', exact: true })
     .click();
@@ -169,7 +182,7 @@ test.describe('touch phase changes', () => {
     await page.touchscreen.tap(3, 3);
     await expect(page.locator('.zuk-phase')).toContainText('timer paused');
     await page.clock.runFor(500);
-    await page.getByRole('button', { name: 'Exit focus mode' }).tap();
+    await page.getByRole('button', { name: 'Help' }).tap();
     await expect(page.locator('.zuk-phase')).toContainText('timer paused');
     await page.getByRole('timer').tap();
     await expect(page.locator('.zuk-phase')).toHaveText('Jad is alive');
